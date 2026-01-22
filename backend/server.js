@@ -3,6 +3,7 @@
 // ============================================
 const express = require("express");
 const dotenv = require("dotenv")
+const db = require("./config/db")
 
 // ============================================
 // CONFIGURATION
@@ -19,6 +20,16 @@ const PORT = process.env.PORT || 5500;
 // ============================================
 // Parse les requêtes JSON
 app.use(express.json());
+
+// ============================================
+// IMPORT DES ROUTES
+// ============================================
+const testRoutes = require('./routes/test.routes');
+
+// ============================================
+// UTILISATION DES ROUTES
+// ============================================
+app.use('/api', testRoutes);
 
 // ============================================
 // ROUTES DE TEST
