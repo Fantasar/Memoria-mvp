@@ -3,6 +3,7 @@
 // ============================================
 const express = require("express");
 const dotenv = require("dotenv")
+const db = require("./config/db")
 
 // ============================================
 // CONFIGURATION
