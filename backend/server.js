@@ -22,6 +22,16 @@ const PORT = process.env.PORT || 5500;
 app.use(express.json());
 
 // ============================================
+// IMPORT DES ROUTES
+// ============================================
+const testRoutes = require('./routes/test.routes');
+
+// ============================================
+// UTILISATION DES ROUTES
+// ============================================
+app.use('/api', testRoutes);
+
+// ============================================
 // ROUTES DE TEST
 // ============================================
 // Route racine
