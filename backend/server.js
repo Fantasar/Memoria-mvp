@@ -4,6 +4,7 @@
 const express = require("express");
 const dotenv = require("dotenv")
 const db = require("./config/db")
+const cors = require("cors");
 
 // ============================================
 // CONFIGURATION
@@ -18,6 +19,12 @@ const PORT = process.env.PORT || 5500;
 // ============================================
 // MIDDLEWARES
 // ============================================
+// Configuration CORS pour permettre les requêtes depuis le frontend
+app.use(cors({
+  origin: 'http://localhost:5173', // URL du frontend Vite
+  credentials: true
+}));
+
 // Parse les requêtes JSON
 app.use(express.json());
 
