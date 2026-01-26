@@ -3,14 +3,14 @@
 -- ============================================================================
 
 -- Extension pour UUID
-CREATE EXTENSION IF NOT EXISTS "pgcrypto"
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================================================
 -- TYPES ENUM
 -- ============================================================================
 
 -- Statut des commandes
-CREATE TYPE order_status enum AS ENUM (
+CREATE TYPE order_status_enum AS ENUM (
     'pending',      -- En attente d'acceptation prestataire
     'accepted',     -- Acceptée par prestataire
     'in_progress',  -- En cours de réalisation
@@ -42,7 +42,7 @@ CREATE TYPE payment_status_enum AS ENUM (
 
 CREATE TABLE roles (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOR NULL,
+    name VARCHAR(50) UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
