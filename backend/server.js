@@ -4,6 +4,7 @@
 const express = require("express");
 const dotenv = require("dotenv")
 const db = require("./config/db")
+const cors = require("cors");
 
 // ============================================
 // CONFIGURATION
@@ -18,6 +19,12 @@ const PORT = process.env.PORT || 5500;
 // ============================================
 // MIDDLEWARES
 // ============================================
+// Configuration CORS pour permettre les requêtes depuis le frontend
+app.use(cors({
+  origin: 'http://localhost:5173', // URL du frontend Vite
+  credentials: true
+}));
+
 // Parse les requêtes JSON
 app.use(express.json());
 
@@ -25,20 +32,29 @@ app.use(express.json());
 // IMPORT DES ROUTES
 // ============================================
 const testRoutes = require('./routes/test.routes');
+const dataRoutes = require('./routes/data.routes');
 
 // ============================================
 // UTILISATION DES ROUTES
 // ============================================
-app.use('/api', testRoutes);
+app.use('/api/test', testRoutes);
+app.use('/api/data', dataRoutes);
 
 // ============================================
-// ROUTES DE TEST
+// ROUTES DE BASE
 // ============================================
-// Route racine
+// Route racine - Documentation API
 app.get("/", (req, res) => {
     res.json({
         message: "Bienvenue sur l'API Mémoria",
-        version: "1.0.0"
+        version: "1.0.0",
+        documentation: {
+            endpoints: [
+                { path: "/api/health", description: "Health check du serveur" },
+                { path: "/api/test", description: "Test de connexion backend" },
+                { path: "/api/data", description: "Test de lecture PostgreSQL" }
+            ]
+        }
     });
 });
 
@@ -68,4 +84,5 @@ app.listen(PORT, () => {
   console.log(`[DEV] Serveur tourne sur le port ${PORT}!`);
   console.log(`URL: http://localhost:${PORT}!`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
+  console.log(`Test PostgreSQL: http://localhost:${PORT}/api/data`);
 });

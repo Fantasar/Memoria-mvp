@@ -7,7 +7,7 @@ const pool = require('../config/db');
  * @desc    Tester la connexion à PostgreSQL
  * @access  Public (pour le moment)
  */
-router.get('/test-db', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
     res.json({
