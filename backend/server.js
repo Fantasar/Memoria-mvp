@@ -33,12 +33,14 @@ app.use(express.json());
 // ============================================
 const testRoutes = require('./routes/test.routes');
 const dataRoutes = require('./routes/data.routes');
+const authRoutes = require('./routes/auth');
 
 // ============================================
 // UTILISATION DES ROUTES
 // ============================================
 app.use('/api/test', testRoutes);
 app.use('/api/data', dataRoutes);
+app.use('/api/auth', authRoutes);
 
 // ============================================
 // ROUTES DE BASE
@@ -52,7 +54,9 @@ app.get("/", (req, res) => {
             endpoints: [
                 { path: "/api/health", description: "Health check du serveur" },
                 { path: "/api/test", description: "Test de connexion backend" },
-                { path: "/api/data", description: "Test de lecture PostgreSQL" }
+                { path: "/api/data", description: "Test de lecture PostgreSQL"},
+                { path:"/api/auth/register", description: "Inscription utilisateur"},
+                {path: "/api/auth/login", description: "Connexion utilisateur"}
             ]
         }
     });
@@ -85,4 +89,7 @@ app.listen(PORT, () => {
   console.log(`URL: http://localhost:${PORT}!`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   console.log(`Test PostgreSQL: http://localhost:${PORT}/api/data`);
+  console.log(`Auth endpoints:`);
+  console.log(`  - POST http://localhost:${PORT}/api/auth/register`);
+  console.log(`  - POST http://localhost:${PORT}/api/auth/login`);
 });
