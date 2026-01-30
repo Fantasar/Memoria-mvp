@@ -45,6 +45,15 @@ const validateRegister = (req, res, next) => {
     }
   }
 
+   // ============ VALIDATION SIRET (prestataire uniquement) ============
+  if (!siret) {
+    errors.push('Le numéro SIRET est obligatoire pour les prestataires');
+  } else if (siret.length !== 14) {
+    errors.push('Le SIRET doit contenir exactement 14 chiffres');
+  } else if (!/^\d{14}$/.test(siret)) {
+    errors.push('Le SIRET doit contenir uniquement des chiffres');
+}
+
   // ============ RETOUR ERREURS OU SUITE ============
   if (errors.length > 0) {
     return res.status(400).json({
