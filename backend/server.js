@@ -34,6 +34,7 @@ app.use(express.json());
 const testRoutes = require('./routes/test.routes');
 const dataRoutes = require('./routes/data.routes');
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
 
 // ============================================
 // UTILISATION DES ROUTES
@@ -41,6 +42,7 @@ const authRoutes = require('./routes/auth');
 app.use('/api/test', testRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ============================================
 // ROUTES DE BASE
@@ -56,7 +58,8 @@ app.get("/", (req, res) => {
                 { path: "/api/test", description: "Test de connexion backend" },
                 { path: "/api/data", description: "Test de lecture PostgreSQL"},
                 { path:"/api/auth/register", description: "Inscription utilisateur"},
-                {path: "/api/auth/login", description: "Connexion utilisateur"}
+                { path: "/api/auth/login", description: "Connexion utilisateur"},
+                { path: "/api/admin", description: "Inscription d'un administrateur"}
             ]
         }
     });
@@ -92,4 +95,6 @@ app.listen(PORT, () => {
   console.log(`Auth endpoints:`);
   console.log(`  - POST http://localhost:${PORT}/api/auth/register`);
   console.log(`  - POST http://localhost:${PORT}/api/auth/login`);
+  console.log(`Admin endpoints:`);
+  console.log(`  - POST http://localhost:${PORT}/api/admin`);
 });
