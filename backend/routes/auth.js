@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const {validateRegister} = require('../middlewares/validation');
+const {validateRegister, validateLogin} = require('../middlewares/validation');
 
 /**
  * @route   POST /api/auth/register
@@ -17,6 +17,6 @@ router.post('/register',validateRegister, authController.register);
  * @desc    Connexion utilisateur et génération JWT
  * @access  Public
  */
-router.post('/login', authController.login);
+router.post('/login', validateLogin, authController.login);
 
 module.exports = router;
