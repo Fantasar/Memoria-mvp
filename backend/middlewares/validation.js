@@ -80,4 +80,42 @@ const validateRegister = (req, res, next) => {
   next();
 };
 
-module.exports = { validateRegister };
+/**
+ * Middleware de validation pour la connexion
+ * Valide : email, password
+ */
+const validateLogin = (req, res, next) => {
+  const { email, password } = req.body;
+  const errors = [];
+
+  // ============ VALIDATION EMAIL ============
+  if (!email) {
+    errors.push('L\'email est obligatoire');
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      errors.push('Le format de l\'email est invalide');
+    }
+  }
+
+  // ============ VALIDATION PASSWORD ============
+  if (!password) {
+    errors.push('Le mot de passe est obligatoire');
+  }
+
+  // ============ RETOUR ERREURS OU SUITE ============
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Données invalides',
+        details: errors
+      }
+    });
+  }
+
+  next();
+};
+
+module.exports = { validateRegister, validateLogin };
