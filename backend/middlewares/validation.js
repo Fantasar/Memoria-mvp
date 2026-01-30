@@ -29,11 +29,21 @@ const validateRegister = (req, res, next) => {
   }
 
   // ============ VALIDATION ROLE ============
-  const rolesValides = ['client', 'prestataire', 'admin'];
+  const rolesValides = ['client', 'prestataire'];
+
   if (!role) {
     errors.push('Le rôle est obligatoire');
+  } else if (role === 'admin') {
+    // Retour immédiat si quelqu'un essaie de créer un admin
+    return res.status(403).json({
+      success: false,
+      error: {
+        code: 'ROLE_NOT_ALLOWED',
+        message: 'La création de compte administrateur via cet endpoint n\'est pas autorisée.'
+      }
+    });
   } else if (!rolesValides.includes(role)) {
-    errors.push('Le rôle doit être: client, prestataire ou admin');
+    errors.push('Le rôle doit être: client ou prestataire');
   }
 
   // ============ VALIDATION ZONE (prestataire uniquement) ============
