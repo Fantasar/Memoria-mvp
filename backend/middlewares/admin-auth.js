@@ -26,7 +26,12 @@ const authenticateToken = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Vérifier que l'utilisateur existe toujours en base
-    const userQuery = 'SELECT id, email, role FROM users WHERE id = $1';
+    const userQuery = `
+      SELECT u.id, u.email, r.name as role
+      FROM users u
+      INNER JOIN roles r ON u.role_id = r.id
+      WHERE u.id = $1
+    `;
     const userResult = await pool.query(userQuery, [decoded.userId]);
 
     if (userResult.rows.length === 0) {
@@ -41,7 +46,7 @@ const authenticateToken = async (req, res, next) => {
 
     // Attacher les infos user à la requête pour les middlewares suivants
     req.user = {
-      id: userResult.rows[0].id,
+      userId: userResult.rows[0].id,
       email: userResult.rows[0].email,
       role: userResult.rows[0].role
     };
