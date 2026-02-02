@@ -59,18 +59,37 @@ const createAdmin = async (req, res) => {
       });
     }
 
+    // ============ RÉCUPÉRER LE ROLE_ID ADMIN ============
+    const roleResult = await pool.query(
+      'SELECT id FROM roles WHERE name = $1',
+      ['admin']  // ← On cherche le rôle "admin"
+    );
+
+    if (roleResult.rows.length === 0) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'ROLE_NOT_FOUND',
+          message: 'Rôle admin introuvable'
+        }
+      });
+    }
+
+    const adminRoleId = roleResult.rows[0].id;  // ← Récupère l'ID (devrait être 3)
+    console.log('🔍 [ADMIN] Role ID récupéré:', adminRoleId, typeof adminRoleId);
+
     // ============ HASHER PASSWORD ============
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // ============ CRÉER L'ADMIN ============
     const insertQuery = `
-      INSERT INTO users (email, password_hash, role, created_at)
-      VALUES ($1, $2, 'admin', NOW())
-      RETURNING id, email, role, created_at
+      INSERT INTO users (email, password_hash, role_id, created_at)
+      VALUES ($1, $2, $3, NOW())
+      RETURNING id, email, role_id, created_at
     `;
 
-    const insertResult = await pool.query(insertQuery, [email, hashedPassword]);
+    const insertResult = await pool.query(insertQuery, [email, hashedPassword, adminRoleId]);
     const newAdmin = insertResult.rows[0];
 
     // ============ LOG DE SÉCURITÉ ============
@@ -87,7 +106,7 @@ const createAdmin = async (req, res) => {
       data: {
         admin_id: newAdmin.id,
         email: newAdmin.email,
-        role: newAdmin.role,
+        role: 'admin',
         created_at: newAdmin.created_at,
         message: 'Compte administrateur créé avec succès'
       }

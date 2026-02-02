@@ -1,5 +1,6 @@
 // backend/controllers/authController.js
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 
 const register = async (req, res) => {
@@ -90,14 +91,101 @@ const register = async (req, res) => {
   }
 };
 
+
 const login = async (req, res) => {
-  res.status(501).json({
-    success: false,
-    error: {
-      code: 'NOT_IMPLEMENTED',
-      message: 'Endpoint login pas encore implémenté'
+  const { email, password } = req.body;
+
+  try {
+    // ============ ÉTAPE 1 : VALIDATION DES DONNÉES ============
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'MISSING_FIELDS',
+          message: 'Email et mot de passe sont obligatoires'
+        }
+      });
     }
-  });
+
+    // ============ ÉTAPE 2 : VÉRIFIER SI L'UTILISATEUR EXISTE ============
+    const userQuery = `
+      SELECT 
+        u.id, 
+        u.email, 
+        u.password_hash, 
+        r.name as role,
+        u.zone_intervention, 
+        u.siret 
+      FROM users u
+      INNER JOIN roles r ON u.role_id = r.id
+      WHERE u.email = $1
+    `;
+    const userResult = await pool.query(userQuery, [email]);
+
+    if (userResult.rows.length === 0) {
+      // Message générique pour ne pas révéler si l'email existe
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Email ou mot de passe incorrect'
+        }
+      });
+    }
+
+    const user = userResult.rows[0];
+
+    // ============ ÉTAPE 3 : VÉRIFIER LE MOT DE PASSE ============
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Email ou mot de passe incorrect'
+        }
+      });
+    }
+
+    // ============ ÉTAPE 4 : GÉNÉRER LE TOKEN JWT ============
+    const token = jwt.sign(
+      { 
+        userId: user.id,
+        email: user.email,
+        role: user.role
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
+
+    // ============ ÉTAPE 5 : RETOURNER LA RÉPONSE ============
+    return res.status(200).json({
+      success: true,
+      data: {
+        token: token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          zone_intervention: user.zone_intervention,
+          siret: user.siret
+        },
+        message: 'Connexion réussie'
+      }
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de la connexion:', error);
+
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de la connexion'
+      }
+    });
+  }
 };
 
 module.exports = { register, login };
