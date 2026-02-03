@@ -35,6 +35,7 @@ const testRoutes = require('./routes/test.routes');
 const dataRoutes = require('./routes/data.routes');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const orderRoutes = require('./routes/orders');
 
 // ============================================
 // UTILISATION DES ROUTES
@@ -43,6 +44,7 @@ app.use('/api/test', testRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/orders', orderRoutes);
 
 // ============================================
 // ROUTES DE BASE
