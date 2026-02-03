@@ -1,6 +1,9 @@
 // backend/controllers/adminController.js
-const bcrypt = require('bcrypt');
-const pool = require('../config/db');
+const authService = require('../services/authService');
+
+/**
+ * CONTROLLER : Orchestration admin
+ */
 
 /**
  * @desc    Créer un nouveau compte administrateur
@@ -8,11 +11,9 @@ const pool = require('../config/db');
  * @access  Private (Admin only)
  */
 const createAdmin = async (req, res) => {
-  const { email, password, prenom, nom } = req.body;
-
   try {
-    // ============ VALIDATION BASIQUE ============
-    if (!email || !password) {
+    // Validation basique
+    if (!req.body.email || !req.body.password) {
       return res.status(400).json({
         success: false,
         error: {
@@ -22,92 +23,17 @@ const createAdmin = async (req, res) => {
       });
     }
 
-    // Validation email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'INVALID_EMAIL',
-          message: 'Format email invalide'
-        }
-      });
-    }
-
-    // Validation password
-    if (password.length < 8) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'INVALID_PASSWORD',
-          message: 'Le mot de passe doit contenir au moins 8 caractères'
-        }
-      });
-    }
-
-    // ============ VÉRIFIER SI EMAIL EXISTE ============
-    const emailCheckQuery = 'SELECT id FROM users WHERE email = $1';
-    const emailCheckResult = await pool.query(emailCheckQuery, [email]);
-
-    if (emailCheckResult.rows.length > 0) {
-      return res.status(409).json({
-        success: false,
-        error: {
-          code: 'EMAIL_ALREADY_EXISTS',
-          message: 'Cet email est déjà utilisé'
-        }
-      });
-    }
-
-    // ============ RÉCUPÉRER LE ROLE_ID ADMIN ============
-    const roleResult = await pool.query(
-      'SELECT id FROM roles WHERE name = $1',
-      ['admin']  // ← On cherche le rôle "admin"
+    // Déléguer au service avec email du créateur
+    const result = await authService.createAdminUser(
+      req.body,
+      req.user.email // Provient du middleware authenticateToken
     );
 
-    if (roleResult.rows.length === 0) {
-      return res.status(500).json({
-        success: false,
-        error: {
-          code: 'ROLE_NOT_FOUND',
-          message: 'Rôle admin introuvable'
-        }
-      });
-    }
-
-    const adminRoleId = roleResult.rows[0].id;  // ← Récupère l'ID (devrait être 3)
-    console.log('🔍 [ADMIN] Role ID récupéré:', adminRoleId, typeof adminRoleId);
-
-    // ============ HASHER PASSWORD ============
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    // ============ CRÉER L'ADMIN ============
-    const insertQuery = `
-      INSERT INTO users (email, password_hash, role_id, created_at)
-      VALUES ($1, $2, $3, NOW())
-      RETURNING id, email, role_id, created_at
-    `;
-
-    const insertResult = await pool.query(insertQuery, [email, hashedPassword, adminRoleId]);
-    const newAdmin = insertResult.rows[0];
-
-    // ============ LOG DE SÉCURITÉ ============
-    console.log(`[SECURITY] Nouvel admin créé par ${req.user.email}:`, {
-      new_admin_id: newAdmin.id,
-      new_admin_email: newAdmin.email,
-      created_by: req.user.email,
-      created_at: new Date().toISOString()
-    });
-
-    // ============ RETOURNER LA RÉPONSE ============
+    // Formatter la réponse HTTP
     return res.status(201).json({
       success: true,
       data: {
-        admin_id: newAdmin.id,
-        email: newAdmin.email,
-        role: 'admin',
-        created_at: newAdmin.created_at,
+        ...result,
         message: 'Compte administrateur créé avec succès'
       }
     });
@@ -115,6 +41,18 @@ const createAdmin = async (req, res) => {
   } catch (error) {
     console.error('Erreur lors de la création admin:', error);
 
+    // Gestion des erreurs métier
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message
+        }
+      });
+    }
+
+    // Erreur serveur inattendue
     return res.status(500).json({
       success: false,
       error: {
