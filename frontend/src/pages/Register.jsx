@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import AuthLayout from '../components/layout/AuthLayout';
 import InputField from '../components/forms/InputField';
 import SelectField from '../components/forms/SelectField';
 import Button from '../components/forms/Button';
 import { validateEmail, validatePassword, validatePasswordConfirmation, validateRole } from '../utils/validators';
-import logoMemoria from '../assets/Logos-Mémoria.jpeg';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -81,94 +81,80 @@ function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
-      <div className="max-w-md w-full">
-        {/* En-tête */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <img 
-              src={logoMemoria} 
-              alt="Logo Mémoria" 
-              className="w-20 h-20 object-contain drop-shadow-lg"
-            />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Inscription</h1>
-          <p className="text-gray-600 mt-2">Créez votre compte Mémoria</p>
-        </div>
+    <AuthLayout 
+      title="Inscription" 
+      subtitle="Créez votre compte Mémoria"
+    >
+      {/* Formulaire */}
+      <form onSubmit={handleSubmit}>
+        <InputField
+          label="Email"
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          error={errors.email}
+          placeholder="exemple@email.com"
+          required
+        />
 
-        {/* Formulaire */}
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <form onSubmit={handleSubmit}>
-            <InputField
-              label="Email"
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              error={errors.email}
-              placeholder="exemple@email.com"
-              required
-            />
+        <InputField
+          label="Mot de passe"
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          error={errors.password}
+          placeholder="********"
+          required
+        />
 
-            <InputField
-              label="Mot de passe"
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              error={errors.password}
-              placeholder="********"
-              required
-            />
+        <InputField
+          label="Confirmer le mot de passe"
+          type="password"
+          name="confirmPassword"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          error={errors.confirmPassword}
+          placeholder="********"
+          required
+        />
 
-            <InputField
-              label="Confirmer le mot de passe"
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              error={errors.confirmPassword}
-              placeholder="********"
-              required
-            />
+        {/* Sélection du rôle */}
+        <SelectField
+          label="Type de compte"
+          name="role"
+          value={formData.role}
+          onChange={handleChange}
+          error={errors.role}
+          options={[
+            { value: 'client', label: 'Client - Je souhaite commander un service' },
+            { value: 'prestataire', label: 'Prestataire - Je souhaite proposer mes services' }
+          ]}
+          placeholder="Sélectionnez un rôle"
+          required
+        />
 
-            {/* Sélection du rôle */}
-            <SelectField
-              label="Type de compte"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              error={errors.role}
-              options={[
-                { value: 'client', label: 'Client - Je souhaite commander un service' },
-                { value: 'prestataire', label: 'Prestataire - Je souhaite proposer mes services' }
-              ]}
-              placeholder="Sélectionnez un rôle"
-              required
-            />
+        <Button
+          type="submit"
+          variant="primary"
+          fullWidth
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Inscription en cours...' : "S'inscrire"}
+        </Button>
+      </form>
 
-            <Button
-              type="submit"
-              variant="primary"
-              fullWidth
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Inscription en cours...' : "S'inscrire"}
-            </Button>
-          </form>
-
-          {/* Lien vers Login */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Vous avez déjà un compte ?{' '}
-              <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-                Se connecter
-              </Link>
-            </p>
-          </div>
-        </div>
+      {/* Lien vers Login */}
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-600">
+          Vous avez déjà un compte ?{' '}
+          <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+            Se connecter
+          </Link>
+        </p>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
 
