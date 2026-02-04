@@ -1,47 +1,28 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AuthLayout from '../components/layout/AuthLayout';
 import InputField from '../components/forms/InputField';
 import SelectField from '../components/forms/SelectField';
 import Button from '../components/forms/Button';
+import useForm from '../hooks/useForm';
 import { validateEmail, validatePassword, validatePasswordConfirmation, validateRole } from '../utils/validators';
 
 function Register() {
-  const [formData, setFormData] = useState({
+  // Valeurs initiales
+  const initialValues = {
     email: '',
     password: '',
     confirmPassword: '',
     role: ''
-  });
-
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Gestion du changement des inputs
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Efface l'erreur du champ modifié
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: null
-      }));
-    }
   };
 
-  // Validation du formulaire
-  const validateForm = () => {
+  // Fonction de validation
+  const validate = (data) => {
     const newErrors = {};
     
-    newErrors.email = validateEmail(formData.email);
-    newErrors.password = validatePassword(formData.password);
-    newErrors.confirmPassword = validatePasswordConfirmation(formData.password, formData.confirmPassword);
-    newErrors.role = validateRole(formData.role);
+    newErrors.email = validateEmail(data.email);
+    newErrors.password = validatePassword(data.password);
+    newErrors.confirmPassword = validatePasswordConfirmation(data.password, data.confirmPassword);
+    newErrors.role = validateRole(data.role);
 
     // Retire les erreurs null
     Object.keys(newErrors).forEach(key => {
@@ -51,41 +32,35 @@ function Register() {
     return newErrors;
   };
 
-  // Soumission du formulaire
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    const validationErrors = validateForm();
-    
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    setIsSubmitting(true);
+  // Callback de soumission
+  const onSubmit = async (data) => {
+    console.log('Données du formulaire:', data);
     
     // Simulation temporaire - sera remplacé par l'appel API
-    console.log('Données du formulaire:', formData);
-    
-    setTimeout(() => {
-      alert('Inscription simulée avec succès ! (Backend à venir)');
-      setIsSubmitting(false);
-      // Reset du formulaire
-      setFormData({
-        email: '',
-        password: '',
-        confirmPassword: '',
-        role: ''
-      });
-    }, 1000);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        alert('Inscription simulée avec succès ! (Backend à venir)');
+        resetForm(); // Reset après succès
+        resolve();
+      }, 1000);
+    });
   };
+
+  // Utilisation du hook
+  const {
+    formData,
+    errors,
+    isSubmitting,
+    handleChange,
+    handleSubmit,
+    resetForm
+  } = useForm(initialValues, validate, onSubmit);
 
   return (
     <AuthLayout 
       title="Inscription" 
       subtitle="Créez votre compte Mémoria"
     >
-      {/* Formulaire */}
       <form onSubmit={handleSubmit}>
         <InputField
           label="Email"
@@ -120,7 +95,6 @@ function Register() {
           required
         />
 
-        {/* Sélection du rôle */}
         <SelectField
           label="Type de compte"
           name="role"

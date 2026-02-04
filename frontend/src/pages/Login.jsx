@@ -1,45 +1,25 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AuthLayout from '../components/layout/AuthLayout';
 import InputField from '../components/forms/InputField';
 import Button from '../components/forms/Button';
+import useForm from '../hooks/useForm';
 import { validateEmail } from '../utils/validators';
 
-
 function Login() {
-  const [formData, setFormData] = useState({
+  // Valeurs initiales
+  const initialValues = {
     email: '',
     password: '',
     rememberMe: false
-  });
-
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Gestion du changement des inputs
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    
-    // Efface l'erreur du champ modifié
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: null
-      }));
-    }
   };
 
-  // Validation du formulaire
-  const validateForm = () => {
+  // Fonction de validation
+  const validate = (data) => {
     const newErrors = {};
     
-    newErrors.email = validateEmail(formData.email);
+    newErrors.email = validateEmail(data.email);
     
-    if (!formData.password) {
+    if (!data.password) {
       newErrors.password = "Le mot de passe est requis";
     }
 
@@ -51,27 +31,27 @@ function Login() {
     return newErrors;
   };
 
-  // Soumission du formulaire
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    const validationErrors = validateForm();
-    
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    setIsSubmitting(true);
+  // Callback de soumission
+  const onSubmit = async (data) => {
+    console.log('Données de connexion:', data);
     
     // Simulation temporaire - sera remplacé par l'appel API
-    console.log('Données de connexion:', formData);
-    
-    setTimeout(() => {
-      alert('Connexion simulée avec succès ! (Backend à venir)');
-      setIsSubmitting(false);
-    }, 1000);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        alert('Connexion simulée avec succès ! (Backend à venir)');
+        resolve();
+      }, 1000);
+    });
   };
+
+  // Utilisation du hook
+  const {
+    formData,
+    errors,
+    isSubmitting,
+    handleChange,
+    handleSubmit
+  } = useForm(initialValues, validate, onSubmit);
 
   return (
     <AuthLayout 
