@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import InputField from '../components/forms/InputField';
 import Button from '../components/forms/Button';
 import { validateEmail } from '../utils/validators';
+import logoMemoria from '../assets/Logos-Mémoria.jpeg';
+
 
 function Login() {
   const [formData, setFormData] = useState({
@@ -77,9 +79,11 @@ function Login() {
         {/* En-tête */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-2xl font-bold">M</span>
-            </div>
+            <img 
+              src={logoMemoria} 
+              alt="Logo Mémoria" 
+              className="w-20 h-20 object-contain drop-shadow-lg"
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Connexion</h1>
           <p className="text-gray-600 mt-2">Accédez à votre compte Mémoria</p>

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import InputField from '../components/forms/InputField';
+import SelectField from '../components/forms/SelectField';
 import Button from '../components/forms/Button';
 import { validateEmail, validatePassword, validatePasswordConfirmation, validateRole } from '../utils/validators';
+import logoMemoria from '../assets/Logos-Mémoria.jpeg';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -84,9 +86,11 @@ function Register() {
         {/* En-tête */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-2xl font-bold">M</span>
-            </div>
+            <img 
+              src={logoMemoria} 
+              alt="Logo Mémoria" 
+              className="w-20 h-20 object-contain drop-shadow-lg"
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Inscription</h1>
           <p className="text-gray-600 mt-2">Créez votre compte Mémoria</p>
@@ -129,30 +133,19 @@ function Register() {
             />
 
             {/* Sélection du rôle */}
-            <div className="mb-6">
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                Type de compte
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition ${
-                  errors.role 
-                    ? 'border-red-500 focus:ring-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500'
-                }`}
-              >
-                <option value="">Sélectionnez un rôle</option>
-                <option value="client">Client - Je souhaite commander un service</option>
-                <option value="prestataire">Prestataire - Je souhaite proposer mes services</option>
-              </select>
-              {errors.role && (
-                <p className="text-red-500 text-sm mt-1">{errors.role}</p>
-              )}
-            </div>
+            <SelectField
+              label="Type de compte"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              error={errors.role}
+              options={[
+                { value: 'client', label: 'Client - Je souhaite commander un service' },
+                { value: 'prestataire', label: 'Prestataire - Je souhaite proposer mes services' }
+              ]}
+              placeholder="Sélectionnez un rôle"
+              required
+            />
 
             <Button
               type="submit"
