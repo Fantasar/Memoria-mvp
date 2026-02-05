@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 
 // Créer le Context
 export const AuthContext = createContext(null);
@@ -8,15 +8,14 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true); // Pour éviter flash de contenu
+  const [loading, setLoading] = useState(true);
 
-  // Fonction login (après appel API réussi)
+  // Fonction login
   const login = (userData, authToken) => {
     setUser(userData);
     setToken(authToken);
     setIsAuthenticated(true);
-    
-    // Sauvegarder dans localStorage pour persistance
+
     localStorage.setItem('token', authToken);
     localStorage.setItem('user', JSON.stringify(userData));
   };
@@ -26,32 +25,29 @@ export function AuthProvider({ children }) {
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
-    
-    // Nettoyer localStorage
+
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
 
-  // Vérifier l'authentification au chargement de l'app
+  // Vérifier auth
   const checkAuth = () => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    
+
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
       setIsAuthenticated(true);
     }
-    
+
     setLoading(false);
   };
 
-  // Exécuter checkAuth au montage du composant
   useEffect(() => {
     checkAuth();
   }, []);
 
-  // Valeur fournie aux composants enfants
   const value = {
     user,
     token,
@@ -68,3 +64,14 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
+
+// Hook personnalisé
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth doit être utilisé dans AuthProvider");
+  }
+
+  return context;
+};
