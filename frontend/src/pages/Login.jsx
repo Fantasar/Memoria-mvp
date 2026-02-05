@@ -1,19 +1,22 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import AuthLayout from '../components/layout/AuthLayout';
 import InputField from '../components/forms/InputField';
 import Button from '../components/forms/Button';
 import useForm from '../hooks/useForm';
 import { validateEmail } from '../utils/validators';
+import authService from '../services/authService';
 
 function Login() {
-  // Valeurs initiales
+  const navigate = useNavigate();
+  const [apiError, setApiError] = useState(null);
+
   const initialValues = {
     email: '',
     password: '',
     rememberMe: false
   };
 
-  // Fonction de validation
   const validate = (data) => {
     const newErrors = {};
     
@@ -23,7 +26,6 @@ function Login() {
       newErrors.password = "Le mot de passe est requis";
     }
 
-    // Retire les erreurs null
     Object.keys(newErrors).forEach(key => {
       if (newErrors[key] === null) delete newErrors[key];
     });
@@ -31,20 +33,41 @@ function Login() {
     return newErrors;
   };
 
-  // Callback de soumission
-  const onSubmit = async (data) => {
-    console.log('Données de connexion:', data);
-    
-    // Simulation temporaire - sera remplacé par l'appel API
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        alert('Connexion simulée avec succès ! (Backend à venir)');
-        resolve();
-      }, 1000);
-    });
-  };
+const onSubmit = async (data) => {
+  try {
+    setApiError(null);
 
-  // Utilisation du hook
+    console.log('📤 Tentative de connexion:', data.email);
+
+    // authService.login() renvoie { token, user }
+    const result = await authService.login(data.email, data.password);
+    
+    console.log('✅ Connexion réussie:', result);
+    console.log('👤 User complet:', result.user);  // ← Corrigé
+    console.log('👤 Rôle utilisateur:', result.user.role);  // ← Corrigé
+
+    // Redirection selon le rôle
+    switch (result.user.role) {  // ← Corrigé
+      case 'client':
+        navigate('/dashboard/client');
+        break;
+      case 'prestataire':
+        navigate('/dashboard/prestataire');
+        break;
+      case 'admin':
+        navigate('/dashboard/admin');
+        break;
+      default:
+        console.error('❌ Rôle non reconnu:', result.user.role);
+        setApiError('Rôle utilisateur non reconnu');
+    }
+
+  } catch (error) {
+    console.error('❌ Erreur de connexion:', error.message);
+    setApiError(error.message);
+  }
+};
+
   const {
     formData,
     errors,
@@ -59,6 +82,17 @@ function Login() {
       subtitle="Accédez à votre compte Mémoria"
     >
       <form onSubmit={handleSubmit}>
+        {apiError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600 flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              {apiError}
+            </p>
+          </div>
+        )}
+
         <InputField
           label="Email"
           type="email"
@@ -81,7 +115,6 @@ function Login() {
           required
         />
 
-        {/* Case à cocher "Se souvenir de moi" */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <input
@@ -116,7 +149,6 @@ function Login() {
         </Button>
       </form>
 
-      {/* Lien vers Register */}
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
           Vous n'avez pas de compte ?{' '}
@@ -126,7 +158,6 @@ function Login() {
         </p>
       </div>
 
-      {/* Note informative */}
       <div className="mt-4 text-center">
         <p className="text-xs text-gray-500">
           En vous connectant, vous acceptez nos conditions d'utilisation
