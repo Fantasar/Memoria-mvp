@@ -2,7 +2,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/userRepository');
-const roleRepository = require('../repositories/roleRepository'); // ← AJOUT
+const roleRepository = require('../repositories/roleRepository');
 
 
 /**
@@ -27,7 +27,7 @@ const registerUser = async (userData) => {
   }
 
   // 2. Vérifier que le rôle existe
-  const roleData = await roleRepository.findByName(role); // ← MODIFICATION
+  const roleData = await roleRepository.findByName(role);
   if (!roleData) {
     const error = new Error('Rôle invalide');
     error.code = 'INVALID_ROLE';
@@ -45,22 +45,35 @@ const registerUser = async (userData) => {
   const newUser = await userRepository.create({
     email,
     password_hash: hashedPassword,
-    role_id: roleData.id, // ← MODIFICATION (au lieu de getRoleIdByName)
+    role_id: roleData.id,
     zone_intervention,
     siret
   });
 
   // 5. Récupérer le nom du rôle pour la réponse
-  const roleInfo = await roleRepository.findById(newUser.role_id); // ← MODIFICATION
+  const roleInfo = await roleRepository.findById(newUser.role_id);
 
-  // ============ RETOURNER LES DONNÉES ============
-  return {
-    user_id: newUser.id,
+  // 6. Générer le JWT pour connexion automatique
+  const token = jwt.sign(
+    { 
+    userId: newUser.id,
     email: newUser.email,
-    role: roleInfo.name, // ← MODIFICATION
-    zone_intervention: newUser.zone_intervention,
-    siret: newUser.siret,
-    created_at: newUser.created_at
+    role: roleInfo.name
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+  );
+
+  return {
+    token,
+    user: {
+      id: newUser.id,
+      email: newUser.email,
+      role: roleInfo.name,
+      zone_intervention: newUser.zone_intervention,
+      siret: newUser.siret,
+      created_at: newUser.created_at
+    }
   };
 };
 
@@ -93,7 +106,7 @@ const loginUser = async (credentials) => {
     { 
       userId: user.id,
       email: user.email,
-      role: user.role // ← Déjà disponible via le JOIN
+      role: user.role
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
@@ -105,7 +118,7 @@ const loginUser = async (credentials) => {
     user: {
       id: user.id,
       email: user.email,
-      role: user.role, // ← Déjà disponible via le JOIN
+      role: user.role,
       zone_intervention: user.zone_intervention,
       siret: user.siret
     }
@@ -147,7 +160,7 @@ const createAdminUser = async (adminData, creatorEmail) => {
   }
 
   // 4. Récupérer le role_id admin
-  const adminRole = await roleRepository.findByName('admin'); // ← MODIFICATION
+  const adminRole = await roleRepository.findByName('admin');
   if (!adminRole) {
     const error = new Error('Rôle admin introuvable');
     error.code = 'ROLE_NOT_FOUND';
@@ -165,7 +178,7 @@ const createAdminUser = async (adminData, creatorEmail) => {
   const newAdmin = await userRepository.create({
     email,
     password_hash: hashedPassword,
-    role_id: adminRole.id, // ← MODIFICATION
+    role_id: adminRole.id,
     zone_intervention: null,
     siret: null
   });
