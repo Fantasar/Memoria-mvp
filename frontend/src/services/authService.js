@@ -1,74 +1,95 @@
 import api from './api';
 
-/**
- * Service d'authentification pour Mémoria
- * Gère les appels API pour l'inscription, la connexion et la déconnexion
- */
-
 const authService = {
   /**
+   * Connexion d'un utilisateur existant
+   */
+  login: async (email, password) => {
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      
+      console.log('📥 Réponse Axios complète:', response);
+      console.log('📥 response.data:', response.data);
+      
+      // Structure backend: { success: true, data: { token, user, message } }
+      
+      if (response.data && response.data.success && response.data.data) {
+        const { token, user } = response.data.data;
+        
+        console.log('🔑 Token extrait:', token);
+        console.log('👤 User extrait:', user);
+        
+        if (!token) {
+          throw new Error('Token manquant dans la réponse');
+        }
+        
+        if (!user) {
+          throw new Error('Données utilisateur manquantes');
+        }
+        
+        // Stockage
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        console.log('✅ Stockage réussi');
+        console.log('✅ User.role:', user.role);
+        
+        // IMPORTANT : Retourner { token, user }
+        return { token, user };
+      }
+      
+      throw new Error('Structure de réponse invalide');
+      
+    } catch (error) {
+      console.error('❌ Erreur dans authService.login:', error);
+      
+      if (error.response?.data?.error) {
+        throw new Error(error.response.data.error.message || 'Email ou mot de passe incorrect');
+      }
+      
+      throw new Error(error.message || 'Impossible de se connecter au serveur');
+    }
+  },
+
+  /**
    * Inscription d'un nouveau utilisateur
-   * @param {Object} userData - Données de l'utilisateur
-   * @param {string} userData.email - Email de l'utilisateur
-   * @param {string} userData.password - Mot de passe
-   * @param {string} userData.role - Rôle (client, prestataire, admin)
-   * @param {string} [userData.prenom] - Prénom (optionnel)
-   * @param {string} [userData.nom] - Nom (optionnel)
-   * @param {string} [userData.zone_intervention] - Zone pour les prestataires (optionnel)
-   * @returns {Promise<Object>} - { token, user }
    */
   register: async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
       
-      // Si l'inscription réussit, on stocke le token et les infos user
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      console.log('📥 Réponse register:', response.data);
+      
+      if (response.data && response.data.success && response.data.data) {
+        const { token, user } = response.data.data;
+        
+        if (!token || !user) {
+          throw new Error('Token ou utilisateur manquant');
+        }
+        
+        // Stockage
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // IMPORTANT : Retourner { token, user }
+        return { token, user };
       }
       
-      return response.data;
+      throw new Error('Structure de réponse invalide');
+      
     } catch (error) {
-      // Gestion des erreurs spécifiques à l'inscription
+      console.error('❌ Erreur dans authService.register:', error);
+      
       if (error.response?.data?.error) {
         throw new Error(error.response.data.error.message || 'Erreur lors de l\'inscription');
       }
-      throw new Error('Impossible de se connecter au serveur');
+      
+      throw new Error(error.message || 'Impossible de se connecter au serveur');
     }
   },
 
   /**
-   * Connexion d'un utilisateur existant
-   * @param {string} email - Email de l'utilisateur
-   * @param {string} password - Mot de passe
-   * @returns {Promise<Object>} - { token, user }
-   */
-  login: async (email, password) => {
-    try {
-      const response = await api.post('/auth/login', {
-        email,
-        password,
-      });
-      
-      // Stockage du token et des infos utilisateur
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-      }
-      
-      return response.data;
-    } catch (error) {
-      // Gestion des erreurs spécifiques à la connexion
-      if (error.response?.data?.error) {
-        throw new Error(error.response.data.error.message || 'Email ou mot de passe incorrect');
-      }
-      throw new Error('Impossible de se connecter au serveur');
-    }
-  },
-
-  /**
-   * Déconnexion de l'utilisateur
-   * Supprime le token et les données utilisateur du localStorage
+   * Déconnexion
    */
   logout: () => {
     localStorage.removeItem('token');
@@ -76,8 +97,7 @@ const authService = {
   },
 
   /**
-   * Récupère l'utilisateur actuellement connecté depuis le localStorage
-   * @returns {Object|null} - Objet user ou null si non connecté
+   * Récupère l'utilisateur connecté
    */
   getCurrentUser: () => {
     const userStr = localStorage.getItem('user');
@@ -85,7 +105,7 @@ const authService = {
       try {
         return JSON.parse(userStr);
       } catch (error) {
-        console.error('Erreur lors du parsing des données utilisateur:', error);
+        console.error('Erreur parsing user:', error);
         return null;
       }
     }
@@ -93,17 +113,14 @@ const authService = {
   },
 
   /**
-   * Vérifie si un utilisateur est connecté
-   * @returns {boolean}
+   * Vérifie si connecté
    */
   isAuthenticated: () => {
-    const token = localStorage.getItem('token');
-    return !!token; // Retourne true si le token existe
+    return !!localStorage.getItem('token');
   },
 
   /**
-   * Récupère le token JWT du localStorage
-   * @returns {string|null}
+   * Récupère le token
    */
   getToken: () => {
     return localStorage.getItem('token');
