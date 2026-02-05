@@ -6,10 +6,12 @@ import Button from '../components/forms/Button';
 import useForm from '../hooks/useForm';
 import { validateEmail } from '../utils/validators';
 import authService from '../services/authService';
+import { useAuth } from '../hooks/useAuth';
 
 function Login() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState(null);
+  const { login } = useAuth();
 
   const initialValues = {
     email: '',
@@ -43,11 +45,14 @@ const onSubmit = async (data) => {
     const result = await authService.login(data.email, data.password);
     
     console.log('✅ Connexion réussie:', result);
-    console.log('👤 User complet:', result.user);  // ← Corrigé
-    console.log('👤 Rôle utilisateur:', result.user.role);  // ← Corrigé
+    console.log('👤 User complet:', result.user);
+    console.log('👤 Rôle utilisateur:', result.user.role);
+
+    // Sauvegarder dans le Context
+    login(result.user, result.token);
 
     // Redirection selon le rôle
-    switch (result.user.role) {  // ← Corrigé
+    switch (result.user.role) {
       case 'client':
         navigate('/dashboard/client');
         break;

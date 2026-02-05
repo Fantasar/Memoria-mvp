@@ -1,19 +1,63 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import Home from './pages/Home'
-import Register from './pages/Register';
-import Login from './pages/Login';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/layout/ProtectedRoute';
 
+// Pages publiques
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+
+// Dashboards
+import DashboardClient from './pages/dashboards/DashboardClient';
+import DashboardPrestataire from './pages/dashboards/DashboardPrestataire';
+import DashboardAdmin from './pages/dashboards/DashboardAdmin';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/register" element={<Register/>} />
-        <Route path="/login" element={<Login/>} />
-      </Routes>
-    </Router>
-  )
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Routes publiques */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          {/* Routes protégées - Client */}
+          <Route 
+            path="/dashboard/client" 
+            element={
+              <ProtectedRoute allowedRoles={['client']}>
+                <DashboardClient />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Routes protégées - Prestataire */}
+          <Route 
+            path="/dashboard/prestataire" 
+            element={
+              <ProtectedRoute allowedRoles={['prestataire']}>
+                <DashboardPrestataire />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Routes protégées - Admin */}
+          <Route 
+            path="/dashboard/admin" 
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <DashboardAdmin />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Route 404 - Redirection vers accueil */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
