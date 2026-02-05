@@ -7,16 +7,20 @@ import Button from '../components/forms/Button';
 import useForm from '../hooks/useForm';
 import { validateEmail, validatePassword, validatePasswordConfirmation, validateRole } from '../utils/validators';
 import authService from '../services/authService';
+import { useAuth } from '../hooks/useAuth';
 
 function Register() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState(null);
+  const { login } = useAuth();
 
   // Valeurs initiales avec champs prestataires
   const initialValues = {
     email: '',
     password: '',
     confirmPassword: '',
+    prenom: '',
+    nom: '',
     role: '',
     // Champs spécifiques prestataires
     siret: '',
@@ -30,6 +34,15 @@ function Register() {
     newErrors.email = validateEmail(data.email);
     newErrors.password = validatePassword(data.password);
     newErrors.confirmPassword = validatePasswordConfirmation(data.password, data.confirmPassword);
+    
+    if (!data.prenom || data.prenom.trim() === '') {
+      newErrors.prenom = "Le prénom est requis";
+    }
+  
+    if (!data.nom || data.nom.trim() === '') {
+      newErrors.nom = "Le nom est requis";
+    }
+    
     newErrors.role = validateRole(data.role);
 
     // Validation conditionnelle pour les prestataires
@@ -62,6 +75,8 @@ function Register() {
       const registrationData = {
         email: data.email,
         password: data.password,
+        prenom: data.prenom,
+        nom: data.nom,
         role: data.role,
       };
 
@@ -78,6 +93,9 @@ function Register() {
       
       console.log('✅ Inscription réussie:', response);
 
+      // Sauvegarder dans le Context
+      login(response.user, response.token);
+      
       // Récupération du rôle depuis la réponse
       // Adaptation: conversion de role_id en role string
       let userRole = response.user?.role;
@@ -145,6 +163,28 @@ function Register() {
           placeholder="exemple@email.com"
           required
         />
+
+        <InputField
+          label="Prénom"
+          type="text"
+          name="prenom"
+          value={formData.prenom}
+          onChange={handleChange}
+          error={errors.prenom}
+          placeholder="Jean"
+          required
+        />
+
+        <InputField
+          label="Nom"
+          type="text"
+          name="nom"
+          value={formData.nom}
+          onChange={handleChange}
+          error={errors.nom}
+          placeholder="Dupont"
+          required
+        /> 
 
         <InputField
           label="Mot de passe"
