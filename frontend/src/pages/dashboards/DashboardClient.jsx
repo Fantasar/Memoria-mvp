@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Header from '../../components/layout/Header';
+import OrderList from '../../components/orders/OrderList';
 
 function DashboardClient() {
   const { user } = useAuth();
@@ -43,14 +44,15 @@ function DashboardClient() {
           )}
           
           {user && (
-            <div className="mb-6">
-              <p className="text-gray-700">Bienvenue <span className="font-semibold">{user.email}</span></p>
+            <div className="mb-6 pb-6 border-b border-gray-200">
+              <p className="text-gray-700">
+                Bienvenue <span className="font-semibold">{user.email}</span>
+              </p>
             </div>
           )}
 
-          <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded">
-            <p className="text-blue-800">🚧 Liste des commandes à venir...</p>
-          </div>
+          {/* ✨ LISTE DES COMMANDES ✨ */}
+          <OrderList />
         </div>
       </main>
     </div>
