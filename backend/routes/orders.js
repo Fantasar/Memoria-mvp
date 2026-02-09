@@ -12,18 +12,28 @@ const orderController = require('../controllers/orderController');
 router.post('/', authenticateToken, orderController.createOrder);
 
 /**
+ * @route   GET /api/orders/available
+ * @desc    Missions disponibles (prestataires)
+ * @access  Private (Prestataire) - JWT REQUIS
+ * 
+ * ⚠️ IMPORTANT : Cette route DOIT être AVANT /api/orders/:id
+ * sinon Express va confondre "available" avec un ID !
+ */
+router.get('/available', authenticateToken, orderController.getAvailableOrders);
+
+/**
+ * @route   GET /api/orders/:id
+ * @desc    Récupérer les détails d'une commande
+ * @access  Private (Tous) - JWT REQUIS
+ */
+router.get('/:id', authenticateToken, orderController.getOrderById);
+
+/**
  * @route   GET /api/orders
  * @desc    Récupérer mes commandes
  * @access  Private (Tous) - JWT REQUIS
  */
 router.get('/', authenticateToken, orderController.getMyOrders);
-
-/**
- * @route   GET /api/orders/available
- * @desc    Missions disponibles (prestataires)
- * @access  Private (Prestataire) - JWT REQUIS
- */
-router.get('/available', authenticateToken, orderController.getAvailableOrders);
 
 /**
  * @route   PATCH /api/orders/:id/accept

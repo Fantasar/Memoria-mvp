@@ -155,9 +155,59 @@ const acceptOrder = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Récupérer les détails d'une commande
+ * @route   GET /api/orders/:id
+ * @access  Private (Tous)
+ */
+const getOrderById = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const order = await orderService.getOrderById(orderId, req.user.userId, req.user.role);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'ORDER_NOT_FOUND',
+          message: 'Commande introuvable'
+        }
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: order
+    });
+
+  } catch (error) {
+    console.error('Erreur récupération commande:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message
+        }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de la récupération de la commande'
+      }
+    });
+  }
+};
+
+
 module.exports = {
   createOrder,
   getMyOrders,
+  getOrderById,
   getAvailableOrders,
   acceptOrder
 };

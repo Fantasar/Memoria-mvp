@@ -81,6 +81,36 @@ const getUserOrders = async (userId, userRole) => {
 };
 
 /**
+ * Récupérer une commande par ID
+ * Vérifie que l'utilisateur a le droit de voir cette commande
+ */
+const getOrderById = async (orderId, userId, userRole) => {
+  const order = await orderRepository.findById(orderId);
+
+  if (!order) {
+    return null;
+  }
+
+  // Vérification des permissions
+  if (userRole === 'client' && order.client_id !== userId) {
+    const error = new Error('Vous n\'avez pas accès à cette commande');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (userRole === 'prestataire' && order.prestataire_id !== userId) {
+    const error = new Error('Vous n\'avez pas accès à cette commande');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  // Admin peut tout voir
+  return order;
+};
+
+/**
  * Récupérer les missions disponibles (prestataire uniquement)
  */
 const getAvailableOrders = async (prestatairId) => {
@@ -176,6 +206,7 @@ const acceptOrder = async (orderId, prestatairId) => {
 module.exports = {
   createOrder,
   getUserOrders,
+  getOrderById,
   getAvailableOrders,
   acceptOrder
 };
