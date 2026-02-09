@@ -14,6 +14,7 @@ import DashboardAdmin from './pages/dashboards/DashboardAdmin';
 
 // Order
 import NewOrder from './pages/orders/NewOrder';
+import OrderDetails from './pages/orders/OrderDetails';
 
 function App() {
   return (
@@ -41,6 +42,16 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['client']}>
                 <NewOrder />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Route protégée - Détails commande (Client uniquement) */}
+          <Route 
+            path="/orders/:id" 
+            element={
+              <ProtectedRoute allowedRoles={['client']}>
+                <OrderDetails />
               </ProtectedRoute>
             } 
           />

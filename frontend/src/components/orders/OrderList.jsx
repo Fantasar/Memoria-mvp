@@ -1,10 +1,12 @@
 // frontend/src/components/orders/OrderList.jsx
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import axios from 'axios';
 import API_URL from '../../config/api';
 
 function OrderList() {
+  const navigate = useNavigate();
   const { token } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -157,7 +159,8 @@ function OrderList() {
         {orders.map((order) => (
           <div
             key={order.id}
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+            onClick={() => navigate(`/orders/${order.id}`)} // ← AJOUTER
+            className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer" // ← AJOUTER cursor-pointer
           >
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
