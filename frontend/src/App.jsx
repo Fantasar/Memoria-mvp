@@ -12,6 +12,9 @@ import DashboardClient from './pages/dashboards/DashboardClient';
 import DashboardPrestataire from './pages/dashboards/DashboardPrestataire';
 import DashboardAdmin from './pages/dashboards/DashboardAdmin';
 
+// Order
+import NewOrder from './pages/orders/NewOrder';
+
 function App() {
   return (
     <AuthProvider>
@@ -28,6 +31,16 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['client']}>
                 <DashboardClient />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Route protégée - Nouvelle commande (Client uniquement) */}
+          <Route 
+            path="/orders/new" 
+            element={
+              <ProtectedRoute allowedRoles={['client']}>
+                <NewOrder />
               </ProtectedRoute>
             } 
           />
