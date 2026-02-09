@@ -2,14 +2,14 @@
 // IMPORTS
 // ============================================
 const express = require("express");
-const dotenv = require("dotenv")
-const db = require("./config/db")
+const dotenv = require("dotenv");
+const db = require("./config/db");
 const cors = require("cors");
 
 // ============================================
 // CONFIGURATION
 // ============================================
-//Charge les variables du fichier .env
+// Charge les variables du fichier .env
 dotenv.config();
 
 const app = express();
@@ -31,23 +31,23 @@ app.use(express.json());
 // ============================================
 // IMPORT DES ROUTES
 // ============================================
-const testRoutes = require('./routes/test.routes');
-const dataRoutes = require('./routes/data.routes');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const orderRoutes = require('./routes/orders');
+const cemeteryRoutes = require('./routes/cemeteries');
+const serviceCategoryRoutes = require('./routes/serviceCategories');
 
 // ============================================
 // UTILISATION DES ROUTES
 // ============================================
-app.use('/api/test', testRoutes);
-app.use('/api/data', dataRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/cemeteries', cemeteryRoutes);
+app.use('/api/service-categories', serviceCategoryRoutes);
 
 // ============================================
-// ROUTES DE BASE
+// ROUTES DE BASE (utilitaires uniquement)
 // ============================================
 // Route racine - Documentation API
 app.get("/", (req, res) => {
@@ -57,11 +57,12 @@ app.get("/", (req, res) => {
         documentation: {
             endpoints: [
                 { path: "/api/health", description: "Health check du serveur" },
-                { path: "/api/test", description: "Test de connexion backend" },
-                { path: "/api/data", description: "Test de lecture PostgreSQL"},
-                { path:"/api/auth/register", description: "Inscription utilisateur"},
-                { path: "/api/auth/login", description: "Connexion utilisateur"},
-                { path: "/api/admin", description: "Inscription d'un administrateur"}
+                { path: "/api/auth/register", description: "Inscription utilisateur" },
+                { path: "/api/auth/login", description: "Connexion utilisateur" },
+                { path: "/api/admin", description: "Inscription d'un administrateur" },
+                { path: "/api/orders", description: "Gestion des commandes" },
+                { path: "/api/cemeteries", description: "Liste des cimetières" },
+                { path: "/api/service-categories", description: "Liste des services" }
             ]
         }
     });
@@ -76,8 +77,27 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Test de connexion PostgreSQL
+app.get('/api/test-db', async (req, res) => {
+    try {
+        const result = await db.query('SELECT NOW()');
+        res.json({
+            status: "OK",
+            message: "Connexion PostgreSQL réussie",
+            timestamp: result.rows[0].now
+        });
+    } catch (error) {
+        console.error('Erreur PostgreSQL:', error);
+        res.status(500).json({
+            status: "ERROR",
+            error: "Erreur de connexion à PostgreSQL",
+            details: error.message
+        });
+    }
+});
+
 // ============================================
-// GESTION DES ROUTES NON TROUVÉES
+// GESTION DES ROUTES NON TROUVÉES (EN DERNIER)
 // ============================================
 app.use((req, res) => {
     res.status(404).json({
@@ -90,13 +110,17 @@ app.use((req, res) => {
 // DÉMARRAGE DU SERVEUR
 // ============================================
 app.listen(PORT, () => {
-  console.log(`[DEV] Serveur tourne sur le port ${PORT}!`);
-  console.log(`URL: http://localhost:${PORT}!`);
-  console.log(`Health check: http://localhost:${PORT}/api/health`);
-  console.log(`Test PostgreSQL: http://localhost:${PORT}/api/data`);
-  console.log(`Auth endpoints:`);
-  console.log(`  - POST http://localhost:${PORT}/api/auth/register`);
-  console.log(`  - POST http://localhost:${PORT}/api/auth/login`);
-  console.log(`Admin endpoints:`);
-  console.log(`  - POST http://localhost:${PORT}/api/admin`);
+    console.log(`\n[DEV] Serveur tourne sur le port ${PORT}!`);
+    console.log(`URL: http://localhost:${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/api/health`);
+    console.log(`Test PostgreSQL: http://localhost:${PORT}/api/test-db`);
+    console.log(`\nAuth endpoints:`);
+    console.log(`  - POST http://localhost:${PORT}/api/auth/register`);
+    console.log(`  - POST http://localhost:${PORT}/api/auth/login`);
+    console.log(`\nAdmin endpoints:`);
+    console.log(`  - POST http://localhost:${PORT}/api/admin`);
+    console.log(`\nOrder endpoints:`);
+    console.log(`  - GET http://localhost:${PORT}/api/cemeteries`);
+    console.log(`  - GET http://localhost:${PORT}/api/service-categories`);
+    console.log(`  - POST http://localhost:${PORT}/api/orders\n`);
 });
