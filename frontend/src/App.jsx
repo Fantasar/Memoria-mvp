@@ -15,6 +15,7 @@ import DashboardAdmin from './pages/dashboards/DashboardAdmin';
 // Order
 import NewOrder from './pages/orders/NewOrder';
 import OrderDetails from './pages/orders/OrderDetails';
+import Checkout from './pages/orders/Checkout';
 
 function App() {
   return (
@@ -36,7 +37,7 @@ function App() {
             } 
           />
 
-          {/* Route protégée - Nouvelle commande (Client uniquement) */}
+          {/* Route protégée - Nouvelle commande - Client */}
           <Route 
             path="/orders/new" 
             element={
@@ -46,7 +47,7 @@ function App() {
             } 
           />
           
-          {/* Route protégée - Détails commande (Client uniquement) */}
+          {/* Route protégée - Détails commande - Client */}
           <Route 
             path="/orders/:id" 
             element={
@@ -54,6 +55,16 @@ function App() {
                 <OrderDetails />
               </ProtectedRoute>
             } 
+          />
+
+          {/* Route protégée - Checkout paiement - Client */}
+            <Route 
+              path="/orders/checkout" 
+              element={
+                <ProtectedRoute allowedRoles={['client']}>
+                  <Checkout />
+                </ProtectedRoute>
+              } 
           />
 
           {/* Routes protégées - Prestataire */}
