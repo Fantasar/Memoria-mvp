@@ -22,6 +22,13 @@ router.post('/', authenticateToken, orderController.createOrder);
 router.get('/available', authenticateToken, orderController.getAvailableOrders);
 
 /**
+ * @route   PATCH /api/orders/:id/accept
+ * @desc    Accepter une mission
+ * @access  Private (Prestataire) - JWT REQUIS
+ */
+router.patch('/:id/accept', authenticateToken, orderController.acceptOrder);
+
+/**
  * @route   GET /api/orders/:id
  * @desc    Récupérer les détails d'une commande
  * @access  Private (Tous) - JWT REQUIS
@@ -34,12 +41,5 @@ router.get('/:id', authenticateToken, orderController.getOrderById);
  * @access  Private (Tous) - JWT REQUIS
  */
 router.get('/', authenticateToken, orderController.getMyOrders);
-
-/**
- * @route   PATCH /api/orders/:id/accept
- * @desc    Accepter une mission
- * @access  Private (Prestataire) - JWT REQUIS
- */
-router.patch('/:id/accept', authenticateToken, orderController.acceptOrder);
 
 module.exports = router;
