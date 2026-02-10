@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import axios from 'axios';
-import API_URL from '../../config/api'; // ← IMPORT
+import API_URL from '../../config/api';
 
 function NewOrder() {
   const navigate = useNavigate();
@@ -13,7 +13,6 @@ function NewOrder() {
   const [cemeteries, setCemeteries] = useState([]);
   const [serviceCategories, setServiceCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   // Données du formulaire
@@ -37,10 +36,9 @@ function NewOrder() {
       try {
         setLoading(true);
         
-        // Récupérer cimetières et services en parallèle
         const [cemeteriesRes, servicesRes] = await Promise.all([
-          axios.get(`${API_URL}/api/cemeteries`),           // ← MODIFIÉ
-          axios.get(`${API_URL}/api/service-categories`)    // ← MODIFIÉ
+          axios.get(`${API_URL}/api/cemeteries`),
+          axios.get(`${API_URL}/api/service-categories`)
         ]);
 
         setCemeteries(cemeteriesRes.data.data);
@@ -81,7 +79,6 @@ function NewOrder() {
 
   const handleLocationChange = (e) => {
     const value = e.target.value;
-    // Limitation 255 caractères
     if (value.length <= 255) {
       setFormData({ ...formData, cemetery_location: value });
       setErrors({ ...errors, cemetery_location: '' });
@@ -114,49 +111,21 @@ function NewOrder() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
     if (!validateForm()) {
       return;
     }
 
-    setSubmitting(true);
-    setError(null);
-
-    try {
-      const response = await axios.post(
-        `${API_URL}/api/orders`,  // ← MODIFIÉ
-        {
+    // Redirection vers Checkout avec les données
+    navigate('/orders/checkout', {
+      state: {
+        orderData: {
           cemetery_id: parseInt(formData.cemetery_id),
           service_category_id: parseInt(formData.service_category_id),
           cemetery_location: formData.cemetery_location.trim(),
-          price: formData.price
+          price: formData.price,
         },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (response.data.success) {
-        // Redirection vers le dashboard client avec message de succès
-        navigate('/dashboard/client', { 
-          state: { message: 'Commande créée avec succès !' }
-        });
-      }
-
-    } catch (err) {
-      console.error('Erreur création commande:', err);
-      
-      if (err.response?.data?.error) {
-        setError(err.response.data.error.message);
-      } else {
-        setError('Une erreur est survenue. Veuillez réessayer.');
-      }
-    } finally {
-      setSubmitting(false);
-    }
+      },
+    });
   };
 
   // ============ RENDER LOADING ============
@@ -329,10 +298,9 @@ function NewOrder() {
             </button>
             <button
               type="submit"
-              disabled={submitting}
-              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
-              {submitting ? 'Création en cours...' : 'Créer la commande'}
+              Continuer vers le paiement
             </button>
           </div>
 
@@ -341,8 +309,8 @@ function NewOrder() {
         {/* Info complémentaire */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            💡 <strong>Bon à savoir :</strong> Votre commande sera visible par les prestataires de votre zone. 
-            Le paiement sera effectué une fois le service validé par notre équipe.
+            💡 <strong>Bon à savoir :</strong> Le paiement sera effectué de manière sécurisée via Stripe. 
+            Votre commande sera créée après confirmation du paiement.
           </p>
         </div>
 
