@@ -8,6 +8,7 @@ const photoService = require('../services/photoService');
 const uploadPhoto = async (req, res) => {
   try {
     if (!req.file) {
+      console.log('❌ Aucun fichier dans req.file');
       return res.status(400).json({
         success: false,
         error: {

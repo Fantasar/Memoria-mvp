@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const photoController = require('../controllers/photoController');
-const { authenticateToken } = require('../middlewares/auth');
+const { authenticateToken } = require('../middlewares/admin-auth');
 
 // Configuration Multer (mémoire temporaire)
 const upload = multer({

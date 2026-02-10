@@ -11,8 +11,8 @@ const create = async (photoData) => {
   const query = `
     INSERT INTO photos (
       order_id,
-      photo_type,
-      cloudinary_url,
+      type,
+      url,
       cloudinary_public_id,
       uploaded_at
     )
