@@ -127,7 +127,7 @@ const findAvailable = async (zone) => {
     LEFT JOIN service_categories sc ON o.service_category_id = sc.id
     WHERE o.prestataire_id IS NULL
     AND o.status = 'pending'
-    AND c.department ILIKE $1
+    AND (c.department ILIKE $1 OR c.city ILIKE $1)
     ORDER BY o.created_at DESC
   `;
   const result = await pool.query(query, [`%${zone}%`]);
