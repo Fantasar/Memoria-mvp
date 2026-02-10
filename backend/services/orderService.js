@@ -180,14 +180,20 @@ const acceptOrder = async (orderId, prestatairId) => {
     throw error;
   }
 
-  // 4. Vérifier que le cimetière est dans la zone du prestataire
-  const zone = user.zone_intervention;
-  if (zone && !order.cemetery_location.toLowerCase().includes(zone.toLowerCase())) {
+// 4. Vérifier que le cimetière est dans la zone du prestataire
+const zone = user.zone_intervention;
+if (zone) {
+  const zoneMatch = 
+    (order.cemetery_department && order.cemetery_department.toLowerCase().includes(zone.toLowerCase())) ||
+    (order.cemetery_city && order.cemetery_city.toLowerCase().includes(zone.toLowerCase()));
+  
+  if (!zoneMatch) {
     const error = new Error('Cette mission n\'est pas dans votre zone d\'intervention');
     error.code = 'ZONE_MISMATCH';
     error.statusCode = 403;
     throw error;
   }
+}
 
   // 5. Assigner le prestataire (opération atomique en BDD)
   const updatedOrder = await orderRepository.assignPrestataire(orderId, prestatairId);
