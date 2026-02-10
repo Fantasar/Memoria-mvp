@@ -6,6 +6,14 @@ const cloudinary = require('../config/cloudinary');
  * Upload photo vers Cloudinary et sauvegarder en DB
  */
 const uploadPhoto = async (orderId, photoType, fileBuffer, userId, userRole) => {
+  console.log('📸 uploadPhoto appelé avec:', {
+    orderId,
+    photoType,
+    bufferSize: fileBuffer?.length,
+    userId,
+    userRole
+  });
+
   // 1. Vérifier que la commande existe
   const order = await orderRepository.findById(orderId);
   
@@ -16,6 +24,8 @@ const uploadPhoto = async (orderId, photoType, fileBuffer, userId, userRole) => 
     throw error;
   }
 
+  console.log('✅ Commande trouvée:', order.id);
+
   // 2. Vérifier permissions
   if (userRole === 'prestataire' && order.prestataire_id !== userId) {
     const error = new Error('Vous ne pouvez uploader des photos que pour vos propres missions');
@@ -23,6 +33,8 @@ const uploadPhoto = async (orderId, photoType, fileBuffer, userId, userRole) => 
     error.statusCode = 403;
     throw error;
   }
+
+  console.log('✅ Permissions OK');
 
   // 3. Valider le type de photo
   const validTypes = ['before', 'after'];
@@ -33,8 +45,9 @@ const uploadPhoto = async (orderId, photoType, fileBuffer, userId, userRole) => 
     throw error;
   }
 
+
   // 4. Upload vers Cloudinary
-  try {
+  try {    
     const uploadResult = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -46,8 +59,13 @@ const uploadPhoto = async (orderId, photoType, fileBuffer, userId, userRole) => 
           ]
         },
         (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
+          if (error) {
+            console.error('❌ Erreur Cloudinary:', error);
+            reject(error);
+          } else {
+            console.log('✅ Cloudinary OK:', result.secure_url);
+            resolve(result);
+          }
         }
       );
 
@@ -64,8 +82,7 @@ const uploadPhoto = async (orderId, photoType, fileBuffer, userId, userRole) => 
 
     return photo;
 
-  } catch (error) {
-    console.error('Erreur upload Cloudinary:', error);
+  } catch (error) {    
     const err = new Error('Erreur lors de l\'upload de la photo');
     err.code = 'UPLOAD_FAILED';
     err.statusCode = 500;
@@ -73,38 +90,6 @@ const uploadPhoto = async (orderId, photoType, fileBuffer, userId, userRole) => 
   }
 };
 
-/**
- * Récupérer les photos d'une commande
- */
-const getOrderPhotos = async (orderId, userId, userRole) => {
-  const order = await orderRepository.findById(orderId);
-  
-  if (!order) {
-    const error = new Error('Commande introuvable');
-    error.code = 'ORDER_NOT_FOUND';
-    error.statusCode = 404;
-    throw error;
-  }
-
-  // Vérifier permissions
-  if (userRole === 'client' && order.client_id !== userId) {
-    const error = new Error('Accès refusé');
-    error.code = 'FORBIDDEN';
-    error.statusCode = 403;
-    throw error;
-  }
-
-  if (userRole === 'prestataire' && order.prestataire_id !== userId) {
-    const error = new Error('Accès refusé');
-    error.code = 'FORBIDDEN';
-    error.statusCode = 403;
-    throw error;
-  }
-
-  return await photoRepository.findByOrderId(orderId);
-};
-
 module.exports = {
   uploadPhoto,
-  getOrderPhotos
 };
