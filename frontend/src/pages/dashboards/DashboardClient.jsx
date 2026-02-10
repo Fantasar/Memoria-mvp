@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Header from '../../components/layout/Header';
-import OrderList from '../../components/orders/OrderList';
+import OrderListPreview from '../../components/orders/OrderListPreview';
 
 function DashboardClient() {
   const { user } = useAuth();
@@ -51,8 +51,8 @@ function DashboardClient() {
             </div>
           )}
 
-          {/* ✨ LISTE DES COMMANDES ✨ */}
-          <OrderList />
+          {/* ✨ PREVIEW DES 5 DERNIÈRES COMMANDES ✨ */}
+          <OrderListPreview />
         </div>
       </main>
     </div>
