@@ -176,8 +176,13 @@ function OrderList() {
                   </p>
                 )}
               </div>
-              <div className="ml-4">
+              <div className="ml-4 flex gap-2 flex-col items-end">
                 {getStatusBadge(order.status)}
+
+                <span className="relative px-3 py-1 text-xs font-semibold rounded-full border bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300 flex items-center gap-1 overflow-hidden">
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer"></span>
+                    ✓ Payé
+                  </span>
               </div>
             </div>
 
