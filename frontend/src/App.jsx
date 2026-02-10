@@ -16,6 +16,7 @@ import DashboardAdmin from './pages/dashboards/DashboardAdmin';
 import NewOrder from './pages/orders/NewOrder';
 import OrderDetails from './pages/orders/OrderDetails';
 import Checkout from './pages/orders/Checkout';
+import OrderHistory from './pages/orders/OrderHistory';
 
 function App() {
   return (
@@ -66,6 +67,16 @@ function App() {
                 </ProtectedRoute>
               } 
           />
+
+          {/* Route protégée - Historique commandes (Client uniquement) */}
+            <Route 
+              path="/orders/history" 
+              element={
+                <ProtectedRoute allowedRoles={['client']}>
+                  <OrderHistory />
+                </ProtectedRoute>
+              } 
+            />
 
           {/* Routes protégées - Prestataire */}
           <Route 
