@@ -29,11 +29,18 @@ router.get('/available', authenticateToken, orderController.getAvailableOrders);
 router.patch('/:id/accept', authenticateToken, orderController.acceptOrder);
 
 /**
- * @route   PATCH /api/orders//:id/complete
+ * @route   PATCH /api/orders/:id/complete
  * @desc    Compléter mission
  * @access  Private (Prestataire) - JWT REQUIS
  */
 router.patch('/:id/complete', authenticateToken, orderController.completeOrder);
+
+/**
+ * @route   PATCH /api/orders//:id/cancel
+ * @desc    Annuler une mission
+ * @access  Private (Prestataire) - JWT REQUIS
+ */
+router.patch('/:id/cancel', authenticateToken, orderController.cancelOrder);
 
 /**
  * @route   GET /api/orders/:id

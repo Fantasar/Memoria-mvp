@@ -195,6 +195,57 @@ const completeOrder = async (req, res) => {
 };
 
 /**
+ * @desc    Annuler une mission
+ * @route   PATCH /api/orders/:id/cancel
+ * @access  Private (Prestataire uniquement)
+ */
+const cancelOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { reason } = req.body;
+
+    if (!reason || reason.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_REASON',
+          message: 'Le motif doit contenir au moins 10 caractères'
+        }
+      });
+    }
+
+    const result = await orderService.cancelOrder(orderId, req.user.userId, reason);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Mission annulée avec succès'
+    });
+
+  } catch (error) {
+    console.error('Erreur annulation mission:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message
+        }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de l\'annulation'
+      }
+    });
+  }
+};
+
+/**
  * @desc    Récupérer les détails d'une commande
  * @route   GET /api/orders/:id
  * @access  Private (Tous)
@@ -249,5 +300,6 @@ module.exports = {
   getOrderById,
   getAvailableOrders,
   acceptOrder,
+  cancelOrder,
   completeOrder
 };

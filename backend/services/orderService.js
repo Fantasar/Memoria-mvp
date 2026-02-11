@@ -283,11 +283,50 @@ const completeOrder = async (orderId, prestatairId) => {
   return updatedOrder;
 };
 
+const cancelOrder = async (orderId, prestatairId, reason) => {
+  // Validations métier
+  const user = await userRepository.findById(prestatairId);
+  
+  if (!user || user.role !== 'prestataire') {
+    const error = new Error('Seuls les prestataires peuvent annuler');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const order = await orderRepository.findById(orderId);
+  
+  if (!order) {
+    const error = new Error('Commande introuvable');
+    error.code = 'ORDER_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (order.prestataire_id !== prestatairId) {
+    const error = new Error('Cette mission ne vous est pas assignée');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (order.status !== 'accepted') {
+    const error = new Error('Cette mission ne peut plus être annulée');
+    error.code = 'INVALID_STATUS';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // ✅ Appel au repository (pas de SQL ici)
+  return await orderRepository.cancelOrder(orderId, reason);
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
   getOrderById,
   getAvailableOrders,
   acceptOrder,
+  cancelOrder,
   completeOrder
 };
