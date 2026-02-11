@@ -14,7 +14,7 @@ const orderService = require('../services/orderService');
 const createOrder = async (req, res) => {
   try {
     const result = await orderService.createOrder(
-      req.user.userId,  // Vient du middleware authenticateToken
+      req.user.userId,
       req.body
     );
 
@@ -156,6 +156,45 @@ const acceptOrder = async (req, res) => {
 };
 
 /**
+ * @desc    Compléter une mission
+ * @route   PATCH /api/orders/:id/complete
+ * @access  Private (Prestataire uniquement)
+ */
+const completeOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const result = await orderService.completeOrder(orderId, req.user.userId);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Mission terminée avec succès. En attente de validation client.'
+    });
+
+  } catch (error) {
+    console.error('Erreur complétion mission:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message
+        }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de la complétion de la mission'
+      }
+    });
+  }
+};
+
+/**
  * @desc    Récupérer les détails d'une commande
  * @route   GET /api/orders/:id
  * @access  Private (Tous)
@@ -209,5 +248,6 @@ module.exports = {
   getMyOrders,
   getOrderById,
   getAvailableOrders,
-  acceptOrder
+  acceptOrder,
+  completeOrder
 };

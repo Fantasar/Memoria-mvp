@@ -39,6 +39,39 @@ const MesMissions = () => {
     }
   };
 
+  const handleCompleteMission = async (orderId) => {
+    const confirm = window.confirm(
+      'Êtes-vous sûr d\'avoir uploadé les photos avant ET après ? La mission sera marquée comme terminée et envoyée au client pour validation.'
+    );
+    
+    if (!confirm) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.patch(
+        `http://localhost:5500/api/orders/${orderId}/complete`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      alert('Mission terminée avec succès ! En attente de validation client.');
+      
+      // Recharger la liste
+      fetchMyMissions();
+      
+    } catch (err) {
+      console.error('Erreur complétion mission:', err);
+      
+      const errorMessage = err.response?.data?.error?.message || 
+                          'Erreur lors de la complétion de la mission';
+      
+      alert(errorMessage);
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -70,7 +103,15 @@ const MesMissions = () => {
 
           {missions.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-8 text-center">
-              <p className="text-gray-600">Aucune mission en cours</p>
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <h3 className="mt-2 text-lg font-medium text-gray-900">
+                Aucune mission en cours
+              </h3>
+              <p className="mt-1 text-gray-500">
+                Acceptez des missions disponibles pour les voir ici
+              </p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -83,6 +124,9 @@ const MesMissions = () => {
                       </h3>
                       <p className="text-sm text-gray-600">
                         {mission.cemetery_city} • {mission.service_name}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Prix : {mission.base_price || mission.price} €
                       </p>
                     </div>
                     <span className="px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
@@ -107,12 +151,21 @@ const MesMissions = () => {
                       </button>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => setSelectedMission(mission.id)}
-                      className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                    >
-                      Ajouter les photos
-                    </button>
+                    <div className="mt-4 flex gap-3">
+                      <button
+                        onClick={() => setSelectedMission(mission.id)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Ajouter les photos
+                      </button>
+                      
+                      <button
+                        onClick={() => handleCompleteMission(mission.id)}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Terminer la mission
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
