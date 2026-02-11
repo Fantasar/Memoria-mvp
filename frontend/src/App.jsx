@@ -17,6 +17,7 @@ import NewOrder from './pages/orders/NewOrder';
 import OrderDetails from './pages/orders/OrderDetails';
 import Checkout from './pages/orders/Checkout';
 import OrderHistory from './pages/orders/OrderHistory';
+import MesMissions from './pages/MesMissions';
 
 function App() {
   return (
@@ -84,6 +85,16 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['prestataire']}>
                 <DashboardPrestataire />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Routes protégées - Cloudinary */}
+          <Route 
+            path="/mes-missions" 
+            element={
+              <ProtectedRoute allowedRoles={['prestataire']}>
+                <MesMissions />
               </ProtectedRoute>
             } 
           />
