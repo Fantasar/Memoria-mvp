@@ -38,6 +38,7 @@ const cemeteryRoutes = require('./routes/cemeteries');
 const serviceCategoryRoutes = require('./routes/serviceCategories');
 const paymentRoutes = require('./routes/payments');
 const photoRoutes = require('./routes/photoRoutes');
+const providerRoutes = require('./routes/providerRoutes');
 
 // ============================================
 // UTILISATION DES ROUTES
@@ -49,6 +50,7 @@ app.use('/api/cemeteries', cemeteryRoutes);
 app.use('/api/service-categories', serviceCategoryRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/photos', photoRoutes);
+app.use('/api/providers', providerRoutes);
 
 // ============================================
 // ROUTES DE BASE (utilitaires uniquement)
