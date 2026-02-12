@@ -293,6 +293,83 @@ const getOrderById = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Récupérer les commandes en attente de validation
+ * @route   GET /api/orders/pending-validation
+ * @access  Private (Admin uniquement)
+ */
+const getPendingValidation = async (req, res) => {
+  try {
+    const orders = await orderService.getPendingValidationOrders(req.user.userId);
+
+    return res.status(200).json({
+      success: true,
+      data: orders,
+      count: orders.length
+    });
+
+  } catch (error) {
+    console.error('Erreur récupération interventions:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message
+        }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de la récupération'
+      }
+    });
+  }
+};
+
+/**
+ * @desc    Valider une intervention
+ * @route   PATCH /api/orders/:id/validate
+ * @access  Private (Admin uniquement)
+ */
+const validateOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const result = await orderService.validateOrder(orderId, req.user.userId);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Intervention validée et paiement prestataire effectué'
+    });
+
+  } catch (error) {
+    console.error('Erreur validation intervention:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message
+        }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de la validation'
+      }
+    });
+  }
+};
+
 
 module.exports = {
   createOrder,
@@ -301,5 +378,7 @@ module.exports = {
   getAvailableOrders,
   acceptOrder,
   cancelOrder,
-  completeOrder
+  completeOrder,
+  getPendingValidation,
+  validateOrder
 };
