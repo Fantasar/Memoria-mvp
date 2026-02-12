@@ -169,6 +169,21 @@ const updateStatus = async (orderId, status) => {
   return result.rows[0];
 };
 
+const cancelOrder = async (orderId, reason) => {
+  const query = `
+    UPDATE orders
+    SET 
+      prestataire_id = NULL,
+      status = 'pending',
+      cancellation_reason = $1,
+      cancelled_at = NOW()
+    WHERE id = $2
+    RETURNING *
+  `;
+  const result = await pool.query(query, [reason, orderId]);
+  return result.rows[0];
+};
+
 /**
  * Récupérer toutes les commandes (pour admin)
  */
@@ -200,5 +215,6 @@ module.exports = {
   findAvailable,
   assignPrestataire,
   updateStatus,
+  cancelOrder,
   findAll
 };

@@ -90,6 +90,38 @@ const uploadPhoto = async (orderId, photoType, fileBuffer, userId, userRole) => 
   }
 };
 
+/**
+ * Récupérer les photos d'une commande
+ */
+const getOrderPhotos = async (orderId, userId, userRole) => {
+  const order = await orderRepository.findById(orderId);
+  
+  if (!order) {
+    const error = new Error('Commande introuvable');
+    error.code = 'ORDER_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Vérifier permissions
+  if (userRole === 'client' && order.client_id !== userId) {
+    const error = new Error('Accès refusé');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (userRole === 'prestataire' && order.prestataire_id !== userId) {
+    const error = new Error('Accès refusé');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return await photoRepository.findByOrderId(orderId);
+};
+
 module.exports = {
   uploadPhoto,
+  getOrderPhotos
 };

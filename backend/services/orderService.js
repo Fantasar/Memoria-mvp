@@ -209,10 +209,124 @@ if (zone) {
   return updatedOrder;
 };
 
+/**
+ * Compléter une mission (prestataire uniquement)
+ */
+const completeOrder = async (orderId, prestatairId) => {
+  // 1. Vérifier que l'utilisateur est prestataire
+  const user = await userRepository.findById(prestatairId);
+  
+  if (!user) {
+    const error = new Error('Utilisateur introuvable');
+    error.code = 'USER_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (user.role !== 'prestataire') {
+    const error = new Error('Seuls les prestataires peuvent compléter des missions');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  // 2. Vérifier que la commande existe
+  const order = await orderRepository.findById(orderId);
+  
+  if (!order) {
+    const error = new Error('Commande introuvable');
+    error.code = 'ORDER_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // 3. Vérifier que c'est bien SA mission
+  if (order.prestataire_id !== prestatairId) {
+    const error = new Error('Cette mission ne vous est pas assignée');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  // 4. Vérifier que la mission est en cours
+  if (order.status !== 'accepted') {
+    const error = new Error('Cette mission n\'est pas en cours');
+    error.code = 'INVALID_STATUS';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 5. Vérifier que les photos sont uploadées (min 2: before et after)
+  const photoRepository = require('../repositories/photoRepository');
+  const photos = await photoRepository.findByOrderId(orderId);
+  
+  const hasBeforePhoto = photos.some(p => p.type === 'before');
+  const hasAfterPhoto = photos.some(p => p.type === 'after');
+  
+  if (!hasBeforePhoto || !hasAfterPhoto) {
+    const error = new Error('Vous devez uploader les photos avant et après avant de terminer la mission');
+    error.code = 'MISSING_PHOTOS';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 6. Mettre à jour le statut
+  const updatedOrder = await orderRepository.updateStatus(orderId, 'awaiting_validation');
+  
+  if (!updatedOrder) {
+    const error = new Error('Erreur lors de la mise à jour du statut');
+    error.code = 'UPDATE_FAILED';
+    error.statusCode = 500;
+    throw error;
+  }
+
+  return updatedOrder;
+};
+
+const cancelOrder = async (orderId, prestatairId, reason) => {
+  // Validations métier
+  const user = await userRepository.findById(prestatairId);
+  
+  if (!user || user.role !== 'prestataire') {
+    const error = new Error('Seuls les prestataires peuvent annuler');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const order = await orderRepository.findById(orderId);
+  
+  if (!order) {
+    const error = new Error('Commande introuvable');
+    error.code = 'ORDER_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (order.prestataire_id !== prestatairId) {
+    const error = new Error('Cette mission ne vous est pas assignée');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (order.status !== 'accepted') {
+    const error = new Error('Cette mission ne peut plus être annulée');
+    error.code = 'INVALID_STATUS';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // ✅ Appel au repository (pas de SQL ici)
+  return await orderRepository.cancelOrder(orderId, reason);
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
   getOrderById,
   getAvailableOrders,
-  acceptOrder
+  acceptOrder,
+  cancelOrder,
+  completeOrder
 };
