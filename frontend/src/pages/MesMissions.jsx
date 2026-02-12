@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import Header from '../components/layout/Header';
 import PhotoUpload from '../components/orders/PhotoUpload';
+import PhotoGallery from '../components/orders/PhotoGallery';
 
 const MesMissions = () => {
   const { user } = useAuth();
@@ -182,28 +183,33 @@ const MesMissions = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="mt-4 flex gap-3">
-                      <button
-                        onClick={() => setSelectedMission(mission.id)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                      >
-                        Ajouter les photos
-                      </button>
-                      
-                      <button
-                        onClick={() => handleCompleteMission(mission.id)}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                      >
-                        Terminer
-                      </button>
-                      
-                      <button
-                        onClick={() => setShowCancelModal(mission.id)}
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                      >
-                        Annuler
-                      </button>
-                    </div>
+                    <>
+                      <div className="mt-4 flex gap-3">
+                        <button
+                          onClick={() => setSelectedMission(mission.id)}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Ajouter les photos
+                        </button>
+      
+                        <button
+                          onClick={() => handleCompleteMission(mission.id)}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Terminer
+                        </button>
+      
+                        <button
+                          onClick={() => setShowCancelModal(mission.id)}
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+
+                      {/* ✅ Affichage des photos uploadées */}
+                      <PhotoGallery orderId={mission.id} />
+                    </>
                   )}
 
                   {/* Modal annulation */}
