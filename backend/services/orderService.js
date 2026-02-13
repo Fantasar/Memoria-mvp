@@ -388,7 +388,7 @@ const validateOrder = async (orderId, adminId) => {
     order_id: orderId,
     amount: providerAmount,
     stripe_transfer_id: simulatedTransferId,
-    status: 'completed',
+    status: 'released',
     payment_type: 'provider_transfer',
     recipient_id: order.prestataire_id
   });

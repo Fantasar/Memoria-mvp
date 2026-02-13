@@ -7,18 +7,23 @@ import Header from '../../components/layout/Header';
 const DashboardAdmin = () => {
   const { user } = useAuth();
   const [pendingProviders, setPendingProviders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [pendingOrders, setPendingOrders] = useState([]);
+  const [loadingProviders, setLoadingProviders] = useState(true);
+  const [loadingOrders, setLoadingOrders] = useState(true);
   const [error, setError] = useState(null);
   const [showRejectModal, setShowRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderPhotos, setOrderPhotos] = useState({});
 
   useEffect(() => {
     fetchPendingProviders();
+    fetchPendingOrders();
   }, []);
 
   const fetchPendingProviders = async () => {
     try {
-      setLoading(true);
+      setLoadingProviders(true);
       const token = localStorage.getItem('token');
       
       const response = await axios.get(
@@ -34,7 +39,7 @@ const DashboardAdmin = () => {
       console.error('Erreur chargement prestataires:', err);
       setError('Impossible de charger les prestataires en attente');
     } finally {
-      setLoading(false);
+      setLoadingProviders(false);
     }
   };
 
@@ -93,7 +98,88 @@ const DashboardAdmin = () => {
     }
   };
 
-  if (loading) {
+  const fetchPendingOrders = async () => {
+    try {
+      setLoadingOrders(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.get(
+        'http://localhost:5500/api/orders/pending-validation',
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      setPendingOrders(response.data.data);
+      
+      // Charger les photos pour chaque commande
+      response.data.data.forEach(order => {
+        fetchOrderPhotos(order.id);
+      });
+      
+    } catch (err) {
+      console.error('Erreur chargement interventions:', err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  // ✅ NOUVEAU : Récupérer les photos d'une commande
+  const fetchOrderPhotos = async (orderId) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.get(
+        `http://localhost:5500/api/photos/order/${orderId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      setOrderPhotos(prev => ({
+        ...prev,
+        [orderId]: response.data.data
+      }));
+      
+    } catch (err) {
+      console.error('Erreur chargement photos:', err);
+    }
+  };
+
+  // ✅ NOUVEAU : Valider une intervention
+  const handleValidateOrder = async (orderId) => {
+    const confirm = window.confirm(
+      'Êtes-vous sûr de vouloir valider cette intervention ? Le paiement sera débloqué au prestataire.'
+    );
+    
+    if (!confirm) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.patch(
+        `http://localhost:5500/api/orders/${orderId}/validate`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      alert('Intervention validée et paiement débloqué !');
+      fetchPendingOrders();
+      
+    } catch (err) {
+      console.error('Erreur validation:', err);
+      alert(err.response?.data?.error?.message || 'Erreur lors de la validation');
+    }
+  };
+
+  // ✅ NOUVEAU : Toggle affichage photos
+  const togglePhotos = (orderId) => {
+    setSelectedOrder(selectedOrder === orderId ? null : orderId);
+  };
+
+  if (loadingProviders || loadingOrders) {
     return (
       <>
         <Header />
@@ -121,6 +207,139 @@ const DashboardAdmin = () => {
             <p className="mt-2 text-gray-600">
               Bienvenue {user?.prenom} {user?.nom}
             </p>
+          </div>
+
+          {/* ✅ NOUVELLE SECTION : Interventions à valider */}
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Interventions à valider
+              </h2>
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                {pendingOrders.length} en attente
+              </span>
+            </div>
+
+            {pendingOrders.length === 0 ? (
+              <div className="text-center py-12">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="mt-2 text-lg font-medium text-gray-900">
+                  Aucune intervention en attente
+                </h3>
+                <p className="mt-1 text-gray-500">
+                  Toutes les interventions ont été validées
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingOrders.map(order => {
+                  const photos = orderPhotos[order.id] || [];
+                  const beforePhoto = photos.find(p => p.type === 'before');
+                  const afterPhoto = photos.find(p => p.type === 'after');
+
+                  return (
+                    <div key={order.id} className="border border-gray-200 rounded-lg p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {order.cemetery_name}
+                            </h3>
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              En attente validation
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <p className="text-sm text-gray-500">Client</p>
+                              <p className="text-sm font-medium text-gray-900">{order.client_email}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Prestataire</p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {order.prestataire_prenom} {order.prestataire_nom}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Service</p>
+                              <p className="text-sm font-medium text-gray-900">{order.service_name}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Montant</p>
+                              <p className="text-sm font-medium text-gray-900">{order.price} €</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Lieu</p>
+                              <p className="text-sm font-medium text-gray-900">{order.cemetery_city}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Terminée le</p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {new Date(order.updated_at).toLocaleDateString('fr-FR')}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Bouton voir photos */}
+                          <button
+                            onClick={() => togglePhotos(order.id)}
+                            className="mb-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                          >
+                            {selectedOrder === order.id ? '▼ Masquer les photos' : '▶ Voir les photos avant/après'}
+                          </button>
+
+                          {/* Photos */}
+                          {selectedOrder === order.id && (
+                            <div className="grid grid-cols-2 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                              {beforePhoto ? (
+                                <div>
+                                  <p className="text-sm font-medium text-gray-700 mb-2">📸 Avant</p>
+                                  <img 
+                                    src={beforePhoto.url} 
+                                    alt="Avant intervention" 
+                                    className="w-full h-64 object-cover rounded-lg border-2 border-gray-200"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center h-64 bg-gray-200 rounded-lg">
+                                  <p className="text-gray-500">Photo avant manquante</p>
+                                </div>
+                              )}
+                              
+                              {afterPhoto ? (
+                                <div>
+                                  <p className="text-sm font-medium text-gray-700 mb-2">✨ Après</p>
+                                  <img 
+                                    src={afterPhoto.url} 
+                                    alt="Après intervention" 
+                                    className="w-full h-64 object-cover rounded-lg border-2 border-green-200"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center h-64 bg-gray-200 rounded-lg">
+                                  <p className="text-gray-500">Photo après manquante</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Bouton validation */}
+                          <button
+                            onClick={() => handleValidateOrder(order.id)}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+                          >
+                            ✓ Valider l'intervention et débloquer le paiement ({(parseFloat(order.price) * 0.80).toFixed(2)}€ → prestataire)
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Section Validation Prestataires */}
