@@ -424,6 +424,157 @@ const getPendingValidationOrders = async (adminId) => {
   return await orderRepository.findPendingValidation();
 };
 
+/**
+ * Récupérer les commandes en litige (admin)
+ */
+const getDisputedOrders = async (adminId) => {
+  const admin = await userRepository.findById(adminId);
+  
+  if (!admin || admin.role !== 'admin') {
+    const error = new Error('Accès réservé aux administrateurs');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return await orderRepository.findDisputed();
+};
+
+/**
+ * Marquer une commande comme litigieuse (admin)
+ */
+const markOrderAsDisputed = async (orderId, adminId, reason) => {
+  const admin = await userRepository.findById(adminId);
+  
+  if (!admin || admin.role !== 'admin') {
+    const error = new Error('Accès réservé aux administrateurs');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const order = await orderRepository.findById(orderId);
+  
+  if (!order) {
+    const error = new Error('Commande introuvable');
+    error.code = 'ORDER_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (order.status !== 'awaiting_validation') {
+    const error = new Error('Seules les commandes en attente de validation peuvent être marquées comme litigieuses');
+    error.code = 'INVALID_STATUS';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return await orderRepository.markAsDisputed(orderId, reason);
+};
+
+/**
+ * Résoudre un litige (admin)
+ */
+const resolveDispute = async (orderId, adminId, action) => {
+  const admin = await userRepository.findById(adminId);
+  
+  if (!admin || admin.role !== 'admin') {
+    const error = new Error('Accès réservé aux administrateurs');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const order = await orderRepository.findById(orderId);
+  
+  if (!order) {
+    const error = new Error('Commande introuvable');
+    error.code = 'ORDER_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (order.status !== 'disputed') {
+    const error = new Error('Cette commande n\'est pas en litige');
+    error.code = 'NOT_DISPUTED';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Actions possibles : 'validate', 'refund', 'request_correction'
+  let newStatus;
+  let additionalActions = {};
+
+  switch (action) {
+    case 'validate':
+      // Valider quand même → Payer le prestataire
+      const providerAmount = parseFloat(order.price) * 0.80;
+      const simulatedTransferId = `tr_dispute_resolved_${Date.now()}`;
+      
+      console.log(`💰 RÉSOLUTION LITIGE - VALIDATION:`);
+      console.log(`   Commande: ${orderId}`);
+      console.log(`   → Prestataire payé: ${providerAmount}€`);
+
+      await paymentRepository.create({
+        order_id: orderId,
+        amount: providerAmount,
+        stripe_transfer_id: simulatedTransferId,
+        status: 'released',
+        payment_type: 'provider_transfer',
+        recipient_id: order.prestataire_id
+      });
+
+      newStatus = 'completed';
+      additionalActions.payment = { amount: providerAmount, transfer_id: simulatedTransferId };
+      break;
+
+    case 'refund':
+      // Rembourser le client
+      console.log(`💸 RÉSOLUTION LITIGE - REMBOURSEMENT:`);
+      console.log(`   Commande: ${orderId}`);
+      console.log(`   → Client remboursé: ${order.price}€`);
+
+      // TODO: Intégrer Stripe Refund en production
+      newStatus = 'refunded';
+      additionalActions.refund = { amount: order.price };
+      break;
+
+    case 'request_correction':
+      // Demander au prestataire de corriger
+      console.log(`🔄 RÉSOLUTION LITIGE - CORRECTION DEMANDÉE:`);
+      console.log(`   Commande: ${orderId}`);
+
+      newStatus = 'accepted'; // Retour au statut "en cours"
+      break;
+
+    default:
+      const error = new Error('Action invalide. Utilisez: validate, refund ou request_correction');
+      error.code = 'INVALID_ACTION';
+      error.statusCode = 400;
+      throw error;
+  }
+
+  // Mettre à jour la commande
+  const query = `
+    UPDATE orders
+    SET 
+      status = $1,
+      resolution_action = $2,
+      resolved_at = NOW(),
+      updated_at = NOW()
+    WHERE id = $3
+    RETURNING *
+  `;
+  
+  const pool = require('../config/db');
+  const result = await pool.query(query, [newStatus, action, orderId]);
+
+  return {
+    order: result.rows[0],
+    ...additionalActions
+  };
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
@@ -433,5 +584,8 @@ module.exports = {
   cancelOrder,
   completeOrder,
   validateOrder,
-  getPendingValidationOrders
+  getPendingValidationOrders,
+  getDisputedOrders,
+  markOrderAsDisputed,
+  resolveDispute
 };
