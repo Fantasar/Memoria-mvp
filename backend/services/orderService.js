@@ -554,23 +554,14 @@ const resolveDispute = async (orderId, adminId, action) => {
       throw error;
   }
 
-  // Mettre à jour la commande
-  const query = `
-    UPDATE orders
-    SET 
-      status = $1,
-      resolution_action = $2,
-      resolved_at = NOW(),
-      updated_at = NOW()
-    WHERE id = $3
-    RETURNING *
-  `;
+  const updatedOrder = await orderRepository.resolveDispute(orderId, newStatus, action);
+
   
   const pool = require('../config/db');
   const result = await pool.query(query, [newStatus, action, orderId]);
 
   return {
-    order: result.rows[0],
+    order: updatedOrder,
     ...additionalActions
   };
 };

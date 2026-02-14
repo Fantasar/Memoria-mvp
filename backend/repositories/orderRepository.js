@@ -282,6 +282,25 @@ const markAsDisputed = async (orderId, reason) => {
   return result.rows[0];
 };
 
+/**
+ * Résoudre un litige (mettre à jour statut + action)
+ */
+const resolveDispute = async (orderId, newStatus, action) => {
+  const query = `
+    UPDATE orders
+    SET 
+      status = $1,
+      resolution_action = $2,
+      resolved_at = NOW(),
+      updated_at = NOW()
+    WHERE id = $3
+    RETURNING *
+  `;
+  
+  const result = await pool.query(query, [newStatus, action, orderId]);
+  return result.rows[0];
+};
+
 
 module.exports = {
   create,
@@ -295,5 +314,6 @@ module.exports = {
   findPendingValidation,
   findAll,
   findDisputed,
+  resolveDispute,
   markAsDisputed
 };
