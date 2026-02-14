@@ -207,6 +207,34 @@ const findAll = async () => {
   return result.rows;
 };
 
+/**
+ * Récupérer les commandes en attente de validation (pour admin)
+ */
+const findPendingValidation = async () => {
+  const query = `
+    SELECT 
+      o.*,
+      uc.email as client_email,
+      up.email as prestataire_email,
+      up.prenom as prestataire_prenom,
+      up.nom as prestataire_nom,
+      c.name as cemetery_name,
+      c.city as cemetery_city,
+      sc.name as service_name
+    FROM orders o
+    LEFT JOIN users uc ON o.client_id = uc.id
+    LEFT JOIN users up ON o.prestataire_id = up.id
+    LEFT JOIN cemeteries c ON o.cemetery_id = c.id
+    LEFT JOIN service_categories sc ON o.service_category_id = sc.id
+    WHERE o.status = 'awaiting_validation'
+    ORDER BY o.updated_at DESC
+  `;
+  
+  const result = await pool.query(query);
+  return result.rows;
+};
+
+
 module.exports = {
   create,
   findById,
@@ -216,5 +244,6 @@ module.exports = {
   assignPrestataire,
   updateStatus,
   cancelOrder,
+  findPendingValidation,
   findAll
 };

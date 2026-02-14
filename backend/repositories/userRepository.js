@@ -110,11 +110,72 @@ const deleteById = async (userId) => {
   return result.rows[0];
 };
 
+/**
+ * Récupérer les prestataires en attente de validation
+ */
+const findPendingProviders = async () => {
+  const query = `
+    SELECT 
+      u.id,
+      u.email,
+      u.prenom,
+      u.nom,
+      u.zone_intervention,
+      u.siret,
+      u.is_verified,
+      u.created_at,
+      r.name as role_name
+    FROM users u
+    LEFT JOIN roles r ON u.role_id = r.id
+    WHERE r.name = 'prestataire'
+      AND u.is_verified = false
+    ORDER BY u.created_at DESC
+  `;
+  const result = await pool.query(query);
+  return result.rows;
+};
+
+/**
+ * Valider un prestataire (changer is_verified)
+ */
+const approveProvider = async (providerId) => {
+  const query = `
+    UPDATE users
+    SET 
+      is_verified = true,
+      verified_at = NOW()
+    WHERE id = $1
+    RETURNING *
+  `;
+  const result = await pool.query(query, [providerId]);
+  return result.rows[0];
+};
+
+/**
+ * Rejeter un prestataire (supprimer ou désactiver)
+ */
+const rejectProvider = async (providerId, reason) => {
+  const query = `
+    UPDATE users
+    SET 
+      is_verified = false,
+      rejection_reason = $1,
+      rejected_at = NOW()
+    WHERE id = $2
+    RETURNING *
+  `;
+  const result = await pool.query(query, [reason, providerId]);
+  return result.rows[0];
+};
+
 module.exports = {
   findByEmail,
   findById,
   emailExists,
   create,
   update,
+  findPendingProviders,
+  approveProvider,
+  rejectProvider,
   deleteById
 };

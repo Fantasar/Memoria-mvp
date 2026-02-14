@@ -43,6 +43,20 @@ router.patch('/:id/complete', authenticateToken, orderController.completeOrder);
 router.patch('/:id/cancel', authenticateToken, orderController.cancelOrder);
 
 /**
+ * @route   GET /api/orders//pending-validation
+ * @desc    Intervention en attente de validation
+ * @access  Private (Admin) - JWT REQUIS
+ */
+router.get('/pending-validation', authenticateToken, orderController.getPendingValidation);
+
+/**
+ * @route   PATCH /api/orders/:id/validate
+ * @desc    Valider une intervention
+ * @access  Private (admin) - JWT REQUIS
+ */
+router.patch('/:id/validate', authenticateToken, orderController.validateOrder);
+
+/**
  * @route   GET /api/orders/:id
  * @desc    Récupérer les détails d'une commande
  * @access  Private (Tous) - JWT REQUIS
