@@ -556,10 +556,6 @@ const resolveDispute = async (orderId, adminId, action) => {
 
   const updatedOrder = await orderRepository.resolveDispute(orderId, newStatus, action);
 
-  
-  const pool = require('../config/db');
-  const result = await pool.query(query, [newStatus, action, orderId]);
-
   return {
     order: updatedOrder,
     ...additionalActions
