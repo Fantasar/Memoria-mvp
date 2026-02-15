@@ -235,6 +235,73 @@ const findPendingValidation = async () => {
 };
 
 
+/**
+ * Récupérer les commandes en litige
+ */
+const findDisputed = async () => {
+  const query = `
+    SELECT 
+      o.*,
+      uc.email as client_email,
+      uc.prenom as client_prenom,
+      uc.nom as client_nom,
+      up.email as prestataire_email,
+      up.prenom as prestataire_prenom,
+      up.nom as prestataire_nom,
+      c.name as cemetery_name,
+      c.city as cemetery_city,
+      sc.name as service_name
+    FROM orders o
+    LEFT JOIN users uc ON o.client_id = uc.id
+    LEFT JOIN users up ON o.prestataire_id = up.id
+    LEFT JOIN cemeteries c ON o.cemetery_id = c.id
+    LEFT JOIN service_categories sc ON o.service_category_id = sc.id
+    WHERE o.status = 'disputed'
+    ORDER BY o.updated_at DESC
+  `;
+  
+  const result = await pool.query(query);
+  return result.rows;
+};
+
+/**
+ * Marquer une commande comme litigieuse
+ */
+const markAsDisputed = async (orderId, reason) => {
+  const query = `
+    UPDATE orders
+    SET 
+      status = 'disputed',
+      dispute_reason = $1,
+      disputed_at = NOW(),
+      updated_at = NOW()
+    WHERE id = $2
+    RETURNING *
+  `;
+  const result = await pool.query(query, [reason, orderId]);
+  return result.rows[0];
+};
+
+/**
+ * Résoudre un litige (mettre à jour statut + action)
+ */
+const resolveDispute = async (orderId, newStatus, action) => {
+  const query = `
+    UPDATE orders
+    SET 
+      status = $1,
+      resolution_action = $2,
+      resolved_at = NOW(),
+      updated_at = NOW()
+    WHERE id = $3
+    RETURNING *
+  `;
+  
+  const result = await pool.query(query, [newStatus, action, orderId]);
+  return result.rows[0];
+};
+
+
 module.exports = {
   create,
   findById,
@@ -245,5 +312,8 @@ module.exports = {
   updateStatus,
   cancelOrder,
   findPendingValidation,
-  findAll
+  findAll,
+  findDisputed,
+  resolveDispute,
+  markAsDisputed
 };

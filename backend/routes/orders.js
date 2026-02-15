@@ -57,6 +57,27 @@ router.get('/pending-validation', authenticateToken, orderController.getPendingV
 router.patch('/:id/validate', authenticateToken, orderController.validateOrder);
 
 /**
+ * @route   GET /api/orders//disputed
+ * @desc    Gestion des litiges
+ * @access  Private (admin) - JWT REQUIS
+ */
+router.get('/disputed', authenticateToken, orderController.getDisputedOrders);
+
+/**
+ * @route   PATCH /api/orders//:id/dispute'
+ * @desc    Marquer comme litigieux
+ * @access  Private (admin) - JWT REQUIS
+ */
+router.patch('/:id/dispute', authenticateToken, orderController.markAsDisputed);
+
+/**
+ * @route   PATCH /api/orders/:id/resolve'
+ * @desc    Résoudre le litige
+ * @access  Private (admin) - JWT REQUIS
+ */
+router.patch('/:id/resolve', authenticateToken, orderController.resolveDispute);
+
+/**
  * @route   GET /api/orders/:id
  * @desc    Récupérer les détails d'une commande
  * @access  Private (Tous) - JWT REQUIS

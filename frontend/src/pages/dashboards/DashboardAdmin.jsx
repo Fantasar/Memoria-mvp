@@ -8,17 +8,22 @@ const DashboardAdmin = () => {
   const { user } = useAuth();
   const [pendingProviders, setPendingProviders] = useState([]);
   const [pendingOrders, setPendingOrders] = useState([]);
+  const [disputedOrders, setDisputedOrders] = useState([]);
   const [loadingProviders, setLoadingProviders] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingDisputes, setLoadingDisputes] = useState(true);
   const [error, setError] = useState(null);
   const [showRejectModal, setShowRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderPhotos, setOrderPhotos] = useState({});
+  const [showDisputeModal, setShowDisputeModal] = useState(null);
+  const [disputeReason, setDisputeReason] = useState('');
 
   useEffect(() => {
     fetchPendingProviders();
     fetchPendingOrders();
+    fetchDisputedOrders();
   }, []);
 
   const fetchPendingProviders = async () => {
@@ -179,7 +184,94 @@ const DashboardAdmin = () => {
     setSelectedOrder(selectedOrder === orderId ? null : orderId);
   };
 
-  if (loadingProviders || loadingOrders) {
+  const fetchDisputedOrders = async () => {
+    try {
+      setLoadingDisputes(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.get(
+        'http://localhost:5500/api/orders/disputed',
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      setDisputedOrders(response.data.data);
+      
+      // Charger les photos pour chaque commande
+      response.data.data.forEach(order => {
+        fetchOrderPhotos(order.id);
+      });
+      
+    } catch (err) {
+      console.error('Erreur chargement litiges:', err);
+    } finally {
+      setLoadingDisputes(false);
+    }
+  };
+
+  // ✅ NOUVEAU : Marquer comme litigieux
+  const handleMarkAsDisputed = async (orderId) => {
+    if (!disputeReason.trim() || disputeReason.length < 10) {
+      alert('Le motif doit contenir au moins 10 caractères');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.patch(
+        `http://localhost:5500/api/orders/${orderId}/dispute`,
+        { reason: disputeReason },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      alert('Commande marquée comme litigieuse');
+      setShowDisputeModal(null);
+      setDisputeReason('');
+      fetchPendingOrders();
+      fetchDisputedOrders();
+      
+    } catch (err) {
+      console.error('Erreur marquage litige:', err);
+      alert(err.response?.data?.error?.message || 'Erreur lors du marquage');
+    }
+  };
+
+  // ✅ NOUVEAU : Résoudre un litige
+  const handleResolveDispute = async (orderId, action) => {
+    const messages = {
+      validate: 'Êtes-vous sûr de vouloir VALIDER cette intervention malgré le litige ? Le prestataire sera payé.',
+      refund: 'Êtes-vous sûr de vouloir REMBOURSER le client ? La commande sera annulée.',
+      request_correction: 'Êtes-vous sûr de demander une CORRECTION au prestataire ? Il devra re-uploader les photos.'
+    };
+
+    const confirm = window.confirm(messages[action]);
+    if (!confirm) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.patch(
+        `http://localhost:5500/api/orders/${orderId}/resolve`,
+        { action },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      alert('Litige résolu avec succès !');
+      fetchDisputedOrders();
+      
+    } catch (err) {
+      console.error('Erreur résolution:', err);
+      alert(err.response?.data?.error?.message || 'Erreur lors de la résolution');
+    }
+  };
+
+  if (loadingProviders || loadingOrders || loadingDisputes) {
     return (
       <>
         <Header />
@@ -209,7 +301,130 @@ const DashboardAdmin = () => {
             </p>
           </div>
 
-          {/* ✅ NOUVELLE SECTION : Interventions à valider */}
+          {/* ✅ SECTION : Litiges */}
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Litiges en cours
+              </h2>
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                {disputedOrders.length} litige{disputedOrders.length > 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {disputedOrders.length === 0 ? (
+              <div className="text-center py-12">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="mt-2 text-lg font-medium text-gray-900">
+                  Aucun litige en cours
+                </h3>
+                <p className="mt-1 text-gray-500">
+                  Tous les litiges ont été résolus
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {disputedOrders.map(order => {
+                  const photos = orderPhotos[order.id] || [];
+                  const beforePhoto = photos.find(p => p.type === 'before');
+                  const afterPhoto = photos.find(p => p.type === 'after');
+
+                  return (
+                    <div key={order.id} className="border-2 border-red-200 rounded-lg p-6 bg-red-50">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {order.cemetery_name}
+                            </h3>
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">
+                              🚨 Litige
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <p className="text-sm text-gray-500">Client</p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {order.client_prenom} {order.client_nom}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Prestataire</p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {order.prestataire_prenom} {order.prestataire_nom}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Service</p>
+                              <p className="text-sm font-medium text-gray-900">{order.service_name}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Montant</p>
+                              <p className="text-sm font-medium text-gray-900">{order.price} €</p>
+                            </div>
+                          </div>
+
+                          <div className="mb-4 p-3 bg-white rounded border border-red-200">
+                            <p className="text-sm font-medium text-red-900 mb-1">Motif du litige :</p>
+                            <p className="text-sm text-gray-700">{order.dispute_reason}</p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            {beforePhoto && (
+                              <div>
+                                <p className="text-sm font-medium text-gray-700 mb-2">📸 Avant</p>
+                                <img 
+                                  src={beforePhoto.url} 
+                                  alt="Avant" 
+                                  className="w-full h-48 object-cover rounded-lg border-2 border-gray-300"
+                                />
+                              </div>
+                            )}
+                            {afterPhoto && (
+                              <div>
+                                <p className="text-sm font-medium text-gray-700 mb-2">✨ Après</p>
+                                <img 
+                                  src={afterPhoto.url} 
+                                  alt="Après" 
+                                  className="w-full h-48 object-cover rounded-lg border-2 border-gray-300"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-3">
+                            <button
+                              onClick={() => handleResolveDispute(order.id, 'validate')}
+                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                            >
+                              ✓ Valider quand même
+                            </button>
+                            <button
+                              onClick={() => handleResolveDispute(order.id, 'request_correction')}
+                              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                            >
+                              🔄 Demander correction
+                            </button>
+                            <button
+                              onClick={() => handleResolveDispute(order.id, 'refund')}
+                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                            >
+                              💸 Rembourser client
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Section Interventions à valider */}
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900">
@@ -283,7 +498,6 @@ const DashboardAdmin = () => {
                             </div>
                           </div>
 
-                          {/* Bouton voir photos */}
                           <button
                             onClick={() => togglePhotos(order.id)}
                             className="mb-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -291,7 +505,6 @@ const DashboardAdmin = () => {
                             {selectedOrder === order.id ? '▼ Masquer les photos' : '▶ Voir les photos avant/après'}
                           </button>
 
-                          {/* Photos */}
                           {selectedOrder === order.id && (
                             <div className="grid grid-cols-2 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                               {beforePhoto ? (
@@ -326,13 +539,56 @@ const DashboardAdmin = () => {
                             </div>
                           )}
 
-                          {/* Bouton validation */}
-                          <button
-                            onClick={() => handleValidateOrder(order.id)}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-                          >
-                            ✓ Valider l'intervention et débloquer le paiement ({(parseFloat(order.price) * 0.80).toFixed(2)}€ → prestataire)
-                          </button>
+                          <div className="grid grid-cols-2 gap-3">
+                            <button
+                              onClick={() => handleValidateOrder(order.id)}
+                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+                            >
+                              ✓ Valider l'intervention ({(parseFloat(order.price) * 0.80).toFixed(2)}€ → prestataire)
+                            </button>
+                            
+                            <button
+                              onClick={() => setShowDisputeModal(order.id)}
+                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+                            >
+                              🚨 Marquer comme litigieux
+                            </button>
+                          </div>
+
+                          {showDisputeModal === order.id && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                                <h3 className="text-lg font-semibold mb-4">Marquer comme litigieux</h3>
+                                <p className="text-sm text-gray-600 mb-4">
+                                  Indiquez le motif du litige (minimum 10 caractères)
+                                </p>
+                                <textarea
+                                  value={disputeReason}
+                                  onChange={(e) => setDisputeReason(e.target.value)}
+                                  className="w-full border border-gray-300 rounded-lg p-3 mb-4"
+                                  rows="4"
+                                  placeholder="Ex: Photos de mauvaise qualité, travail non conforme, client mécontent..."
+                                />
+                                <div className="flex gap-3">
+                                  <button
+                                    onClick={() => {
+                                      setShowDisputeModal(null);
+                                      setDisputeReason('');
+                                    }}
+                                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg"
+                                  >
+                                    Annuler
+                                  </button>
+                                  <button
+                                    onClick={() => handleMarkAsDisputed(order.id)}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+                                  >
+                                    Confirmer
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -432,7 +688,6 @@ const DashboardAdmin = () => {
                       </div>
                     </div>
 
-                    {/* Modal rejet */}
                     {showRejectModal === provider.id && (
                       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
@@ -473,7 +728,7 @@ const DashboardAdmin = () => {
             )}
           </div>
 
-          {/* Section Statistiques (placeholder) */}
+          {/* Section Statistiques */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-sm font-medium text-gray-500 mb-2">Total Commandes</h3>

@@ -371,6 +371,147 @@ const validateOrder = async (req, res) => {
 };
 
 
+/**
+ * @desc    Récupérer les commandes en litige
+ * @route   GET /api/orders/disputed
+ * @access  Private (Admin uniquement)
+ */
+const getDisputedOrders = async (req, res) => {
+  try {
+    const orders = await orderService.getDisputedOrders(req.user.userId);
+
+    return res.status(200).json({
+      success: true,
+      data: orders,
+      count: orders.length
+    });
+
+  } catch (error) {
+    console.error('Erreur récupération litiges:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message
+        }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de la récupération des litiges'
+      }
+    });
+  }
+};
+
+/**
+ * @desc    Marquer une commande comme litigieuse
+ * @route   PATCH /api/orders/:id/dispute
+ * @access  Private (Admin uniquement)
+ */
+const markAsDisputed = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { reason } = req.body;
+
+    if (!reason || reason.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_REASON',
+          message: 'Le motif doit contenir au moins 10 caractères'
+        }
+      });
+    }
+
+    const result = await orderService.markOrderAsDisputed(orderId, req.user.userId, reason);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Commande marquée comme litigieuse'
+    });
+
+  } catch (error) {
+    console.error('Erreur marquage litige:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message
+        }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors du marquage'
+      }
+    });
+  }
+};
+
+/**
+ * @desc    Résoudre un litige
+ * @route   PATCH /api/orders/:id/resolve
+ * @access  Private (Admin uniquement)
+ */
+const resolveDispute = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { action } = req.body;
+
+    if (!['validate', 'refund', 'request_correction'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_ACTION',
+          message: 'Action invalide. Utilisez: validate, refund ou request_correction'
+        }
+      });
+    }
+
+    const result = await orderService.resolveDispute(orderId, req.user.userId, action);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Litige résolu avec succès'
+    });
+
+  } catch (error) {
+    console.error('Erreur résolution litige:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message
+        }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de la résolution'
+      }
+    });
+  }
+};
+
+
 module.exports = {
   createOrder,
   getMyOrders,
@@ -380,5 +521,8 @@ module.exports = {
   cancelOrder,
   completeOrder,
   getPendingValidation,
-  validateOrder
+  validateOrder,
+  getDisputedOrders,
+  markAsDisputed,
+  resolveDispute
 };

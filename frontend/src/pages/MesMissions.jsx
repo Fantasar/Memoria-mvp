@@ -9,6 +9,7 @@ const MesMissions = () => {
   const { user } = useAuth();
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refundedMissions, setRefundedMissions] = useState([]);
   const [selectedMission, setSelectedMission] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [showCancelModal, setShowCancelModal] = useState(null);
@@ -29,12 +30,16 @@ const MesMissions = () => {
         }
       );
 
-      // Filtrer seulement les missions acceptées
-      const acceptedMissions = response.data.data.filter(
-        order => order.status === 'accepted'
-      );
+    const activeMissions = response.data.data.filter(
+      order => order.status === 'accepted'
+    );
 
-      setMissions(acceptedMissions);
+    const refundedMissions = response.data.data.filter(
+      order => order.status === 'refunded' && order.prestataire_id === response.data.data[0]?.prestataire_id
+    );
+
+    setMissions(activeMissions);
+    setRefundedMissions(refundedMissions);
     } catch (err) {
       console.error('Erreur chargement missions:', err);
     } finally {
@@ -132,6 +137,70 @@ const MesMissions = () => {
               {missions.length} mission{missions.length > 1 ? 's' : ''} à compléter
             </p>
           </div>
+        
+        {/* ✅ Section Missions annulées/remboursées */}
+{refundedMissions.length > 0 && (
+  <div className="mt-8">
+    <h2 className="text-2xl font-bold text-gray-900 mb-4">
+      Missions annulées
+    </h2>
+    <p className="text-sm text-gray-600 mb-4">
+      {refundedMissions.length} mission{refundedMissions.length > 1 ? 's ont' : ' a'} été annulée{refundedMissions.length > 1 ? 's' : ''} suite à un litige
+    </p>
+
+    <div className="space-y-6">
+      {refundedMissions.map(mission => (
+        <div key={mission.id} className="bg-red-50 border-2 border-red-200 rounded-lg shadow p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {mission.cemetery_name}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {mission.cemetery_city} • {mission.service_name}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Prix initial : {mission.base_price || mission.price} €
+              </p>
+            </div>
+            
+            <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-600 text-white">
+              ❌ Annulée / Remboursée
+            </span>
+          </div>
+
+          {/* Message explicatif */}
+          <div className="p-4 bg-white border-l-4 border-red-500 rounded">
+            <div className="flex items-start">
+              <svg className="h-5 w-5 text-red-500 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <h4 className="text-sm font-semibold text-red-800 mb-1">
+                  Mission annulée par l'administration
+                </h4>
+                <p className="text-sm text-red-700">
+                  Cette mission a été annulée suite à un litige. Le client a été remboursé. 
+                  Vous ne serez pas rémunéré pour cette intervention.
+                </p>
+                {mission.dispute_reason && (
+                  <p className="text-sm text-red-700 mt-2">
+                    <span className="font-medium">Motif du litige :</span> {mission.dispute_reason}
+                  </p>
+                )}
+                <p className="text-sm text-gray-600 mt-2">
+                  Annulée le : {new Date(mission.resolved_at || mission.updated_at).toLocaleDateString('fr-FR')}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+
 
           {missions.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-8 text-center">
