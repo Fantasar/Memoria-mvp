@@ -18,6 +18,22 @@ const getPlatformStats = async (adminId) => {
   return await statsRepository.getPlatformStats();
 };
 
+/**
+ * Récupérer les statistiques d'un prestataire
+ */
+const getProviderStats = async (userId, userRole) => {
+  // Vérifier que c'est un prestataire
+  if (userRole !== 'prestataire') {
+    const error = new Error('Accès réservé aux prestataires');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return await statsRepository.getProviderStats(userId);
+};
+
 module.exports = {
-  getPlatformStats
+  getPlatformStats,
+  getProviderStats
 };
