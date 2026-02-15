@@ -19,11 +19,14 @@ const DashboardAdmin = () => {
   const [orderPhotos, setOrderPhotos] = useState({});
   const [showDisputeModal, setShowDisputeModal] = useState(null);
   const [disputeReason, setDisputeReason] = useState('');
+    const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true); 
 
   useEffect(() => {
     fetchPendingProviders();
     fetchPendingOrders();
     fetchDisputedOrders();
+    fetchStats();
   }, []);
 
   const fetchPendingProviders = async () => {
@@ -45,6 +48,27 @@ const DashboardAdmin = () => {
       setError('Impossible de charger les prestataires en attente');
     } finally {
       setLoadingProviders(false);
+    }
+  };
+
+    const fetchStats = async () => {
+    try {
+      setLoadingStats(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.get(
+        'http://localhost:5500/api/stats',
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      setStats(response.data.data);
+      
+    } catch (err) {
+      console.error('Erreur chargement stats:', err);
+    } finally {
+      setLoadingStats(false);
     }
   };
 
@@ -728,21 +752,169 @@ const DashboardAdmin = () => {
             )}
           </div>
 
-          {/* Section Statistiques */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Total Commandes</h3>
-              <p className="text-3xl font-bold text-gray-900">--</p>
+{/* Section Statistiques */}
+<div className="space-y-8">
+  
+  {/* KPIs principaux */}
+  <div>
+    <h2 className="text-xl font-semibold text-gray-900 mb-4">
+      Statistiques de la plateforme
+    </h2>
+    
+    {loadingStats ? (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+      </div>
+    ) : stats ? (
+      <>
+        {/* Cartes KPIs */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {/* Total Utilisateurs */}
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium opacity-90">Utilisateurs</h3>
+              <svg className="h-8 w-8 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
             </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Prestataires Actifs</h3>
-              <p className="text-3xl font-bold text-gray-900">--</p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Clients</h3>
-              <p className="text-3xl font-bold text-gray-900">--</p>
+            <p className="text-4xl font-bold mb-2">{stats.users.total}</p>
+            <div className="text-sm opacity-90">
+              <p>Clients: {stats.users.by_role.client || 0}</p>
+              <p>Prestataires: {stats.users.by_role.prestataire || 0}</p>
             </div>
           </div>
+
+          {/* Total Commandes */}
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium opacity-90">Commandes</h3>
+              <svg className="h-8 w-8 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <p className="text-4xl font-bold mb-2">{stats.orders.total}</p>
+            <div className="text-sm opacity-90">
+              <p>Complétées: {stats.orders.by_status.completed || 0}</p>
+              <p>En cours: {stats.orders.by_status.accepted || 0}</p>
+            </div>
+          </div>
+
+          {/* Chiffre d'affaires */}
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium opacity-90">CA Total</h3>
+              <svg className="h-8 w-8 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-4xl font-bold mb-2">{stats.revenue.total.toFixed(2)}€</p>
+            <div className="text-sm opacity-90">
+              <p>{stats.revenue.paid_orders} commandes payées</p>
+            </div>
+          </div>
+
+          {/* Prestataires actifs */}
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium opacity-90">Prestataires</h3>
+              <svg className="h-8 w-8 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p className="text-4xl font-bold mb-2">{stats.users.by_role.prestataire || 0}</p>
+            <div className="text-sm opacity-90">
+              <p>Actifs sur la plateforme</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Détails par statut commande */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Répartition des commandes par statut
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Object.entries(stats.orders.by_status).map(([status, count]) => (
+              <div key={status} className="border border-gray-200 rounded-lg p-4">
+                <p className="text-sm text-gray-500 mb-1 capitalize">
+                  {status === 'pending' && '⏳ En attente'}
+                  {status === 'paid' && '💳 Payées'}
+                  {status === 'accepted' && '🔄 En cours'}
+                  {status === 'awaiting_validation' && '⏰ À valider'}
+                  {status === 'disputed' && '🚨 Litiges'}
+                  {status === 'completed' && '✅ Terminées'}
+                  {status === 'refunded' && '💸 Remboursées'}
+                  {status === 'cancelled' && '❌ Annulées'}
+                </p>
+                <p className="text-2xl font-bold text-gray-900">{count}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Top 5 prestataires */}
+        {stats.top_providers.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              🏆 Top 5 Prestataires
+            </h3>
+            <div className="space-y-3">
+              {stats.top_providers.map((provider, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">
+                      {index === 0 && '🥇'}
+                      {index === 1 && '🥈'}
+                      {index === 2 && '🥉'}
+                      {index > 2 && `${index + 1}.`}
+                    </span>
+                    <div>
+                      <p className="font-semibold text-gray-900">{provider.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {provider.missions_completed} mission{provider.missions_completed > 1 ? 's' : ''} complétée{provider.missions_completed > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-green-600">
+                      {provider.total_earned.toFixed(2)}€
+                    </p>
+                    <p className="text-xs text-gray-500">CA généré</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Évolution mensuelle */}
+        {stats.monthly_orders.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              📈 Évolution sur 3 mois
+            </h3>
+            <div className="grid grid-cols-3 gap-4">
+              {stats.monthly_orders.map((month, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-500 mb-2">{month.month}</p>
+                  <p className="text-2xl font-bold text-gray-900 mb-1">{month.count}</p>
+                  <p className="text-sm text-gray-600">commandes</p>
+                  <p className="text-lg font-semibold text-green-600 mt-2">
+                    {month.revenue.toFixed(2)}€
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </>
+    ) : (
+      <div className="text-center py-8 text-gray-500">
+        Impossible de charger les statistiques
+      </div>
+    )}
+  </div>
+</div>
         </div>
       </div>
     </>
