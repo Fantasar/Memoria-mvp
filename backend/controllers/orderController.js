@@ -1,5 +1,6 @@
 // backend/controllers/orderController.js
 const orderService = require('../services/orderService');
+const orderRepository = require('../repositories/orderRepository');
 
 /**
  * CONTROLLER : Orchestration des commandes
@@ -511,6 +512,20 @@ const resolveDispute = async (req, res) => {
   }
 };
 
+// Statistiques pour le dashboard client
+const getDashboardStats = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const stats = await orderRepository.getDashboardStats(userId);
+
+    res.json(stats);
+  } catch (err) {
+    console.error('Erreur getDashboardStats:', err);
+    res.status(500).json({ error: 'Erreur serveur lors de la récupération des stats' });
+  }
+};
+
 
 module.exports = {
   createOrder,
@@ -524,5 +539,6 @@ module.exports = {
   validateOrder,
   getDisputedOrders,
   markAsDisputed,
+  getDashboardStats,
   resolveDispute
 };

@@ -14,7 +14,9 @@ const findByEmail = async (email) => {
     SELECT 
       u.id, 
       u.email, 
-      u.password_hash, 
+      u.password_hash,
+      u.prenom,
+      u.nom,
       r.name as role,
       u.zone_intervention, 
       u.siret,
@@ -35,7 +37,9 @@ const findById = async (userId) => {
     SELECT 
       u.id, 
       u.email, 
-      u.password_hash, 
+      u.password_hash,
+      u.prenom,
+      u.nom,
       r.name as role,
       u.zone_intervention, 
       u.siret,
@@ -62,15 +66,17 @@ const emailExists = async (email) => {
  */
 const create = async (userData) => {
   const query = `
-    INSERT INTO users (email, password_hash, role_id, zone_intervention, siret, created_at)
-    VALUES ($1, $2, $3, $4, $5, NOW())
-    RETURNING id, email, role_id, zone_intervention, siret, created_at
+    INSERT INTO users (email, password_hash, role_id, prenom, nom, zone_intervention, siret)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING id, email, role_id, prenom, nom, zone_intervention, siret, created_at
   `;
   
   const values = [
     userData.email,
     userData.password_hash,
     userData.role_id,
+    userData.prenom || null,
+    userData.nom || null,
     userData.zone_intervention || null,
     userData.siret || null
   ];
@@ -85,13 +91,15 @@ const create = async (userData) => {
 const update = async (userId, userData) => {
   const query = `
     UPDATE users 
-    SET email = $1, zone_intervention = $2, siret = $3
-    WHERE id = $4
-    RETURNING id, email, role_id, zone_intervention, siret
+    SET email = $1, prenom = $2, nom = $3, zone_intervention = $4, siret = $5, updated_at = NOW()
+    WHERE id = $6
+    RETURNING id, email, prenom, nom, role_id, zone_intervention, siret, created_at, updated_at
   `;
   
   const values = [
     userData.email,
+    userData.prenom || null,
+    userData.nom || null,
     userData.zone_intervention,
     userData.siret,
     userId

@@ -16,8 +16,9 @@ import DashboardAdmin from './pages/dashboards/DashboardAdmin';
 import NewOrder from './pages/orders/NewOrder';
 import OrderDetails from './pages/orders/OrderDetails';
 import Checkout from './pages/orders/Checkout';
-import OrderHistory from './pages/orders/OrderHistory';
 import MesMissions from './pages/MesMissions';
+import CompleteMission from './pages/CompleteMission';
+
 
 function App() {
   return (
@@ -39,6 +40,8 @@ function App() {
             } 
           />
 
+          <Route path="/missions/:id/complete" element={<ProtectedRoute><CompleteMission /></ProtectedRoute>} />
+          
           {/* Route protégée - Nouvelle commande - Client */}
           <Route 
             path="/orders/new" 
@@ -68,16 +71,6 @@ function App() {
                 </ProtectedRoute>
               } 
           />
-
-          {/* Route protégée - Historique commandes (Client uniquement) */}
-            <Route 
-              path="/orders/history" 
-              element={
-                <ProtectedRoute allowedRoles={['client']}>
-                  <OrderHistory />
-                </ProtectedRoute>
-              } 
-            />
 
           {/* Routes protégées - Prestataire */}
           <Route 
