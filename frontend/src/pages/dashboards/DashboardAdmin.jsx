@@ -14,6 +14,9 @@ function DashboardAdmin() {
   const [pendingOrders, setPendingOrders] = useState([]);
   const [disputedOrders, setDisputedOrders] = useState([]);
   const [orderPhotos, setOrderPhotos] = useState({});
+  const [allOrders, setAllOrders] = useState([]);
+  const [loadingAllOrders, setLoadingAllOrders] = useState(true);
+  const [historyFilter, setHistoryFilter] = useState('all');
 
   // States pour les modals
   const [showRejectModal, setShowRejectModal] = useState(null);
@@ -34,6 +37,7 @@ function DashboardAdmin() {
     fetchPendingProviders();
     fetchPendingOrders();
     fetchDisputedOrders();
+    fetchAllOrders();
   }, []);
 
   // ============================================
@@ -51,6 +55,20 @@ function DashboardAdmin() {
       console.error('Erreur stats:', err);
     } finally {
       setLoadingStats(false);
+    }
+  };
+
+  const fetchAllOrders = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/orders', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAllOrders(response.data.data || []);
+    } catch (err) {
+      console.error('Erreur historique:', err);
+    } finally {
+      setLoadingAllOrders(false);
     }
   };
 
@@ -217,6 +235,25 @@ function DashboardAdmin() {
     setSelectedOrder(selectedOrder === orderId ? null : orderId);
   };
 
+// Config des badges de statut
+const statusConfig = {
+  pending: { label: '⏳ En attente', color: 'bg-yellow-100 text-yellow-800' },
+  paid: { label: '💳 Payée', color: 'bg-blue-100 text-blue-800' },
+  accepted: { label: '🔄 Acceptée', color: 'bg-green-100 text-green-800' },
+  in_progress: { label: '🔄 En cours', color: 'bg-purple-100 text-purple-800' },
+  awaiting_validation: { label: '⏰ À valider', color: 'bg-orange-100 text-orange-800' },
+  completed: { label: '✅ Terminée', color: 'bg-green-200 text-green-900' },
+  disputed: { label: '🚨 Litige', color: 'bg-red-100 text-red-800' },
+  cancelled: { label: '❌ Annulée', color: 'bg-gray-100 text-gray-800' },
+  refunded: { label: '💸 Remboursée', color: 'bg-indigo-100 text-indigo-800' },
+};
+
+// Commandes filtrées selon le statut sélectionné
+const filteredOrders = historyFilter === 'all' 
+  ? allOrders 
+  : allOrders.filter(order => order.status === historyFilter);
+
+
   // ============================================
   // SECTIONS CONTENT
   // ============================================
@@ -302,6 +339,89 @@ function DashboardAdmin() {
           </>
         ) : (
           <p className="text-center text-gray-500 py-12">Impossible de charger les statistiques</p>
+        )}
+      </div>
+    ),
+
+    history: (
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-semibold">Historique de la plateforme</h2>
+          <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+            {allOrders.length} commande{allOrders.length > 1 ? 's' : ''} au total
+          </span>
+        </div>
+
+        {/* Filtres */}
+        <div className="flex gap-3 mb-6 flex-wrap">
+          {['all', 'pending', 'paid', 'accepted', 'awaiting_validation', 'completed', 'disputed', 'cancelled', 'refunded'].map(status => (
+            <button
+              key={status}
+              onClick={() => setHistoryFilter(status)}
+              className={`px-3 py-1 rounded-full text-sm font-medium transition ${
+                historyFilter === status 
+                  ? 'bg-purple-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {status === 'all' && 'Toutes'}
+              {status === 'pending' && '⏳ En attente'}
+              {status === 'paid' && '💳 Payées'}
+              {status === 'accepted' && '🔄 Acceptées'}
+              {status === 'awaiting_validation' && '⏰ À valider'}
+              {status === 'completed' && '✅ Terminées'}
+              {status === 'disputed' && '🚨 Litiges'}
+              {status === 'cancelled' && '❌ Annulées'}
+              {status === 'refunded' && '💸 Remboursées'}
+            </button>
+          ))}
+        </div>
+
+        {loadingAllOrders ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <p className="text-gray-600">Aucune commande trouvée</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredOrders.map(order => (
+              <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-semibold">{order.cemetery_name || 'Cimetière'}</h3>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${statusConfig[order.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                      {statusConfig[order.status]?.label || order.status}
+                    </span>
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-500">Client</p>
+                    <p className="font-medium">{order.client_email || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Prestataire</p>
+                    <p className="font-medium">{order.prestataire_email || 'Non assigné'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Service</p>
+                    <p className="font-medium">{order.service_name || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Montant</p>
+                    <p className="font-medium text-green-600">{order.price ? `${parseFloat(order.price).toFixed(2)}€` : '-'}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     ),
@@ -631,6 +751,9 @@ function DashboardAdmin() {
           </button>
           <button onClick={() => setActiveSection('providers')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'providers' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Prestataires ({pendingProviders.length})
+          </button>
+          <button onClick={() => setActiveSection('history')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'history' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Historique ({allOrders.length})
           </button>
         </aside>
 
