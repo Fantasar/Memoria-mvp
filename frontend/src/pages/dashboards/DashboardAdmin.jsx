@@ -30,6 +30,10 @@ function DashboardAdmin() {
   const [loadingProviders, setLoadingProviders] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [loadingDisputes, setLoadingDisputes] = useState(true);
+  const [allPhotos, setAllPhotos] = useState([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(true);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [photoFilter, setPhotoFilter] = useState('all');
 
   // Charger toutes les données au montage
   useEffect(() => {
@@ -38,6 +42,7 @@ function DashboardAdmin() {
     fetchPendingOrders();
     fetchDisputedOrders();
     fetchAllOrders();
+    fetchAllPhotos();
   }, []);
 
   // ============================================
@@ -55,6 +60,20 @@ function DashboardAdmin() {
       console.error('Erreur stats:', err);
     } finally {
       setLoadingStats(false);
+    }
+  };
+
+  const fetchAllPhotos = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get('/api/photos', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAllPhotos(response.data.data || []);
+    } catch (err) {
+      console.error('Erreur galerie photos:', err);
+    } finally {
+      setLoadingPhotos(false);
     }
   };
 
@@ -235,24 +254,28 @@ function DashboardAdmin() {
     setSelectedOrder(selectedOrder === orderId ? null : orderId);
   };
 
-// Config des badges de statut
-const statusConfig = {
-  pending: { label: '⏳ En attente', color: 'bg-yellow-100 text-yellow-800' },
-  paid: { label: '💳 Payée', color: 'bg-blue-100 text-blue-800' },
-  accepted: { label: '🔄 Acceptée', color: 'bg-green-100 text-green-800' },
-  in_progress: { label: '🔄 En cours', color: 'bg-purple-100 text-purple-800' },
-  awaiting_validation: { label: '⏰ À valider', color: 'bg-orange-100 text-orange-800' },
-  completed: { label: '✅ Terminée', color: 'bg-green-200 text-green-900' },
-  disputed: { label: '🚨 Litige', color: 'bg-red-100 text-red-800' },
-  cancelled: { label: '❌ Annulée', color: 'bg-gray-100 text-gray-800' },
-  refunded: { label: '💸 Remboursée', color: 'bg-indigo-100 text-indigo-800' },
-};
+  // Config des badges de statut
+  const statusConfig = {
+    pending: { label: '⏳ En attente', color: 'bg-yellow-100 text-yellow-800' },
+    paid: { label: '💳 Payée', color: 'bg-blue-100 text-blue-800' },
+    accepted: { label: '🔄 Acceptée', color: 'bg-green-100 text-green-800' },
+    in_progress: { label: '🔄 En cours', color: 'bg-purple-100 text-purple-800' },
+    awaiting_validation: { label: '⏰ À valider', color: 'bg-orange-100 text-orange-800' },
+    completed: { label: '✅ Terminée', color: 'bg-green-200 text-green-900' },
+    disputed: { label: '🚨 Litige', color: 'bg-red-100 text-red-800' },
+    cancelled: { label: '❌ Annulée', color: 'bg-gray-100 text-gray-800' },
+    refunded: { label: '💸 Remboursée', color: 'bg-indigo-100 text-indigo-800' },
+  };
 
-// Commandes filtrées selon le statut sélectionné
-const filteredOrders = historyFilter === 'all' 
-  ? allOrders 
-  : allOrders.filter(order => order.status === historyFilter);
+  // Commandes filtrées selon le statut sélectionné
+  const filteredOrders = historyFilter === 'all' 
+    ? allOrders 
+    : allOrders.filter(order => order.status === historyFilter);
 
+  // Filtre les photos pour la galerie
+  const filteredPhotos = photoFilter === 'all'
+    ? allPhotos
+    : allPhotos.filter(photo => (photo.photo_type || photo.type) === photoFilter);
 
   // ============================================
   // SECTIONS CONTENT
@@ -425,6 +448,169 @@ const filteredOrders = historyFilter === 'all'
         )}
       </div>
     ),
+
+    gallery: (
+  <div>
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-2xl font-semibold">Galerie photos</h2>
+      <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+        {allPhotos.length} photo{allPhotos.length > 1 ? 's' : ''}
+      </span>
+    </div>
+
+    {/* Filtres avant/après */}
+    <div className="flex gap-3 mb-6">
+      {['all', 'before', 'after'].map(type => (
+        <button
+          key={type}
+          onClick={() => setPhotoFilter(type)}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+            photoFilter === type
+              ? 'bg-purple-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          {type === 'all' && '🖼️ Toutes'}
+          {type === 'before' && '📸 Avant'}
+          {type === 'after' && '✨ Après'}
+        </button>
+      ))}
+    </div>
+
+    {loadingPhotos ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    ) : filteredPhotos.length === 0 ? (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">Aucune photo disponible</p>
+      </div>
+    ) : (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {filteredPhotos.map(photo => (
+          <div 
+            key={photo.id} 
+            className="group relative cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition"
+            onClick={() => setSelectedPhoto(photo)}
+          >
+            {/* Image */}
+            <img 
+              src={photo.url} 
+              alt={`${photo.photo_type} - ${photo.cemetery_name}`}
+              className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+
+            {/* Badge type */}
+            <div className="absolute top-2 left-2">
+              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                (photo.photo_type || photo.type) === 'before' 
+                  ? 'bg-yellow-500 text-white' 
+                  : 'bg-green-500 text-white'
+              }`}>
+                {photo.photo_type === 'before' ? '📸 Avant' : '✨ Après'}
+              </span>
+            </div>
+
+            {/* Overlay avec infos */}
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-end">
+              <div className="p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <p className="text-sm font-semibold">{photo.cemetery_name}</p>
+                <p className="text-xs opacity-80">{photo.cemetery_city}</p>
+                <p className="text-xs opacity-80">{photo.service_name}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* LIGHTBOX */}
+    {selectedPhoto && (
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+        onClick={() => setSelectedPhoto(null)}
+      >
+        <div 
+          className="bg-white rounded-xl max-w-4xl w-full max-h-screen overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header lightbox */}
+          <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center gap-3">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                selectedPhoto.photo_type === 'before'
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-green-100 text-green-800'
+              }`}>
+                {selectedPhoto.photo_type === 'before' ? '📸 Avant' : '✨ Après'}
+              </span>
+              <h3 className="font-semibold text-gray-900">{selectedPhoto.cemetery_name}</h3>
+            </div>
+            <button 
+              onClick={() => setSelectedPhoto(null)}
+              className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Image grande */}
+          <div className="p-4">
+            <img 
+              src={selectedPhoto.url} 
+              alt="Photo intervention" 
+              className="w-full max-h-96 object-contain rounded-lg"
+            />
+          </div>
+
+          {/* Infos détaillées */}
+          <div className="p-4 border-t bg-gray-50 rounded-b-xl">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500">Cimetière</p>
+                <p className="font-medium">{selectedPhoto.cemetery_name}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Ville</p>
+                <p className="font-medium">{selectedPhoto.cemetery_city}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Service</p>
+                <p className="font-medium">{selectedPhoto.service_name}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Prestataire</p>
+                <p className="font-medium">
+                  {selectedPhoto.prestataire_prenom && selectedPhoto.prestataire_nom
+                    ? `${selectedPhoto.prestataire_prenom} ${selectedPhoto.prestataire_nom}`
+                    : selectedPhoto.prestataire_email || 'Non assigné'}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500">Statut commande</p>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${statusConfig[selectedPhoto.order_status]?.color}`}>
+                  {statusConfig[selectedPhoto.order_status]?.label}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-500">Uploadée le</p>
+                <p className="font-medium">{new Date(selectedPhoto.uploaded_at).toLocaleDateString('fr-FR')}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Montant</p>
+                <p className="font-medium text-green-600">{selectedPhoto.price ? `${parseFloat(selectedPhoto.price).toFixed(2)}€` : '-'}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Client</p>
+                <p className="font-medium">{selectedPhoto.client_email}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+),
 
     disputes: (
       <div>
@@ -751,6 +937,9 @@ const filteredOrders = historyFilter === 'all'
           </button>
           <button onClick={() => setActiveSection('providers')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'providers' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Prestataires ({pendingProviders.length})
+          </button>
+          <button onClick={() => setActiveSection('gallery')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'gallery' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Galerie photos ({allPhotos.length})
           </button>
           <button onClick={() => setActiveSection('history')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'history' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Historique ({allOrders.length})
