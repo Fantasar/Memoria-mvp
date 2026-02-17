@@ -121,7 +121,21 @@ const getOrderPhotos = async (orderId, userId, userRole) => {
   return await photoRepository.findByOrderId(orderId);
 };
 
+const getAllPhotos = async (userId, role) => {
+  // Logique métier : vérifier que c'est un admin
+  if (role !== 'admin') {
+    const error = new Error('Accès réservé aux administrateurs');
+    error.statusCode = 403;
+    error.code = 'FORBIDDEN';
+    throw error;
+  }
+
+  // Déléguer la requête SQL au repository
+  return await photoRepository.getAllPhotos();
+};
+
 module.exports = {
   uploadPhoto,
-  getOrderPhotos
+  getOrderPhotos,
+  getAllPhotos
 };

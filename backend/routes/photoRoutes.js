@@ -35,4 +35,11 @@ router.get(
   photoController.getOrderPhotos
 );
 
+// GET toutes les photos (admin uniquement)
+router.get(
+  '/',
+  authenticateToken,
+  photoController.getAllPhotos
+);
+
 module.exports = router;
