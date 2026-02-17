@@ -25,6 +25,29 @@ const findAllActive = async () => {
 };
 
 /**
+ * Récupérer toutes les catégories (admin) avec compteur commandes
+ */
+const findAll = async () => {
+  const query = `
+    SELECT 
+      sc.id,
+      sc.name,
+      sc.description,
+      sc.base_price,
+      sc.is_active,
+      sc.created_at,
+      sc.updated_at,
+      COUNT(o.id) as orders_count
+    FROM service_categories sc
+    LEFT JOIN orders o ON o.service_category_id = sc.id
+    GROUP BY sc.id
+    ORDER BY sc.name ASC
+  `;
+  const result = await pool.query(query);
+  return result.rows;
+};
+
+/**
  * Vérifier si une catégorie existe et est active
  */
 const existsById = async (categoryId) => {
@@ -54,5 +77,6 @@ const getPriceById = async (categoryId) => {
 module.exports = {
   findAllActive,
   existsById,
-  getPriceById
+  getPriceById,
+  findAll
 };

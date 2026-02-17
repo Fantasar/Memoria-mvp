@@ -18,6 +18,29 @@ function DashboardAdmin() {
   const [loadingAllOrders, setLoadingAllOrders] = useState(true);
   const [historyFilter, setHistoryFilter] = useState('all');
 
+  //Gestion des sous onglet pour les Utilisateurs
+  const [clients, setClients] = useState([]);
+  const [providers, setProviders] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [usersTab, setUsersTab] = useState('clients');
+  const [searchUsers, setSearchUsers] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  //Gestion des cimetières - Ajout
+  const [showAddCemetery, setShowAddCemetery] = useState(false);
+  const [selectedCemetery, setSelectedCemetery] = useState(null);
+  const [newCemetery, setNewCemetery] = useState({ name: '', city: '', postal_code: '', department: '' });
+  const [addingCemetery, setAddingCemetery] = useState(false);
+
+  // Gestion des onglets finances - Cimetière - Service
+  const [finances, setFinances] = useState(null);
+  const [cemeteries, setCemeteries] = useState([]);
+  const [services, setServices] = useState([]);
+  const [loadingFinances, setLoadingFinances] = useState(true);
+  const [loadingCemeteries, setLoadingCemeteries] = useState(true);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [searchCemeteries, setSearchCemeteries] = useState('');
+
   // States pour les modals
   const [showRejectModal, setShowRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -43,6 +66,10 @@ function DashboardAdmin() {
     fetchDisputedOrders();
     fetchAllOrders();
     fetchAllPhotos();
+    fetchAllUsers();
+    fetchFinances();
+    fetchCemeteries();
+    fetchServices();
   }, []);
 
   // ============================================
@@ -150,6 +177,66 @@ function DashboardAdmin() {
       console.error('Erreur photos:', err);
     }
   };
+
+  const fetchAllUsers = async () => {
+  try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/admin/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+    const allUsers = response.data.data || [];
+      setClients(allUsers.filter(u => u.role === 'client'));
+      setProviders(allUsers.filter(u => u.role === 'prestataire'));
+    } catch (err) {
+      console.error('Erreur utilisateurs:', err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const fetchFinances = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get('/api/stats', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setFinances(response.data.data);
+  } catch (err) {
+    console.error('Erreur finances:', err);
+  } finally {
+    setLoadingFinances(false);
+  }
+};
+
+const fetchCemeteries = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get('/api/cemeteries', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setCemeteries(response.data.data || []);
+  } catch (err) {
+    console.error('Erreur cimetières:', err);
+  } finally {
+    setLoadingCemeteries(false);
+  }
+};
+
+const fetchServices = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get('/api/service-categories/admin', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setServices(response.data.data || []);
+  } catch (err) {
+    console.error('Erreur services:', err);
+  } finally {
+    setLoadingServices(false);
+  }
+};
+
 
   // ============================================
   // ACTIONS HANDLERS
@@ -277,6 +364,40 @@ function DashboardAdmin() {
     ? allPhotos
     : allPhotos.filter(photo => (photo.photo_type || photo.type) === photoFilter);
 
+  const filteredClients = clients.filter(c =>
+    `${c.prenom} ${c.nom} ${c.email}`.toLowerCase().includes(searchUsers.toLowerCase())
+  );
+
+  const filteredProviders = providers.filter(p =>
+    `${p.prenom} ${p.nom} ${p.email} ${p.siret || ''} ${p.zone_intervention || ''}`.toLowerCase().includes(searchUsers.toLowerCase())
+  );
+
+  const filteredCemeteries = cemeteries.filter(c =>
+    `${c.name} ${c.city} ${c.department || ''}`.toLowerCase().includes(searchCemeteries.toLowerCase())
+  );
+
+  const handleAddCemetery = async (e) => {
+  e.preventDefault();
+  if (!newCemetery.name || !newCemetery.city) {
+    alert('Nom et ville sont obligatoires');
+    return;
+  }
+  setAddingCemetery(true);
+  try {
+    const token = localStorage.getItem('token');
+    await axios.post('/api/cemeteries', newCemetery, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    alert('Cimetière ajouté !');
+    setShowAddCemetery(false);
+    setNewCemetery({ name: '', city: '', postal_code: '', department: '' });
+    fetchCemeteries();
+  } catch (err) {
+    alert(err.response?.data?.error?.message || 'Erreur lors de l\'ajout');
+  } finally {
+    setAddingCemetery(false);
+  }
+};
   // ============================================
   // SECTIONS CONTENT
   // ============================================
@@ -612,6 +733,685 @@ function DashboardAdmin() {
   </div>
 ),
 
+finances: (
+  <div>
+    <h2 className="text-2xl font-semibold mb-6">Finances</h2>
+
+    {loadingFinances ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    ) : finances ? (
+      <>
+        {/* KPIs financiers */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg">
+            <h3 className="text-sm font-medium opacity-90 mb-2">💰 CA Total plateforme</h3>
+            <p className="text-4xl font-bold mb-1">{finances.revenue.total.toFixed(2)}€</p>
+            <p className="text-sm opacity-80">{finances.revenue.paid_orders} commandes payées</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+            <h3 className="text-sm font-medium opacity-90 mb-2">🏦 Commission Mémoria (20%)</h3>
+            <p className="text-4xl font-bold mb-1">
+              {(finances.revenue.total * 0.20).toFixed(2)}€
+            </p>
+            <p className="text-sm opacity-80">Revenus de la plateforme</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg">
+            <h3 className="text-sm font-medium opacity-90 mb-2">👷 Reversé prestataires (80%)</h3>
+            <p className="text-4xl font-bold mb-1">
+              {(finances.revenue.total * 0.80).toFixed(2)}€
+            </p>
+            <p className="text-sm opacity-80">Total reversé</p>
+          </div>
+        </div>
+
+        {/* Répartition par statut */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
+          <h3 className="text-lg font-semibold mb-4">Répartition financière par statut</h3>
+          <div className="space-y-3">
+            {[
+              { label: '✅ Commandes terminées', status: 'completed', color: 'bg-green-500' },
+              { label: '💳 Commandes payées', status: 'paid', color: 'bg-blue-500' },
+              { label: '💸 Commandes remboursées', status: 'refunded', color: 'bg-red-500' },
+              { label: '🚨 Commandes en litige', status: 'disputed', color: 'bg-orange-500' },
+            ].map(item => {
+              const count = finances.orders.by_status[item.status] || 0;
+              const total = finances.orders.total || 1;
+              const percentage = Math.round((count / total) * 100);
+              return (
+                <div key={item.status}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-700">{item.label}</span>
+                    <span className="font-medium">{count} commande{count > 1 ? 's' : ''} ({percentage}%)</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div
+                      className={`${item.color} h-2 rounded-full transition-all`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Évolution mensuelle */}
+        {finances.monthly_orders?.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">📈 Évolution mensuelle</h3>
+            <div className="grid grid-cols-3 gap-4">
+              {finances.monthly_orders.map((month, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 text-center">
+                  <p className="text-sm text-gray-500 mb-2">{month.month}</p>
+                  <p className="text-2xl font-bold text-gray-900 mb-1">{month.count}</p>
+                  <p className="text-xs text-gray-500 mb-2">commandes</p>
+                  <p className="text-lg font-semibold text-green-600">{month.revenue.toFixed(2)}€</p>
+                  <p className="text-xs text-purple-600">
+                    Commission: {(month.revenue * 0.20).toFixed(2)}€
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </>
+    ) : (
+      <p className="text-center text-gray-500 py-12">Impossible de charger les données financières</p>
+    )}
+  </div>
+),
+
+cemeteries: (
+  <div>
+    {/* Header */}
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-2xl font-semibold">Cimetières</h2>
+      <div className="flex items-center gap-3">
+        <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+          {cemeteries.length} cimetière{cemeteries.length > 1 ? 's' : ''}
+        </span>
+        <button
+          onClick={() => setShowAddCemetery(true)}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+        >
+          + Ajouter
+        </button>
+      </div>
+    </div>
+
+    {/* Barre de recherche */}
+    <div className="relative mb-6">
+      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="text"
+        value={searchCemeteries}
+        onChange={(e) => setSearchCemeteries(e.target.value)}
+        placeholder="Rechercher par nom, ville, département..."
+        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+      />
+      {searchCemeteries && (
+        <button onClick={() => setSearchCemeteries('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>
+      )}
+    </div>
+
+    {loadingCemeteries ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    ) : filteredCemeteries.length === 0 ? (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">{searchCemeteries ? 'Aucun résultat' : 'Aucun cimetière référencé'}</p>
+      </div>
+    ) : (
+      <div className="space-y-3">
+        {filteredCemeteries.map(cemetery => (
+          <div
+            key={cemetery.id}
+            onClick={() => setSelectedCemetery(cemetery)}
+            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-purple-300 transition cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl">⛪</div>
+                <div>
+                  <p className="font-semibold text-gray-900">{cemetery.name}</p>
+                  <p className="text-sm text-gray-500">
+                    📍 {cemetery.city}
+                    {cemetery.postal_code ? ` — ${cemetery.postal_code}` : ''}
+                    {cemetery.department ? ` (${cemetery.department})` : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                {cemetery.orders_count !== undefined && (
+                  <div className="text-right">
+                    <p className="text-gray-500">Commandes</p>
+                    <p className="font-bold text-purple-600">{cemetery.orders_count}</p>
+                  </div>
+                )}
+                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* ===== MODAL FICHE CIMETIÈRE ===== */}
+    {selectedCemetery && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedCemetery(null)}>
+        <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between p-6 border-b">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center text-3xl">⛪</div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">{selectedCemetery.name}</h3>
+                <p className="text-sm text-gray-500">📍 {selectedCemetery.city}</p>
+              </div>
+            </div>
+            <button onClick={() => setSelectedCemetery(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Informations</h4>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Nom</span>
+                  <span className="font-medium">{selectedCemetery.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Ville</span>
+                  <span className="font-medium">{selectedCemetery.city}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Code postal</span>
+                  <span className="font-medium">{selectedCemetery.postal_code || 'Non renseigné'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Département</span>
+                  <span className="font-medium">{selectedCemetery.department || 'Non renseigné'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Adresse</span>
+                  <span className="font-medium">{selectedCemetery.address || 'Non renseignée'}</span>
+                </div>
+                {selectedCemetery.orders_count !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Nb commandes</span>
+                    <span className="font-bold text-purple-600">{selectedCemetery.orders_count}</span>
+                  </div>
+                )}
+                {selectedCemetery.created_at && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Ajouté le</span>
+                    <span className="font-medium">
+                      {new Date(selectedCemetery.created_at).toLocaleDateString('fr-FR')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 border-t bg-gray-50 rounded-b-xl">
+            <button onClick={() => setSelectedCemetery(null)} className="w-full px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ===== MODAL AJOUT CIMETIÈRE ===== */}
+    {showAddCemetery && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowAddCemetery(false)}>
+        <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between p-6 border-b">
+            <h3 className="text-xl font-bold text-gray-900">Ajouter un cimetière</h3>
+            <button onClick={() => setShowAddCemetery(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
+          </div>
+
+          <form onSubmit={handleAddCemetery} className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nom <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={newCemetery.name}
+                onChange={e => setNewCemetery({ ...newCemetery, name: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Cimetière de..."
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Ville <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={newCemetery.city}
+                onChange={e => setNewCemetery({ ...newCemetery, city: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Bordeaux"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Code postal</label>
+                <input
+                  type="text"
+                  value={newCemetery.postal_code}
+                  onChange={e => setNewCemetery({ ...newCemetery, postal_code: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="33000"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Département</label>
+                <input
+                  type="text"
+                  value={newCemetery.department}
+                  onChange={e => setNewCemetery({ ...newCemetery, department: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Gironde"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t">
+              <button
+                type="button"
+                onClick={() => setShowAddCemetery(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={addingCemetery}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
+              >
+                {addingCemetery ? 'Ajout...' : '+ Ajouter'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+  </div>
+),
+
+services: (
+  <div>
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-2xl font-semibold">Services</h2>
+      <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+        {services.length} service{services.length > 1 ? 's' : ''}
+      </span>
+    </div>
+
+    {loadingServices ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    ) : services.length === 0 ? (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">Aucun service référencé</p>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {services.map(service => (
+          <div key={service.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-2xl">
+                  🌿
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">{service.name}</p>
+                  {service.description && (
+                    <p className="text-sm text-gray-500 mt-1">{service.description}</p>
+                  )}
+                </div>
+              </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                service.is_active !== false
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {service.is_active !== false ? '✅ Actif' : '❌ Inactif'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-sm border-t border-gray-100 pt-4">
+              <div>
+                <p className="text-gray-500">Prix de base</p>
+                <p className="font-bold text-green-600 text-lg">
+                  {service.base_price ? `${parseFloat(service.base_price).toFixed(2)}€` : '-'}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500">Commission (20%)</p>
+                <p className="font-bold text-purple-600 text-lg">
+                  {service.base_price ? `${(parseFloat(service.base_price) * 0.20).toFixed(2)}€` : '-'}
+                </p>
+              </div>
+              {service.orders_count !== undefined && (
+                <div>
+                  <p className="text-gray-500">Commandes totales</p>
+                  <p className="font-medium text-gray-900">{service.orders_count}</p>
+                </div>
+              )}
+              {service.duration_minutes && (
+                <div>
+                  <p className="text-gray-500">Durée estimée</p>
+                  <p className="font-medium text-gray-900">{service.duration_minutes} min</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+),
+
+
+users: (
+  <div>
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-2xl font-semibold">Utilisateurs</h2>
+      <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+        {clients.length + providers.length} utilisateurs
+      </span>
+    </div>
+
+    {/* Barre de recherche */}
+    <div className="relative mb-6">
+      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="text"
+        value={searchUsers}
+        onChange={(e) => setSearchUsers(e.target.value)}
+        placeholder="Rechercher par nom, email, SIRET, zone..."
+        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+      />
+      {searchUsers && (
+        <button
+          onClick={() => setSearchUsers('')}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+
+    {/* Sous-onglets */}
+    <div className="flex gap-2 mb-6 border-b border-gray-200">
+      <button
+        onClick={() => setUsersTab('clients')}
+        className={`px-6 py-3 font-medium text-sm transition border-b-2 -mb-px ${
+          usersTab === 'clients'
+            ? 'border-purple-600 text-purple-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        👥 Clients ({filteredClients.length})
+      </button>
+      <button
+        onClick={() => setUsersTab('providers')}
+        className={`px-6 py-3 font-medium text-sm transition border-b-2 -mb-px ${
+          usersTab === 'providers'
+            ? 'border-purple-600 text-purple-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        🔧 Prestataires ({filteredProviders.length})
+      </button>
+    </div>
+
+    {loadingUsers ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    ) : (
+      <>
+        {/* ===== LISTE CLIENTS ===== */}
+        {usersTab === 'clients' && (
+          <div>
+            {filteredClients.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">
+                  {searchUsers ? 'Aucun résultat pour cette recherche' : 'Aucun client inscrit'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredClients.map(client => (
+                  <div
+                    key={client.id}
+                    onClick={() => setSelectedUser(client)}
+                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-purple-300 transition cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg">
+                          {client.prenom?.[0]}{client.nom?.[0]}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{client.prenom} {client.nom}</p>
+                          <p className="text-sm text-gray-500">{client.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6 text-sm">
+                        <div className="text-right">
+                          <p className="text-gray-500">Inscrit le</p>
+                          <p className="font-medium">{new Date(client.created_at).toLocaleDateString('fr-FR')}</p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          client.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {client.is_verified ? '✅ Vérifié' : '⏳ Non vérifié'}
+                        </span>
+                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== LISTE PRESTATAIRES ===== */}
+        {usersTab === 'providers' && (
+          <div>
+            {filteredProviders.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">
+                  {searchUsers ? 'Aucun résultat pour cette recherche' : 'Aucun prestataire inscrit'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredProviders.map(provider => (
+                  <div
+                    key={provider.id}
+                    onClick={() => setSelectedUser(provider)}
+                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-purple-300 transition cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-lg">
+                          {provider.prenom?.[0]}{provider.nom?.[0]}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{provider.prenom} {provider.nom}</p>
+                          <p className="text-sm text-gray-500">{provider.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6 text-sm">
+                        <div className="text-right">
+                          <p className="text-gray-500">Zone</p>
+                          <p className="font-medium">{provider.zone_intervention || 'Non définie'}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-gray-500">Note</p>
+                          <p className="font-medium">{provider.rating ? `⭐ ${provider.rating}` : '-'}</p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          provider.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {provider.is_verified ? '✅ Vérifié' : '⏳ En attente'}
+                        </span>
+                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                    {provider.rejection_reason && (
+                      <div className="mt-3 pt-3 border-t border-red-100 bg-red-50 rounded p-2">
+                        <p className="text-xs text-red-700">❌ Rejeté : {provider.rejection_reason}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </>
+    )}
+
+    {/* ===== MODAL FICHE UTILISATEUR ===== */}
+    {selectedUser && (
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+        onClick={() => setSelectedUser(null)}
+      >
+        <div
+          className="bg-white rounded-xl max-w-lg w-full shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header modal */}
+          <div className="flex items-center justify-between p-6 border-b">
+            <div className="flex items-center gap-4">
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl ${
+                selectedUser.role === 'client' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
+              }`}>
+                {selectedUser.prenom?.[0]}{selectedUser.nom?.[0]}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  {selectedUser.prenom} {selectedUser.nom}
+                </h3>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  selectedUser.role === 'client' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                }`}>
+                  {selectedUser.role === 'client' ? '👥 Client' : '🔧 Prestataire'}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedUser(null)}
+              className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Contenu modal */}
+          <div className="p-6 space-y-4">
+
+            {/* Infos générales */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Informations générales</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Email</span>
+                  <span className="font-medium">{selectedUser.email}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Inscrit le</span>
+                  <span className="font-medium">
+                    {new Date(selectedUser.created_at).toLocaleDateString('fr-FR', {
+                      day: 'numeric', month: 'long', year: 'numeric'
+                    })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Statut</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    selectedUser.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {selectedUser.is_verified ? '✅ Vérifié' : '⏳ Non vérifié'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Infos prestataire uniquement */}
+            {selectedUser.role === 'prestataire' && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Informations professionnelles</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">SIRET</span>
+                    <span className="font-medium">{selectedUser.siret || 'Non renseigné'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Zone d'intervention</span>
+                    <span className="font-medium">{selectedUser.zone_intervention || 'Non définie'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Note moyenne</span>
+                    <span className="font-medium">
+                      {selectedUser.rating ? `⭐ ${selectedUser.rating} / 5` : 'Pas encore noté'}
+                    </span>
+                  </div>
+                  {selectedUser.rejection_reason && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Motif rejet</span>
+                      <span className="font-medium text-red-600">{selectedUser.rejection_reason}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+          </div>
+
+          {/* Footer modal */}
+          <div className="p-6 border-t bg-gray-50 rounded-b-xl">
+            <button
+              onClick={() => setSelectedUser(null)}
+              className="w-full px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+),
     disputes: (
       <div>
         <div className="flex items-center justify-between mb-6">
@@ -938,8 +1738,20 @@ function DashboardAdmin() {
           <button onClick={() => setActiveSection('providers')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'providers' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Prestataires ({pendingProviders.length})
           </button>
+          <button onClick={() => setActiveSection('users')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'users' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Utilisateurs ({clients.length + providers.length})
+          </button>
           <button onClick={() => setActiveSection('gallery')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'gallery' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Galerie photos ({allPhotos.length})
+          </button>
+          <button onClick={() => setActiveSection('finances')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'finances' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Finances
+          </button>
+          <button onClick={() => setActiveSection('cemeteries')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'cemeteries' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Cimetières ({cemeteries.length})
+          </button>
+          <button onClick={() => setActiveSection('services')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'services' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Services ({services.length})
           </button>
           <button onClick={() => setActiveSection('history')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'history' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Historique ({allOrders.length})
