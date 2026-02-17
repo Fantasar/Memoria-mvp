@@ -301,6 +301,47 @@ const resolveDispute = async (orderId, newStatus, action) => {
   return result.rows[0];
 };
 
+const getDashboardStats = async (userId) => {
+  console.log('📊 Repository: calcul stats pour userId:', userId);
+
+  // Commandes en cours
+  const inProgressQuery = `
+    SELECT COUNT(*) 
+    FROM orders 
+    WHERE client_id = $1 
+      AND status NOT IN ('completed', 'cancelled', 'refunded')
+  `;
+  const inProgressResult = await pool.query(inProgressQuery, [userId]);
+
+  // Commandes terminées
+  const completedQuery = `
+    SELECT COUNT(*) 
+    FROM orders 
+    WHERE client_id = $1 
+      AND status = 'completed'
+  `;
+  const completedResult = await pool.query(completedQuery, [userId]);
+
+  // Dernière commande
+  const lastOrderQuery = `
+    SELECT created_at 
+    FROM orders 
+    WHERE client_id = $1 
+    ORDER BY created_at DESC 
+    LIMIT 1
+  `;
+  const lastOrderResult = await pool.query(lastOrderQuery, [userId]);
+
+  const stats = {
+    orders_in_progress: parseInt(inProgressResult.rows[0].count),
+    orders_completed: parseInt(completedResult.rows[0].count),
+    last_order_date: lastOrderResult.rows[0]?.created_at || null,
+  };
+
+  console.log('📊 Stats calculées:', stats);
+  return stats;
+};
+
 
 module.exports = {
   create,
@@ -315,5 +356,6 @@ module.exports = {
   findAll,
   findDisputed,
   resolveDispute,
+  getDashboardStats,
   markAsDisputed
 };

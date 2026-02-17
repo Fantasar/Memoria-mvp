@@ -78,11 +78,19 @@ router.patch('/:id/dispute', authenticateToken, orderController.markAsDisputed);
 router.patch('/:id/resolve', authenticateToken, orderController.resolveDispute);
 
 /**
+ * @route   GET /api//dashboard-stats
+ * @desc    Récupérer les statistique
+ * @access  Private (Tous) - JWT REQUIS
+ */
+router.get('/dashboard-stats', authenticateToken, orderController.getDashboardStats);
+
+/**
  * @route   GET /api/orders/:id
  * @desc    Récupérer les détails d'une commande
  * @access  Private (Tous) - JWT REQUIS
  */
 router.get('/:id', authenticateToken, orderController.getOrderById);
+
 
 /**
  * @route   GET /api/orders

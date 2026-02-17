@@ -1,105 +1,139 @@
-// frontend/src/pages/dashboards/DashboardAdmin.jsx
-import { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
-import Header from '../../components/layout/Header';
 
-const DashboardAdmin = () => {
-  const { user } = useAuth();
+function DashboardAdmin() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState('overview');
+
+  // States pour les données
+  const [stats, setStats] = useState(null);
   const [pendingProviders, setPendingProviders] = useState([]);
   const [pendingOrders, setPendingOrders] = useState([]);
   const [disputedOrders, setDisputedOrders] = useState([]);
+  const [orderPhotos, setOrderPhotos] = useState({});
+
+  // States pour les modals
+  const [showRejectModal, setShowRejectModal] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showDisputeModal, setShowDisputeModal] = useState(null);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // Loading states
+  const [loadingStats, setLoadingStats] = useState(true);
   const [loadingProviders, setLoadingProviders] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [loadingDisputes, setLoadingDisputes] = useState(true);
-  const [error, setError] = useState(null);
-  const [showRejectModal, setShowRejectModal] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [orderPhotos, setOrderPhotos] = useState({});
-  const [showDisputeModal, setShowDisputeModal] = useState(null);
-  const [disputeReason, setDisputeReason] = useState('');
-    const [stats, setStats] = useState(null);
-  const [loadingStats, setLoadingStats] = useState(true); 
 
+  // Charger toutes les données au montage
   useEffect(() => {
+    fetchStats();
     fetchPendingProviders();
     fetchPendingOrders();
     fetchDisputedOrders();
-    fetchStats();
   }, []);
 
-  const fetchPendingProviders = async () => {
+  // ============================================
+  // FETCH FUNCTIONS
+  // ============================================
+
+  const fetchStats = async () => {
     try {
-      setLoadingProviders(true);
       const token = localStorage.getItem('token');
-      
-      const response = await axios.get(
-        'http://localhost:5500/api/providers/pending',
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      setPendingProviders(response.data.data);
-      setError(null);
-    } catch (err) {
-      console.error('Erreur chargement prestataires:', err);
-      setError('Impossible de charger les prestataires en attente');
-    } finally {
-      setLoadingProviders(false);
-    }
-  };
-
-    const fetchStats = async () => {
-    try {
-      setLoadingStats(true);
-      const token = localStorage.getItem('token');
-      
-      const response = await axios.get(
-        'http://localhost:5500/api/stats',
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
+      const response = await axios.get('/api/stats', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setStats(response.data.data);
-      
     } catch (err) {
-      console.error('Erreur chargement stats:', err);
+      console.error('Erreur stats:', err);
     } finally {
       setLoadingStats(false);
     }
   };
 
-  const handleApprove = async (providerId) => {
-    const confirm = window.confirm(
-      'Êtes-vous sûr de vouloir valider ce prestataire ? Il pourra alors accepter des missions.'
-    );
-    
-    if (!confirm) return;
-
+  const fetchPendingProviders = async () => {
     try {
       const token = localStorage.getItem('token');
-      
-      await axios.patch(
-        `http://localhost:5500/api/providers/${providerId}/approve`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      alert('Prestataire validé avec succès !');
-      fetchPendingProviders();
-      
+      const response = await axios.get('/api/providers/pending', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPendingProviders(response.data.data);
     } catch (err) {
-      console.error('Erreur validation:', err);
-      alert(err.response?.data?.error?.message || 'Erreur lors de la validation');
+      console.error('Erreur prestataires:', err);
+    } finally {
+      setLoadingProviders(false);
     }
   };
 
-  const handleReject = async (providerId) => {
+  const fetchPendingOrders = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/orders/pending-validation', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPendingOrders(response.data.data);
+      
+      // Charger les photos
+      response.data.data.forEach(order => fetchOrderPhotos(order.id));
+    } catch (err) {
+      console.error('Erreur interventions:', err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const fetchDisputedOrders = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/orders/disputed', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDisputedOrders(response.data.data);
+      
+      // Charger les photos
+      response.data.data.forEach(order => fetchOrderPhotos(order.id));
+    } catch (err) {
+      console.error('Erreur litiges:', err);
+    } finally {
+      setLoadingDisputes(false);
+    }
+  };
+
+  const fetchOrderPhotos = async (orderId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/photos/order/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOrderPhotos(prev => ({ ...prev, [orderId]: response.data.data }));
+    } catch (err) {
+      console.error('Erreur photos:', err);
+    }
+  };
+
+  // ============================================
+  // ACTIONS HANDLERS
+  // ============================================
+
+  const handleApproveProvider = async (providerId) => {
+    if (!window.confirm('Valider ce prestataire ?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(`/api/providers/${providerId}/approve`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Prestataire validé !');
+      fetchPendingProviders();
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Erreur');
+    }
+  };
+
+  const handleRejectProvider = async (providerId) => {
     if (!rejectReason.trim() || rejectReason.length < 10) {
       alert('Le motif doit contenir au moins 10 caractères');
       return;
@@ -107,134 +141,34 @@ const DashboardAdmin = () => {
 
     try {
       const token = localStorage.getItem('token');
-      
-      await axios.patch(
-        `http://localhost:5500/api/providers/${providerId}/reject`,
+      await axios.patch(`/api/providers/${providerId}/reject`, 
         { reason: rejectReason },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` }}
       );
-
       alert('Prestataire rejeté');
       setShowRejectModal(null);
       setRejectReason('');
       fetchPendingProviders();
-      
     } catch (err) {
-      console.error('Erreur rejet:', err);
-      alert(err.response?.data?.error?.message || 'Erreur lors du rejet');
+      alert(err.response?.data?.error?.message || 'Erreur');
     }
   };
 
-  const fetchPendingOrders = async () => {
-    try {
-      setLoadingOrders(true);
-      const token = localStorage.getItem('token');
-      
-      const response = await axios.get(
-        'http://localhost:5500/api/orders/pending-validation',
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      setPendingOrders(response.data.data);
-      
-      // Charger les photos pour chaque commande
-      response.data.data.forEach(order => {
-        fetchOrderPhotos(order.id);
-      });
-      
-    } catch (err) {
-      console.error('Erreur chargement interventions:', err);
-    } finally {
-      setLoadingOrders(false);
-    }
-  };
-
-  // ✅ NOUVEAU : Récupérer les photos d'une commande
-  const fetchOrderPhotos = async (orderId) => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      const response = await axios.get(
-        `http://localhost:5500/api/photos/order/${orderId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      setOrderPhotos(prev => ({
-        ...prev,
-        [orderId]: response.data.data
-      }));
-      
-    } catch (err) {
-      console.error('Erreur chargement photos:', err);
-    }
-  };
-
-  // ✅ NOUVEAU : Valider une intervention
   const handleValidateOrder = async (orderId) => {
-    const confirm = window.confirm(
-      'Êtes-vous sûr de vouloir valider cette intervention ? Le paiement sera débloqué au prestataire.'
-    );
-    
-    if (!confirm) return;
+    if (!window.confirm('Valider cette intervention ? Le paiement sera débloqué.')) return;
 
     try {
       const token = localStorage.getItem('token');
-      
-      await axios.patch(
-        `http://localhost:5500/api/orders/${orderId}/validate`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      alert('Intervention validée et paiement débloqué !');
-      fetchPendingOrders();
-      
-    } catch (err) {
-      console.error('Erreur validation:', err);
-      alert(err.response?.data?.error?.message || 'Erreur lors de la validation');
-    }
-  };
-
-  // ✅ NOUVEAU : Toggle affichage photos
-  const togglePhotos = (orderId) => {
-    setSelectedOrder(selectedOrder === orderId ? null : orderId);
-  };
-
-  const fetchDisputedOrders = async () => {
-    try {
-      setLoadingDisputes(true);
-      const token = localStorage.getItem('token');
-      
-      const response = await axios.get(
-        'http://localhost:5500/api/orders/disputed',
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      setDisputedOrders(response.data.data);
-      
-      // Charger les photos pour chaque commande
-      response.data.data.forEach(order => {
-        fetchOrderPhotos(order.id);
+      await axios.patch(`/api/orders/${orderId}/validate`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      
+      alert('Intervention validée !');
+      fetchPendingOrders();
     } catch (err) {
-      console.error('Erreur chargement litiges:', err);
-    } finally {
-      setLoadingDisputes(false);
+      alert(err.response?.data?.error?.message || 'Erreur');
     }
   };
 
-  // ✅ NOUVEAU : Marquer comme litigieux
   const handleMarkAsDisputed = async (orderId) => {
     if (!disputeReason.trim() || disputeReason.length < 10) {
       alert('Le motif doit contenir au moins 10 caractères');
@@ -243,682 +177,480 @@ const DashboardAdmin = () => {
 
     try {
       const token = localStorage.getItem('token');
-      
-      await axios.patch(
-        `http://localhost:5500/api/orders/${orderId}/dispute`,
+      await axios.patch(`/api/orders/${orderId}/dispute`,
         { reason: disputeReason },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` }}
       );
-
       alert('Commande marquée comme litigieuse');
       setShowDisputeModal(null);
       setDisputeReason('');
       fetchPendingOrders();
       fetchDisputedOrders();
-      
     } catch (err) {
-      console.error('Erreur marquage litige:', err);
-      alert(err.response?.data?.error?.message || 'Erreur lors du marquage');
+      alert(err.response?.data?.error?.message || 'Erreur');
     }
   };
 
-  // ✅ NOUVEAU : Résoudre un litige
   const handleResolveDispute = async (orderId, action) => {
     const messages = {
-      validate: 'Êtes-vous sûr de vouloir VALIDER cette intervention malgré le litige ? Le prestataire sera payé.',
-      refund: 'Êtes-vous sûr de vouloir REMBOURSER le client ? La commande sera annulée.',
-      request_correction: 'Êtes-vous sûr de demander une CORRECTION au prestataire ? Il devra re-uploader les photos.'
+      validate: 'Valider malgré le litige ?',
+      refund: 'Rembourser le client ?',
+      request_correction: 'Demander une correction ?'
     };
 
-    const confirm = window.confirm(messages[action]);
-    if (!confirm) return;
+    if (!window.confirm(messages[action])) return;
 
     try {
       const token = localStorage.getItem('token');
-      
-      await axios.patch(
-        `http://localhost:5500/api/orders/${orderId}/resolve`,
+      await axios.patch(`/api/orders/${orderId}/resolve`,
         { action },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` }}
       );
-
-      alert('Litige résolu avec succès !');
+      alert('Litige résolu !');
       fetchDisputedOrders();
-      
     } catch (err) {
-      console.error('Erreur résolution:', err);
-      alert(err.response?.data?.error?.message || 'Erreur lors de la résolution');
+      alert(err.response?.data?.error?.message || 'Erreur');
     }
   };
 
-  if (loadingProviders || loadingOrders || loadingDisputes) {
-    return (
-      <>
-        <Header />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Chargement...</p>
-          </div>
-        </div>
-      </>
-    );
-  }
+  const togglePhotos = (orderId) => {
+    setSelectedOrder(selectedOrder === orderId ? null : orderId);
+  };
 
-  return (
-    <>
-      <Header />
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Dashboard Administrateur
-            </h1>
-            <p className="mt-2 text-gray-600">
-              Bienvenue {user?.prenom} {user?.nom}
-            </p>
-          </div>
+  // ============================================
+  // SECTIONS CONTENT
+  // ============================================
 
-          {/* ✅ SECTION : Litiges */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Litiges en cours
-              </h2>
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                {disputedOrders.length} litige{disputedOrders.length > 1 ? 's' : ''}
-              </span>
+  const sections = {
+    overview: (
+      <div>
+        <h2 className="text-2xl font-semibold mb-6">Statistiques de la plateforme</h2>
+
+        {loadingStats ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : stats ? (
+          <>
+            {/* KPIs */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+                <h3 className="text-sm font-medium opacity-90 mb-2">Utilisateurs</h3>
+                <p className="text-4xl font-bold mb-2">{stats.users.total}</p>
+                <div className="text-sm opacity-90">
+                  <p>Clients: {stats.users.by_role.client || 0}</p>
+                  <p>Prestataires: {stats.users.by_role.prestataire || 0}</p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+                <h3 className="text-sm font-medium opacity-90 mb-2">Commandes</h3>
+                <p className="text-4xl font-bold mb-2">{stats.orders.total}</p>
+                <div className="text-sm opacity-90">
+                  <p>Complétées: {stats.orders.by_status.completed || 0}</p>
+                  <p>En cours: {stats.orders.by_status.accepted || 0}</p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+                <h3 className="text-sm font-medium opacity-90 mb-2">CA Total</h3>
+                <p className="text-4xl font-bold mb-2">{stats.revenue.total.toFixed(2)}€</p>
+                <div className="text-sm opacity-90">
+                  <p>{stats.revenue.paid_orders} commandes payées</p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white">
+                <h3 className="text-sm font-medium opacity-90 mb-2">Prestataires Actifs</h3>
+                <p className="text-4xl font-bold mb-2">{stats.users.by_role.prestataire || 0}</p>
+              </div>
             </div>
 
-            {disputedOrders.length === 0 ? (
-              <div className="text-center py-12">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  Aucun litige en cours
-                </h3>
-                <p className="mt-1 text-gray-500">
-                  Tous les litiges ont été résolus
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {disputedOrders.map(order => {
-                  const photos = orderPhotos[order.id] || [];
-                  const beforePhoto = photos.find(p => p.type === 'before');
-                  const afterPhoto = photos.find(p => p.type === 'after');
-
-                  return (
-                    <div key={order.id} className="border-2 border-red-200 rounded-lg p-6 bg-red-50">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {order.cemetery_name}
-                            </h3>
-                            <span className="px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">
-                              🚨 Litige
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <p className="text-sm text-gray-500">Client</p>
-                              <p className="text-sm font-medium text-gray-900">
-                                {order.client_prenom} {order.client_nom}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Prestataire</p>
-                              <p className="text-sm font-medium text-gray-900">
-                                {order.prestataire_prenom} {order.prestataire_nom}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Service</p>
-                              <p className="text-sm font-medium text-gray-900">{order.service_name}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Montant</p>
-                              <p className="text-sm font-medium text-gray-900">{order.price} €</p>
-                            </div>
-                          </div>
-
-                          <div className="mb-4 p-3 bg-white rounded border border-red-200">
-                            <p className="text-sm font-medium text-red-900 mb-1">Motif du litige :</p>
-                            <p className="text-sm text-gray-700">{order.dispute_reason}</p>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            {beforePhoto && (
-                              <div>
-                                <p className="text-sm font-medium text-gray-700 mb-2">📸 Avant</p>
-                                <img 
-                                  src={beforePhoto.url} 
-                                  alt="Avant" 
-                                  className="w-full h-48 object-cover rounded-lg border-2 border-gray-300"
-                                />
-                              </div>
-                            )}
-                            {afterPhoto && (
-                              <div>
-                                <p className="text-sm font-medium text-gray-700 mb-2">✨ Après</p>
-                                <img 
-                                  src={afterPhoto.url} 
-                                  alt="Après" 
-                                  className="w-full h-48 object-cover rounded-lg border-2 border-gray-300"
-                                />
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-3">
-                            <button
-                              onClick={() => handleResolveDispute(order.id, 'validate')}
-                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-                            >
-                              ✓ Valider quand même
-                            </button>
-                            <button
-                              onClick={() => handleResolveDispute(order.id, 'request_correction')}
-                              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-                            >
-                              🔄 Demander correction
-                            </button>
-                            <button
-                              onClick={() => handleResolveDispute(order.id, 'refund')}
-                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-                            >
-                              💸 Rembourser client
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Section Interventions à valider */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Interventions à valider
-              </h2>
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                {pendingOrders.length} en attente
-              </span>
-            </div>
-
-            {pendingOrders.length === 0 ? (
-              <div className="text-center py-12">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  Aucune intervention en attente
-                </h3>
-                <p className="mt-1 text-gray-500">
-                  Toutes les interventions ont été validées
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {pendingOrders.map(order => {
-                  const photos = orderPhotos[order.id] || [];
-                  const beforePhoto = photos.find(p => p.type === 'before');
-                  const afterPhoto = photos.find(p => p.type === 'after');
-
-                  return (
-                    <div key={order.id} className="border border-gray-200 rounded-lg p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {order.cemetery_name}
-                            </h3>
-                            <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                              En attente validation
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <p className="text-sm text-gray-500">Client</p>
-                              <p className="text-sm font-medium text-gray-900">{order.client_email}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Prestataire</p>
-                              <p className="text-sm font-medium text-gray-900">
-                                {order.prestataire_prenom} {order.prestataire_nom}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Service</p>
-                              <p className="text-sm font-medium text-gray-900">{order.service_name}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Montant</p>
-                              <p className="text-sm font-medium text-gray-900">{order.price} €</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Lieu</p>
-                              <p className="text-sm font-medium text-gray-900">{order.cemetery_city}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Terminée le</p>
-                              <p className="text-sm font-medium text-gray-900">
-                                {new Date(order.updated_at).toLocaleDateString('fr-FR')}
-                              </p>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={() => togglePhotos(order.id)}
-                            className="mb-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            {selectedOrder === order.id ? '▼ Masquer les photos' : '▶ Voir les photos avant/après'}
-                          </button>
-
-                          {selectedOrder === order.id && (
-                            <div className="grid grid-cols-2 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
-                              {beforePhoto ? (
-                                <div>
-                                  <p className="text-sm font-medium text-gray-700 mb-2">📸 Avant</p>
-                                  <img 
-                                    src={beforePhoto.url} 
-                                    alt="Avant intervention" 
-                                    className="w-full h-64 object-cover rounded-lg border-2 border-gray-200"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center h-64 bg-gray-200 rounded-lg">
-                                  <p className="text-gray-500">Photo avant manquante</p>
-                                </div>
-                              )}
-                              
-                              {afterPhoto ? (
-                                <div>
-                                  <p className="text-sm font-medium text-gray-700 mb-2">✨ Après</p>
-                                  <img 
-                                    src={afterPhoto.url} 
-                                    alt="Après intervention" 
-                                    className="w-full h-64 object-cover rounded-lg border-2 border-green-200"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center h-64 bg-gray-200 rounded-lg">
-                                  <p className="text-gray-500">Photo après manquante</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <button
-                              onClick={() => handleValidateOrder(order.id)}
-                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-                            >
-                              ✓ Valider l'intervention ({(parseFloat(order.price) * 0.80).toFixed(2)}€ → prestataire)
-                            </button>
-                            
-                            <button
-                              onClick={() => setShowDisputeModal(order.id)}
-                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-                            >
-                              🚨 Marquer comme litigieux
-                            </button>
-                          </div>
-
-                          {showDisputeModal === order.id && (
-                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                                <h3 className="text-lg font-semibold mb-4">Marquer comme litigieux</h3>
-                                <p className="text-sm text-gray-600 mb-4">
-                                  Indiquez le motif du litige (minimum 10 caractères)
-                                </p>
-                                <textarea
-                                  value={disputeReason}
-                                  onChange={(e) => setDisputeReason(e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg p-3 mb-4"
-                                  rows="4"
-                                  placeholder="Ex: Photos de mauvaise qualité, travail non conforme, client mécontent..."
-                                />
-                                <div className="flex gap-3">
-                                  <button
-                                    onClick={() => {
-                                      setShowDisputeModal(null);
-                                      setDisputeReason('');
-                                    }}
-                                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg"
-                                  >
-                                    Annuler
-                                  </button>
-                                  <button
-                                    onClick={() => handleMarkAsDisputed(order.id)}
-                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
-                                  >
-                                    Confirmer
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Section Validation Prestataires */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Prestataires en attente de validation
-              </h2>
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
-                {pendingProviders.length} en attente
-              </span>
-            </div>
-
-            {error && (
-              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-800 text-sm">{error}</p>
-              </div>
-            )}
-
-            {pendingProviders.length === 0 ? (
-              <div className="text-center py-12">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  Aucun prestataire en attente
-                </h3>
-                <p className="mt-1 text-gray-500">
-                  Tous les prestataires ont été validés ou rejetés
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {pendingProviders.map(provider => (
-                  <div key={provider.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {provider.prenom} {provider.nom}
-                          </h3>
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                            En attente
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <p className="text-sm text-gray-500">Email</p>
-                            <p className="text-sm font-medium text-gray-900">{provider.email}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Téléphone</p>
-                            <p className="text-sm font-medium text-gray-900">{provider.phone || 'Non renseigné'}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">SIRET</p>
-                            <p className="text-sm font-medium text-gray-900">{provider.siret || 'Non renseigné'}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Zone d'intervention</p>
-                            <p className="text-sm font-medium text-gray-900">{provider.zone_intervention || 'Non définie'}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Adresse</p>
-                            <p className="text-sm font-medium text-gray-900">{provider.address || 'Non renseignée'}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Inscrit le</p>
-                            <p className="text-sm font-medium text-gray-900">
-                              {new Date(provider.created_at).toLocaleDateString('fr-FR')}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => handleApprove(provider.id)}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                          >
-                            ✓ Valider
-                          </button>
-                          <button
-                            onClick={() => setShowRejectModal(provider.id)}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                          >
-                            ✗ Rejeter
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {showRejectModal === provider.id && (
-                      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                          <h3 className="text-lg font-semibold mb-4">Rejeter le prestataire</h3>
-                          <p className="text-sm text-gray-600 mb-4">
-                            Veuillez indiquer le motif du rejet (minimum 10 caractères)
-                          </p>
-                          <textarea
-                            value={rejectReason}
-                            onChange={(e) => setRejectReason(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg p-3 mb-4"
-                            rows="4"
-                            placeholder="Ex: Documents incomplets, SIRET invalide, zone non couverte..."
-                          />
-                          <div className="flex gap-3">
-                            <button
-                              onClick={() => {
-                                setShowRejectModal(null);
-                                setRejectReason('');
-                              }}
-                              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg"
-                            >
-                              Annuler
-                            </button>
-                            <button
-                              onClick={() => handleReject(provider.id)}
-                              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
-                            >
-                              Confirmer le rejet
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+            {/* Répartition statuts */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
+              <h3 className="text-lg font-semibold mb-4">Répartition des commandes</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Object.entries(stats.orders.by_status).map(([status, count]) => (
+                  <div key={status} className="border border-gray-200 rounded-lg p-4 text-center">
+                    <p className="text-sm text-gray-500 mb-1 capitalize">{status}</p>
+                    <p className="text-2xl font-bold">{count}</p>
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Top prestataires */}
+            {stats.top_providers?.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold mb-4">🏆 Top 5 Prestataires</h3>
+                <div className="space-y-3">
+                  {stats.top_providers.map((provider, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}</span>
+                        <div>
+                          <p className="font-semibold">{provider.name}</p>
+                          <p className="text-sm text-gray-500">{provider.missions_completed} missions</p>
+                        </div>
+                      </div>
+                      <p className="text-lg font-bold text-green-600">{provider.total_earned.toFixed(2)}€</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-          </div>
-
-{/* Section Statistiques */}
-<div className="space-y-8">
-  
-  {/* KPIs principaux */}
-  <div>
-    <h2 className="text-xl font-semibold text-gray-900 mb-4">
-      Statistiques de la plateforme
-    </h2>
-    
-    {loadingStats ? (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          </>
+        ) : (
+          <p className="text-center text-gray-500 py-12">Impossible de charger les statistiques</p>
+        )}
       </div>
-    ) : stats ? (
-      <>
-        {/* Cartes KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {/* Total Utilisateurs */}
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium opacity-90">Utilisateurs</h3>
-              <svg className="h-8 w-8 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-            <p className="text-4xl font-bold mb-2">{stats.users.total}</p>
-            <div className="text-sm opacity-90">
-              <p>Clients: {stats.users.by_role.client || 0}</p>
-              <p>Prestataires: {stats.users.by_role.prestataire || 0}</p>
-            </div>
-          </div>
+    ),
 
-          {/* Total Commandes */}
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium opacity-90">Commandes</h3>
-              <svg className="h-8 w-8 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <p className="text-4xl font-bold mb-2">{stats.orders.total}</p>
-            <div className="text-sm opacity-90">
-              <p>Complétées: {stats.orders.by_status.completed || 0}</p>
-              <p>En cours: {stats.orders.by_status.accepted || 0}</p>
-            </div>
-          </div>
-
-          {/* Chiffre d'affaires */}
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium opacity-90">CA Total</h3>
-              <svg className="h-8 w-8 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <p className="text-4xl font-bold mb-2">{stats.revenue.total.toFixed(2)}€</p>
-            <div className="text-sm opacity-90">
-              <p>{stats.revenue.paid_orders} commandes payées</p>
-            </div>
-          </div>
-
-          {/* Prestataires actifs */}
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium opacity-90">Prestataires</h3>
-              <svg className="h-8 w-8 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <p className="text-4xl font-bold mb-2">{stats.users.by_role.prestataire || 0}</p>
-            <div className="text-sm opacity-90">
-              <p>Actifs sur la plateforme</p>
-            </div>
-          </div>
+    disputes: (
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-semibold">Litiges en cours</h2>
+          <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+            {disputedOrders.length} litige{disputedOrders.length > 1 ? 's' : ''}
+          </span>
         </div>
 
-        {/* Détails par statut commande */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Répartition des commandes par statut
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.entries(stats.orders.by_status).map(([status, count]) => (
-              <div key={status} className="border border-gray-200 rounded-lg p-4">
-                <p className="text-sm text-gray-500 mb-1 capitalize">
-                  {status === 'pending' && '⏳ En attente'}
-                  {status === 'paid' && '💳 Payées'}
-                  {status === 'accepted' && '🔄 En cours'}
-                  {status === 'awaiting_validation' && '⏰ À valider'}
-                  {status === 'disputed' && '🚨 Litiges'}
-                  {status === 'completed' && '✅ Terminées'}
-                  {status === 'refunded' && '💸 Remboursées'}
-                  {status === 'cancelled' && '❌ Annulées'}
-                </p>
-                <p className="text-2xl font-bold text-gray-900">{count}</p>
+        {loadingDisputes ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : disputedOrders.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <p className="text-gray-600">Aucun litige en cours</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {disputedOrders.map(order => {
+              const photos = orderPhotos[order.id] || [];
+              const beforePhoto = photos.find(p => p.type === 'before');
+              const afterPhoto = photos.find(p => p.type === 'after');
+
+              return (
+                <div key={order.id} className="border-2 border-red-200 rounded-lg p-6 bg-red-50">
+                  <div className="flex items-center gap-3 mb-4">
+                    <h3 className="text-lg font-semibold">{order.cemetery_name}</h3>
+                    <span className="px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">🚨 Litige</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Client</p>
+                      <p className="font-medium">{order.client_prenom} {order.client_nom}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Prestataire</p>
+                      <p className="font-medium">{order.prestataire_prenom} {order.prestataire_nom}</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4 p-3 bg-white rounded border border-red-200">
+                    <p className="text-sm font-medium text-red-900 mb-1">Motif :</p>
+                    <p className="text-sm">{order.dispute_reason}</p>
+                  </div>
+
+                  {(beforePhoto || afterPhoto) && (
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      {beforePhoto && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">📸 Avant</p>
+                          <img src={beforePhoto.url} alt="Avant" className="w-full h-48 object-cover rounded-lg" />
+                        </div>
+                      )}
+                      {afterPhoto && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">✨ Après</p>
+                          <img src={afterPhoto.url} alt="Après" className="w-full h-48 object-cover rounded-lg" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <button onClick={() => handleResolveDispute(order.id, 'validate')} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
+                      ✓ Valider
+                    </button>
+                    <button onClick={() => handleResolveDispute(order.id, 'request_correction')} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
+                      🔄 Correction
+                    </button>
+                    <button onClick={() => handleResolveDispute(order.id, 'refund')} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
+                      💸 Rembourser
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    ),
+
+    interventions: (
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-semibold">Interventions à valider</h2>
+          <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+            {pendingOrders.length} en attente
+          </span>
+        </div>
+
+        {loadingOrders ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : pendingOrders.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <p className="text-gray-600">Aucune intervention en attente</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {pendingOrders.map(order => {
+              const photos = orderPhotos[order.id] || [];
+              const beforePhoto = photos.find(p => p.type === 'before');
+              const afterPhoto = photos.find(p => p.type === 'after');
+
+              return (
+                <div key={order.id} className="border border-gray-200 rounded-lg p-6 bg-white">
+                  <div className="flex items-center gap-3 mb-4">
+                    <h3 className="text-lg font-semibold">{order.cemetery_name}</h3>
+                    <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">En attente validation</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Client</p>
+                      <p className="font-medium">{order.client_email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Prestataire</p>
+                      <p className="font-medium">{order.prestataire_prenom} {order.prestataire_nom}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Service</p>
+                      <p className="font-medium">{order.service_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Montant</p>
+                      <p className="font-medium">{order.price}€</p>
+                    </div>
+                  </div>
+
+                  <button onClick={() => togglePhotos(order.id)} className="mb-4 text-blue-600 hover:text-blue-700 text-sm font-medium">
+                    {selectedOrder === order.id ? '▼ Masquer les photos' : '▶ Voir les photos'}
+                  </button>
+
+                  {selectedOrder === order.id && (
+                    <div className="grid grid-cols-2 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                      {beforePhoto ? (
+                        <div>
+                          <p className="text-sm font-medium mb-2">📸 Avant</p>
+                          <img src={beforePhoto.url} alt="Avant" className="w-full h-64 object-cover rounded-lg" />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-64 bg-gray-200 rounded-lg">
+                          <p className="text-gray-500">Photo avant manquante</p>
+                        </div>
+                      )}
+                      {afterPhoto ? (
+                        <div>
+                          <p className="text-sm font-medium mb-2">✨ Après</p>
+                          <img src={afterPhoto.url} alt="Après" className="w-full h-64 object-cover rounded-lg" />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-64 bg-gray-200 rounded-lg">
+                          <p className="text-gray-500">Photo après manquante</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={() => handleValidateOrder(order.id)} className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition">
+                      ✓ Valider ({(parseFloat(order.price) * 0.80).toFixed(2)}€ → prestataire)
+                    </button>
+                    <button onClick={() => setShowDisputeModal(order.id)} className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition">
+                      🚨 Marquer comme litigieux
+                    </button>
+                  </div>
+
+                  {/* Modal dispute */}
+                  {showDisputeModal === order.id && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 className="text-lg font-semibold mb-4">Marquer comme litigieux</h3>
+                        <p className="text-sm text-gray-600 mb-4">Motif du litige (min 10 caractères)</p>
+                        <textarea value={disputeReason} onChange={(e) => setDisputeReason(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 mb-4" rows="4" placeholder="Ex: Photos floues, travail incomplet..." />
+                        <div className="flex gap-3">
+                          <button onClick={() => { setShowDisputeModal(null); setDisputeReason(''); }} className="flex-1 bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg">Annuler</button>
+                          <button onClick={() => handleMarkAsDisputed(order.id)} className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Confirmer</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    ),
+
+    providers: (
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-semibold">Prestataires à valider</h2>
+          <span className="px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+            {pendingProviders.length} en attente
+          </span>
+        </div>
+
+        {loadingProviders ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : pendingProviders.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <p className="text-gray-600">Aucun prestataire en attente</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {pendingProviders.map(provider => (
+              <div key={provider.id} className="border border-gray-200 rounded-lg p-6 bg-white">
+                <div className="flex items-center gap-3 mb-4">
+                  <h3 className="text-lg font-semibold">{provider.prenom} {provider.nom}</h3>
+                  <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">En attente</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-medium">{provider.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Téléphone</p>
+                    <p className="font-medium">{provider.phone || 'Non renseigné'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">SIRET</p>
+                    <p className="font-medium">{provider.siret || 'Non renseigné'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Zone</p>
+                    <p className="font-medium">{provider.zone_intervention || 'Non définie'}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button onClick={() => handleApproveProvider(provider.id)} className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                    ✓ Valider
+                  </button>
+                  <button onClick={() => setShowRejectModal(provider.id)} className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                    ✗ Rejeter
+                  </button>
+                </div>
+
+                {/* Modal reject */}
+                {showRejectModal === provider.id && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                      <h3 className="text-lg font-semibold mb-4">Rejeter le prestataire</h3>
+                      <p className="text-sm text-gray-600 mb-4">Motif du rejet (min 10 caractères)</p>
+                      <textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 mb-4" rows="4" placeholder="Ex: Documents incomplets, SIRET invalide..." />
+                      <div className="flex gap-3">
+                        <button onClick={() => { setShowRejectModal(null); setRejectReason(''); }} className="flex-1 bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg">Annuler</button>
+                        <button onClick={() => handleRejectProvider(provider.id)} className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Confirmer</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Top 5 prestataires */}
-        {stats.top_providers.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              🏆 Top 5 Prestataires
-            </h3>
-            <div className="space-y-3">
-              {stats.top_providers.map((provider, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">
-                      {index === 0 && '🥇'}
-                      {index === 1 && '🥈'}
-                      {index === 2 && '🥉'}
-                      {index > 2 && `${index + 1}.`}
-                    </span>
-                    <div>
-                      <p className="font-semibold text-gray-900">{provider.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {provider.missions_completed} mission{provider.missions_completed > 1 ? 's' : ''} complétée{provider.missions_completed > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-green-600">
-                      {provider.total_earned.toFixed(2)}€
-                    </p>
-                    <p className="text-xs text-gray-500">CA généré</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         )}
-
-        {/* Évolution mensuelle */}
-        {stats.monthly_orders.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              📈 Évolution sur 3 mois
-            </h3>
-            <div className="grid grid-cols-3 gap-4">
-              {stats.monthly_orders.map((month, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
-                  <p className="text-sm text-gray-500 mb-2">{month.month}</p>
-                  <p className="text-2xl font-bold text-gray-900 mb-1">{month.count}</p>
-                  <p className="text-sm text-gray-600">commandes</p>
-                  <p className="text-lg font-semibold text-green-600 mt-2">
-                    {month.revenue.toFixed(2)}€
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </>
-    ) : (
-      <div className="text-center py-8 text-gray-500">
-        Impossible de charger les statistiques
       </div>
-    )}
+    ),
+  };
+
+  // ============================================
+  // RENDER
+  // ============================================
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+
+{/* NAVBAR */}
+<nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 border-b border-gray-200">
+  <div className="max-w-7xl mx-auto px-6 py-4">
+    <div className="flex items-center justify-between">
+
+      {/* Logo */}
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <div className="w-12 h-12 border-2 border-black rounded-lg flex items-center justify-center">
+            <span className="text-2xl font-serif font-bold">M</span>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-400 rounded-full"></div>
+          </div>
+        </div>
+        <span className="text-xl font-serif font-semibold tracking-tight">Mémoria</span>
+      </div>
+
+      {/* Liens navigation */}
+      <div className="hidden md:flex items-center gap-8">
+        <button onClick={() => navigate('/')} className="text-gray-900 hover:text-blue-600 font-medium transition">Accueil</button>
+        <button onClick={() => navigate('/', { state: { scrollTo: 'comment-ca-marche-section' } })} className="text-gray-700 hover:text-blue-600 transition">Services</button>
+        <button onClick={() => navigate('/', { state: { scrollTo: 'faq-section' } })} className="text-gray-700 hover:text-blue-600 transition">À propos</button>
+        <button onClick={() => navigate('/', { state: { scrollTo: 'team-section' } })} className="text-gray-700 hover:text-blue-600 transition">Contact</button>
+      </div>
+
+      {/* Déconnexion */}
+      <div className="flex items-center gap-4">
+        <button onClick={() => { logout(); navigate('/'); }} className="px-4 py-1 border-2 border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-50 transition">Déconnexion</button>
+      </div>
+    </div>
   </div>
-</div>
-        </div>
-      </div>
-    </>
+</nav>
+
+      {/* DASHBOARD */}
+      <main className="flex-1 flex bg-purple-50 gap-6 px-6 py-8 pt-32 w-full">
+
+        {/* Sidebar */}
+        <aside className="w-1/3 bg-white border-l-4 border-purple-600 rounded-lg p-6 space-y-4 shadow h-fit">
+          <p className="text-gray-500 uppercase font-semibold text-sm mb-4">Sections</p>
+          <button onClick={() => setActiveSection('overview')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'overview' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Aperçu
+          </button>
+          <button onClick={() => setActiveSection('disputes')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'disputes' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Litiges ({disputedOrders.length})
+          </button>
+          <button onClick={() => setActiveSection('interventions')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'interventions' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Interventions ({pendingOrders.length})
+          </button>
+          <button onClick={() => setActiveSection('providers')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'providers' ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Prestataires ({pendingProviders.length})
+          </button>
+        </aside>
+
+        {/* Contenu */}
+        <section className="flex-1 bg-white border-r-4 border-purple-600 rounded-lg p-6 shadow">
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <h1 className="text-2xl font-bold mb-2">Dashboard Administrateur</h1>
+            {user && (
+              <p className="text-gray-700">Bienvenue <span className="font-semibold">{user.prenom} {user.nom}</span></p>
+            )}
+          </div>
+
+          {/* Contenu dynamique */}
+          {sections[activeSection]}
+        </section>
+
+      </main>
+
+    </div>
   );
-};
+}
 
 export default DashboardAdmin;

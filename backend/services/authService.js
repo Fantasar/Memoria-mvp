@@ -13,7 +13,7 @@ const roleRepository = require('../repositories/roleRepository');
  * Inscription d'un nouvel utilisateur
  */
 const registerUser = async (userData) => {
-  const { email, password, role, zone_intervention, siret } = userData;
+  const { email, password, role, zone_intervention, siret, prenom, nom } = userData;
 
   // ============ VÉRIFICATION MÉTIER ============
   
@@ -46,6 +46,8 @@ const registerUser = async (userData) => {
     email,
     password_hash: hashedPassword,
     role_id: roleData.id,
+    prenom,
+    nom,
     zone_intervention,
     siret
   });
@@ -69,6 +71,8 @@ const registerUser = async (userData) => {
     user: {
       id: newUser.id,
       email: newUser.email,
+      prenom: newUser.prenom,
+      nom: newUser.nom,
       role: roleInfo.name,
       zone_intervention: newUser.zone_intervention,
       siret: newUser.siret,
@@ -118,6 +122,8 @@ const loginUser = async (credentials) => {
     user: {
       id: user.id,
       email: user.email,
+      prenom: user.prenom,
+      nom: user.nom,
       role: user.role,
       zone_intervention: user.zone_intervention,
       siret: user.siret
