@@ -376,24 +376,32 @@ const fetchServices = async () => {
     `${c.name} ${c.city} ${c.department || ''}`.toLowerCase().includes(searchCemeteries.toLowerCase())
   );
 
-  const handleAddCemetery = async (e) => {
+const handleAddCemetery = async (e) => {
   e.preventDefault();
-  if (!newCemetery.name || !newCemetery.city) {
-    alert('Nom et ville sont obligatoires');
+  
+  if (!newCemetery.name || !newCemetery.city || !newCemetery.postal_code) {
+    alert('Nom, ville et code postal sont obligatoires');
     return;
   }
+  
   setAddingCemetery(true);
+  
   try {
     const token = localStorage.getItem('token');
     await axios.post('/api/cemeteries', newCemetery, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    alert('Cimetière ajouté !');
+    alert('Cimetière ajouté avec succès !');
     setShowAddCemetery(false);
     setNewCemetery({ name: '', city: '', postal_code: '', department: '' });
     fetchCemeteries();
   } catch (err) {
-    alert(err.response?.data?.error?.message || 'Erreur lors de l\'ajout');
+    console.error('Erreur ajout cimetière:', err);
+    if (err.response?.data?.error?.code === 'DUPLICATE_CEMETERY') {
+      alert('Ce cimetière existe déjà dans cette ville');
+    } else {
+      alert(err.response?.data?.error?.message || 'Erreur lors de l\'ajout');
+    }
   } finally {
     setAddingCemetery(false);
   }
@@ -972,85 +980,94 @@ cemeteries: (
       </div>
     )}
 
-    {/* ===== MODAL AJOUT CIMETIÈRE ===== */}
-    {showAddCemetery && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowAddCemetery(false)}>
-        <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-          <div className="flex items-center justify-between p-6 border-b">
-            <h3 className="text-xl font-bold text-gray-900">Ajouter un cimetière</h3>
-            <button onClick={() => setShowAddCemetery(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
-          </div>
-
-          <form onSubmit={handleAddCemetery} className="p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nom <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={newCemetery.name}
-                onChange={e => setNewCemetery({ ...newCemetery, name: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Cimetière de..."
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ville <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={newCemetery.city}
-                onChange={e => setNewCemetery({ ...newCemetery, city: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Bordeaux"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Code postal</label>
-                <input
-                  type="text"
-                  value={newCemetery.postal_code}
-                  onChange={e => setNewCemetery({ ...newCemetery, postal_code: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="33000"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Département</label>
-                <input
-                  type="text"
-                  value={newCemetery.department}
-                  onChange={e => setNewCemetery({ ...newCemetery, department: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Gironde"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-4 border-t">
-              <button
-                type="button"
-                onClick={() => setShowAddCemetery(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                disabled={addingCemetery}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
-              >
-                {addingCemetery ? 'Ajout...' : '+ Ajouter'}
-              </button>
-            </div>
-          </form>
-        </div>
+{/* ===== MODAL AJOUT CIMETIÈRE ===== */}
+{showAddCemetery && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowAddCemetery(false)}>
+    <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+      <div className="flex items-center justify-between p-6 border-b">
+        <h3 className="text-xl font-bold text-gray-900">Ajouter un cimetière</h3>
+        <button onClick={() => setShowAddCemetery(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
       </div>
-    )}
+
+      <form onSubmit={handleAddCemetery} className="p-6 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Nom <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={newCemetery.name}
+            onChange={e => setNewCemetery({ ...newCemetery, name: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="Cimetière de..."
+            required
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ville <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newCemetery.city}
+              onChange={e => setNewCemetery({ ...newCemetery, city: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Bordeaux"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Code postal <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newCemetery.postal_code}
+              onChange={e => setNewCemetery({ ...newCemetery, postal_code: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="33000"
+              pattern="[0-9]{5}"
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Département</label>
+          <input
+            type="text"
+            value={newCemetery.department}
+            onChange={e => setNewCemetery({ ...newCemetery, department: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="Gironde"
+          />
+        </div>
+
+        <div className="flex gap-3 pt-4 border-t">
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddCemetery(false);
+              setNewCemetery({ name: '', city: '', postal_code: '', department: '' });
+            }}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+          >
+            Annuler
+          </button>
+          <button
+            type="submit"
+            disabled={addingCemetery}
+            className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
+          >
+            {addingCemetery ? 'Ajout...' : '+ Ajouter'}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
   </div>
 ),
 
