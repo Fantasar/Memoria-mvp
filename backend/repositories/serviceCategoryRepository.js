@@ -37,7 +37,7 @@ const findAll = async () => {
       sc.is_active,
       sc.created_at,
       sc.updated_at,
-      COUNT(o.id) as orders_count
+      COUNT(o.id)::integer as orders_count
     FROM service_categories sc
     LEFT JOIN orders o ON o.service_category_id = sc.id
     GROUP BY sc.id
@@ -74,9 +74,40 @@ const getPriceById = async (categoryId) => {
   return result.rows[0]?.base_price || null;
 };
 
+const createServiceCategory = async ({ name, description, base_price }) => {
+  const query = `
+    INSERT INTO service_categories (name, description, base_price)
+    VALUES ($1, $2, $3)
+    RETURNING *
+  `;
+  const result = await pool.query(query, [
+    name,
+    description || null,
+    base_price
+  ]);
+  return result.rows[0];
+};
+
+const findById = async (id) => {
+  const query = `
+    SELECT 
+      id,
+      name,
+      description,
+      base_price,
+      is_active
+    FROM service_categories
+    WHERE id = $1
+  `;
+  const result = await pool.query(query, [id]);
+  return result.rows[0] || null;
+};
+
 module.exports = {
   findAllActive,
   existsById,
   getPriceById,
-  findAll
+  findAll,
+  findById,
+  createServiceCategory
 };

@@ -58,6 +58,15 @@ function DashboardAdmin() {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoFilter, setPhotoFilter] = useState('all');
 
+  //Ajout de nouveaux service
+  const [showAddService, setShowAddService] = useState(false);
+  const [newService, setNewService] = useState({ 
+    name: '', 
+    description: '', 
+    base_price: '' 
+  });
+  const [addingService, setAddingService] = useState(false);
+
   // Charger toutes les données au montage
   useEffect(() => {
     fetchStats();
@@ -229,6 +238,9 @@ const fetchServices = async () => {
     const response = await axios.get('/api/service-categories/admin', {
       headers: { Authorization: `Bearer ${token}` }
     });
+
+    console.log('📦 Services reçus:', response.data.data); // ✅ Debug
+
     setServices(response.data.data || []);
   } catch (err) {
     console.error('Erreur services:', err);
@@ -404,6 +416,42 @@ const handleAddCemetery = async (e) => {
     }
   } finally {
     setAddingCemetery(false);
+  }
+};
+
+const handleAddService = async (e) => {
+  e.preventDefault();
+  
+  if (!newService.name || !newService.base_price) {
+    alert('Nom et prix sont obligatoires');
+    return;
+  }
+  
+  if (parseFloat(newService.base_price) <= 0) {
+    alert('Le prix doit être supérieur à 0');
+    return;
+  }
+  
+  setAddingService(true);
+  
+  try {
+    const token = localStorage.getItem('token');
+    await axios.post('/api/service-categories', newService, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    alert('Service ajouté avec succès !');
+    setShowAddService(false);
+    setNewService({ name: '', description: '', base_price: '' });
+    fetchServices();
+  } catch (err) {
+    console.error('Erreur ajout service:', err);
+    if (err.response?.data?.error?.code === '23505') {
+      alert('Ce service existe déjà');
+    } else {
+      alert(err.response?.data?.error?.message || 'Erreur lors de l\'ajout');
+    }
+  } finally {
+    setAddingService(false);
   }
 };
   // ============================================
@@ -1073,11 +1121,20 @@ cemeteries: (
 
 services: (
   <div>
+    {/* Header */}
     <div className="flex items-center justify-between mb-6">
       <h2 className="text-2xl font-semibold">Services</h2>
-      <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-        {services.length} service{services.length > 1 ? 's' : ''}
-      </span>
+      <div className="flex items-center gap-3">
+        <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+          {services.length} service{services.length > 1 ? 's' : ''}
+        </span>
+        <button
+          onClick={() => setShowAddService(true)}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+        >
+          + Ajouter
+        </button>
+      </div>
     </div>
 
     {loadingServices ? (
@@ -1092,6 +1149,8 @@ services: (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {services.map(service => (
           <div key={service.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
+
+            {/* Header carte */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-2xl">
@@ -1105,42 +1164,128 @@ services: (
                 </div>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                service.is_active !== false
+                service.is_active
                   ? 'bg-green-100 text-green-800'
                   : 'bg-red-100 text-red-800'
               }`}>
-                {service.is_active !== false ? '✅ Actif' : '❌ Inactif'}
+                {service.is_active ? '✅ Actif' : '❌ Inactif'}
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-sm border-t border-gray-100 pt-4">
-              <div>
-                <p className="text-gray-500">Prix de base</p>
-                <p className="font-bold text-green-600 text-lg">
+            {/* Infos financières */}
+            <div className="grid grid-cols-3 gap-3 text-sm border-t border-gray-100 pt-4">
+              <div className="text-center p-2 bg-green-50 rounded-lg">
+                <p className="text-gray-500 text-xs mb-1">Prix client</p>
+                <p className="font-bold text-green-600 text-base">
                   {service.base_price ? `${parseFloat(service.base_price).toFixed(2)}€` : '-'}
                 </p>
               </div>
-              <div>
-                <p className="text-gray-500">Commission (20%)</p>
-                <p className="font-bold text-purple-600 text-lg">
+              <div className="text-center p-2 bg-purple-50 rounded-lg">
+                <p className="text-gray-500 text-xs mb-1">Commission 20%</p>
+                <p className="font-bold text-purple-600 text-base">
                   {service.base_price ? `${(parseFloat(service.base_price) * 0.20).toFixed(2)}€` : '-'}
                 </p>
               </div>
-              {service.orders_count !== undefined && (
-                <div>
-                  <p className="text-gray-500">Commandes totales</p>
-                  <p className="font-medium text-gray-900">{service.orders_count}</p>
-                </div>
-              )}
-              {service.duration_minutes && (
-                <div>
-                  <p className="text-gray-500">Durée estimée</p>
-                  <p className="font-medium text-gray-900">{service.duration_minutes} min</p>
-                </div>
-              )}
+              <div className="text-center p-2 bg-blue-50 rounded-lg">
+                <p className="text-gray-500 text-xs mb-1">Prestataire 80%</p>
+                <p className="font-bold text-blue-600 text-base">
+                  {service.base_price ? `${(parseFloat(service.base_price) * 0.80).toFixed(2)}€` : '-'}
+                </p>
+              </div>
+            </div>
+
+            {/* Footer carte */}
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 text-sm text-gray-500">
+              <span>
+                📦 {service.orders_count || 0} commande{service.orders_count > 1 ? 's' : ''}
+              </span>
+              <span>
+                Créé le {new Date(service.created_at).toLocaleDateString('fr-FR')}
+              </span>
             </div>
           </div>
         ))}
+      </div>
+    )}
+
+    {/* ===== MODAL AJOUT SERVICE ===== */}
+    {showAddService && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowAddService(false)}>
+        <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between p-6 border-b">
+            <h3 className="text-xl font-bold text-gray-900">Ajouter un service</h3>
+            <button onClick={() => setShowAddService(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
+          </div>
+
+          <form onSubmit={handleAddService} className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nom du service <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={newService.name}
+                onChange={e => setNewService({ ...newService, name: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Ex: Nettoyage de tombe, Dépôt de fleurs..."
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea
+                value={newService.description}
+                onChange={e => setNewService({ ...newService, description: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Description du service (optionnel)"
+                rows="3"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Prix de base <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={newService.base_price}
+                  onChange={e => setNewService({ ...newService, base_price: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="45.00"
+                  required
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                💡 Commission Mémoria: 20% — Prestataire reçoit: 80%
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddService(false);
+                  setNewService({ name: '', description: '', base_price: '' });
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={addingService}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
+              >
+                {addingService ? 'Ajout...' : '+ Ajouter'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     )}
   </div>

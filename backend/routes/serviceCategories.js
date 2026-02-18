@@ -1,20 +1,15 @@
-// backend/routes/serviceCategories.js
 const express = require('express');
 const router = express.Router();
 const serviceCategoryController = require('../controllers/serviceCategoryController');
-const { authenticateToken } = require('../middlewares/admin-auth');
+const { authenticateToken, authenticateAdmin } = require('../middlewares/admin-auth');
 
-/**
- * @route   GET /api/service-categories
- * @desc    Récupérer la liste des catégories de services actives
- * @access  Public (ou Private si tu veux protéger)
- */
-router.get('/', serviceCategoryController.getAllServiceCategories);
+// Route publique : services actifs (sans compteur)
+router.get('/', serviceCategoryController.getAllActiveServiceCategories);
 
-router.get(
-  '/admin',
-  authenticateToken,
-  serviceCategoryController.getAllServiceCategories
-);
+// Route admin : tous les services (avec compteur)
+router.get('/admin', authenticateToken, serviceCategoryController.getAllServiceCategoriesAdmin);
+
+// Créer un service (admin)
+router.post('/', authenticateToken, authenticateAdmin, serviceCategoryController.createServiceCategory);
 
 module.exports = router;
