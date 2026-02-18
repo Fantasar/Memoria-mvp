@@ -121,8 +121,7 @@ function NewOrder() {
         orderData: {
           cemetery_id: parseInt(formData.cemetery_id),
           service_category_id: parseInt(formData.service_category_id),
-          cemetery_location: formData.cemetery_location.trim(),
-          price: formData.price,
+          cemetery_location: formData.cemetery_location.trim()
         },
       },
     });
