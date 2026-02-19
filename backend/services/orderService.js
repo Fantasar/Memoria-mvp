@@ -163,20 +163,13 @@ const getAvailableOrders = async (prestatairId) => {
 };
 
 /**
- * Accepter une mission (prestataire uniquement)
+ * Accepter une mission avec date et heure planifiée
  */
-const acceptOrder = async (orderId, prestatairId) => {
+const acceptOrder = async (orderId, prestatairId, scheduledDate, scheduledTime) => {
   // 1. Vérifier que l'utilisateur est prestataire
   const user = await userRepository.findById(prestatairId);
   
-  if (!user) {
-    const error = new Error('Utilisateur introuvable');
-    error.code = 'USER_NOT_FOUND';
-    error.statusCode = 404;
-    throw error;
-  }
-
-  if (user.role !== 'prestataire') {
+  if (!user || user.role !== 'prestataire') {
     const error = new Error('Seuls les prestataires peuvent accepter des missions');
     error.code = 'FORBIDDEN';
     error.statusCode = 403;
@@ -195,39 +188,128 @@ const acceptOrder = async (orderId, prestatairId) => {
 
   // 3. Vérifier que la commande est disponible
   if (order.prestataire_id !== null) {
-    const error = new Error('Cette mission est déjà assignée à un autre prestataire');
+    const error = new Error('Cette mission est déjà assignée');
     error.code = 'ORDER_ALREADY_ASSIGNED';
     error.statusCode = 409;
     throw error;
   }
 
-// 4. Vérifier que le cimetière est dans la zone du prestataire
-const zone = user.zone_intervention;
-if (zone) {
-  const zoneMatch = 
-    (order.cemetery_department && order.cemetery_department.toLowerCase().includes(zone.toLowerCase())) ||
-    (order.cemetery_city && order.cemetery_city.toLowerCase().includes(zone.toLowerCase()));
-  
-  if (!zoneMatch) {
-    const error = new Error('Cette mission n\'est pas dans votre zone d\'intervention');
-    error.code = 'ZONE_MISMATCH';
-    error.statusCode = 403;
+  // 4. Validation de la date
+  if (!scheduledDate || !scheduledTime) {
+    const error = new Error('La date et l\'heure sont obligatoires');
+    error.code = 'MISSING_SCHEDULE';
+    error.statusCode = 400;
     throw error;
   }
-}
 
-  // 5. Assigner le prestataire (opération atomique en BDD)
-  const updatedOrder = await orderRepository.assignPrestataire(orderId, prestatairId);
+  const selectedDate = new Date(scheduledDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   
-  // 6. Double vérification : si un autre prestataire a accepté entre-temps
+  const maxDate = new Date();
+  maxDate.setDate(maxDate.getDate() + 15);
+
+  if (selectedDate < today) {
+    const error = new Error('La date ne peut pas être dans le passé');
+    error.code = 'INVALID_DATE';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (selectedDate > maxDate) {
+    const error = new Error('La date ne peut pas dépasser 15 jours');
+    error.code = 'DATE_TOO_FAR';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 5. Validation de l'heure (7h - 19h)
+  const [hours, minutes] = scheduledTime.split(':').map(Number);
+  
+  if (hours < 7 || hours >= 19) {
+    const error = new Error('L\'heure doit être entre 7h et 19h');
+    error.code = 'INVALID_TIME';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 6. Récupérer la durée du service
+  const durationHours = await orderRepository.getServiceDuration(order.service_category_id);
+
+  // Vérifier que la mission ne se termine pas après 19h
+  const startMinutes = hours * 60 + minutes;
+  const endMinutes = startMinutes + (durationHours * 60);
+  const endHours = Math.floor(endMinutes / 60);
+
+  if (endHours >= 19) {
+    const error = new Error(`Cette mission dure ${durationHours}h et se terminerait après 19h. Choisissez une heure plus tôt.`);
+    error.code = 'MISSION_TOO_LATE';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 7. Vérifier disponibilité du créneau
+  const isAvailable = await orderRepository.checkTimeSlotAvailability(
+    prestatairId,
+    scheduledDate,
+    scheduledTime,
+    durationHours
+  );
+  
+  if (!isAvailable) {
+    const error = new Error('Ce créneau chevauche une autre mission');
+    error.code = 'TIME_CONFLICT';
+    error.statusCode = 409;
+    throw error;
+  }
+
+  // 8. Vérifier la zone
+  const zone = user.zone_intervention;
+  if (zone) {
+    const zoneMatch = 
+      (order.cemetery_department && order.cemetery_department.toLowerCase().includes(zone.toLowerCase())) ||
+      (order.cemetery_city && order.cemetery_city.toLowerCase().includes(zone.toLowerCase()));
+    
+    if (!zoneMatch) {
+      const error = new Error('Cette mission n\'est pas dans votre zone');
+      error.code = 'ZONE_MISMATCH';
+      error.statusCode = 403;
+      throw error;
+    }
+  }
+
+  // 9. Assigner le prestataire avec date et heure
+  const updatedOrder = await orderRepository.assignPrestataireWithSchedule(
+    orderId,
+    prestatairId,
+    scheduledDate,
+    scheduledTime
+  );
+  
   if (!updatedOrder) {
-    const error = new Error('Cette mission vient d\'être acceptée par un autre prestataire');
+    const error = new Error('Cette mission vient d\'être acceptée');
     error.code = 'ORDER_ALREADY_ASSIGNED';
     error.statusCode = 409;
     throw error;
   }
 
   return updatedOrder;
+};
+
+/**
+ * Récupérer le calendrier du prestataire
+ */
+const getProviderCalendar = async (prestatairId) => {
+  const user = await userRepository.findById(prestatairId);
+  
+  if (!user || user.role !== 'prestataire') {
+    const error = new Error('Accès réservé aux prestataires');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return await orderRepository.findCalendarByPrestataire(prestatairId);
 };
 
 /**
@@ -611,5 +693,6 @@ module.exports = {
   getDisputedOrders,
   markOrderAsDisputed,
   resolveDispute,
-  getProviderHistory
+  getProviderHistory,
+  getProviderCalendar
 };
