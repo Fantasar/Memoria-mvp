@@ -316,6 +316,112 @@ const markAsDisputed = async (orderId, reason) => {
 };
 
 /**
+ * Vérifier la disponibilité du créneau horaire
+ */
+const checkTimeSlotAvailability = async (prestatairId, scheduledDate, scheduledTime, durationHours) => {
+  const query = `
+    SELECT 
+      o.scheduled_time,
+      sd.duration_hours
+    FROM orders o
+    LEFT JOIN service_durations sd ON sd.service_category_id = o.service_category_id
+    WHERE o.prestataire_id = $1
+    AND o.scheduled_date = $2
+    AND o.status NOT IN ('cancelled', 'refunded')
+    AND o.scheduled_time IS NOT NULL
+  `;
+  const result = await pool.query(query, [prestatairId, scheduledDate]);
+  
+  // Si aucune mission ce jour-là, c'est disponible
+  if (result.rows.length === 0) return true;
+
+  // Convertir l'heure demandée en minutes depuis minuit
+  const [reqHours, reqMinutes] = scheduledTime.split(':').map(Number);
+  const requestedStart = reqHours * 60 + reqMinutes;
+  const requestedEnd = requestedStart + (durationHours * 60);
+
+  // Vérifier les chevauchements
+  for (const mission of result.rows) {
+    const [missionHours, missionMinutes] = mission.scheduled_time.split(':').map(Number);
+    const missionStart = missionHours * 60 + missionMinutes;
+    const missionEnd = missionStart + (parseFloat(mission.duration_hours) * 60);
+
+    // Chevauchement détecté
+    if (
+      (requestedStart >= missionStart && requestedStart < missionEnd) ||
+      (requestedEnd > missionStart && requestedEnd <= missionEnd) ||
+      (requestedStart <= missionStart && requestedEnd >= missionEnd)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Assigner un prestataire avec date ET heure planifiée
+ */
+const assignPrestataireWithSchedule = async (orderId, prestataireId, scheduledDate, scheduledTime) => {
+  const query = `
+    UPDATE orders 
+    SET prestataire_id = $1, 
+        status = 'accepted',
+        scheduled_date = $2,
+        scheduled_time = $3,
+        updated_at = NOW()
+    WHERE id = $4 
+      AND prestataire_id IS NULL
+      AND status IN ('paid', 'pending')
+    RETURNING *
+  `;
+  const result = await pool.query(query, [prestataireId, scheduledDate, scheduledTime, orderId]);
+  return result.rows[0] || null;
+};
+
+/**
+ * Récupérer le calendrier avec horaires
+ */
+const findCalendarByPrestataire = async (prestatairId) => {
+  const query = `
+    SELECT 
+      o.id,
+      o.scheduled_date,
+      o.scheduled_time,
+      o.status,
+      o.price,
+      o.cemetery_location,
+      c.name as cemetery_name,
+      c.city as cemetery_city,
+      sc.name as service_name,
+      sd.duration_hours
+    FROM orders o
+    LEFT JOIN cemeteries c ON o.cemetery_id = c.id
+    LEFT JOIN service_categories sc ON o.service_category_id = sc.id
+    LEFT JOIN service_durations sd ON sd.service_category_id = sc.id
+    WHERE o.prestataire_id = $1
+    AND o.scheduled_date IS NOT NULL
+    AND o.status IN ('accepted', 'awaiting_validation', 'completed')
+    ORDER BY o.scheduled_date ASC, o.scheduled_time ASC
+  `;
+  const result = await pool.query(query, [prestatairId]);
+  return result.rows;
+};
+
+/**
+ * Récupérer la durée d'un service
+ */
+const getServiceDuration = async (serviceCategoryId) => {
+  const query = `
+    SELECT duration_hours 
+    FROM service_durations 
+    WHERE service_category_id = $1
+  `;
+  const result = await pool.query(query, [serviceCategoryId]);
+  return result.rows[0]?.duration_hours || 2.0; // 2h par défaut
+};
+
+/**
  * Résoudre un litige (mettre à jour statut + action)
  */
 const resolveDispute = async (orderId, newStatus, action) => {
@@ -391,5 +497,9 @@ module.exports = {
   resolveDispute,
   getDashboardStats,
   markAsDisputed,
-  findHistoryByPrestataire
+  findHistoryByPrestataire,
+  checkTimeSlotAvailability,
+  assignPrestataireWithSchedule,
+  findCalendarByPrestataire,
+  getServiceDuration
 };

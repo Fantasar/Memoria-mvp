@@ -85,11 +85,18 @@ router.patch('/:id/resolve', authenticateToken, orderController.resolveDispute);
 router.get('/dashboard-stats', authenticateToken, orderController.getDashboardStats);
 
 /**
- * @route   GET /api//history
+ * @route   GET /api/history
  * @desc    Récupérer l'historique des commandes prestataire
  * @access  Prestataires - JWT REQUIS
  */
 router.get('/history', authenticateToken, orderController.getProviderHistory);
+
+/**
+ * @route   GET /api/calendar
+ * @desc    Récupérer le calendrier d'un prestataire
+ * @access  Prestataires - JWT REQUIS
+ */
+router.get('/calendar', authenticateToken, orderController.getProviderCalendar);
 
 /**
  * @route   GET /api/orders/:id

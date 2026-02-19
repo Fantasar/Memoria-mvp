@@ -24,12 +24,22 @@ function DashboardPrestataire() {
   const [historyFilter, setHistoryFilter] = useState('all');
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState(null);
 
+  //States pour le calendrier
+  const [calendar, setCalendar] = useState([]);
+  const [loadingCalendar, setLoadingCalendar] = useState(true);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [missionToSchedule, setMissionToSchedule] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [schedulingError, setSchedulingError] = useState('');
+
   // Charger les données au montage
   useEffect(() => {
     fetchStats();
     fetchAvailableMissions();
     fetchMyMissions();
     fetchHistory();
+    fetchCalendar();
   }, []);
 
   // ============================================
@@ -92,26 +102,69 @@ function DashboardPrestataire() {
     }
   };
 
+  const fetchCalendar = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/orders/calendar', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCalendar(response.data.data || []);
+    } catch (err) {
+      console.error('Erreur calendrier:', err);
+    } finally {
+      setLoadingCalendar(false);
+    }
+  };
+
   // ============================================
   // ACTIONS HANDLERS
   // ============================================
 
-  const handleAcceptMission = async (missionId) => {
-    if (!window.confirm('Accepter cette mission ?')) return;
+const handleAcceptMission = (mission) => {
+  console.log('🔍 handleAcceptMission appelée avec:', mission);
+  setMissionToSchedule(mission);
+  setShowScheduleModal(true);
+  setSchedulingError('');
+  
+  // Pré-remplir avec demain par défaut
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  setSelectedDate(tomorrow.toISOString().split('T')[0]);
+  setSelectedTime('09:00');
+};
 
-    try {
-      const token = localStorage.getItem('token');
-      await axios.patch(`/api/orders/${missionId}/accept`, {}, {
+const confirmScheduleMission = async () => {
+  if (!selectedDate || !selectedTime) {
+    setSchedulingError('Date et heure sont obligatoires');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    await axios.patch(
+      `/api/orders/${missionToSchedule.id}/accept`,
+      {
+        scheduled_date: selectedDate,
+        scheduled_time: selectedTime
+      },
+      {
         headers: { Authorization: `Bearer ${token}` }
-      });
-      alert('Mission acceptée !');
-      fetchAvailableMissions();
-      fetchMyMissions();
-      fetchStats();
-    } catch (err) {
-      alert(err.response?.data?.error?.message || 'Erreur');
-    }
-  };
+      }
+    );
+
+    alert('Mission acceptée et planifiée !');
+    setShowScheduleModal(false);
+    setMissionToSchedule(null);
+    fetchAvailableMissions();
+    fetchMyMissions();
+    fetchCalendar();
+  } catch (err) {
+    console.error('Erreur planification:', err);
+    setSchedulingError(
+      err.response?.data?.error?.message || 'Erreur lors de la planification'
+    );
+  }
+};
 
   const handleCompleteMission = async (missionId) => {
     if (!window.confirm('Marquer cette mission comme terminée ?')) return;
@@ -240,6 +293,124 @@ function DashboardPrestataire() {
         )}
       </div>
     ),
+    calendar: (
+  <div>
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-2xl font-semibold">Calendrier</h2>
+      <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+        {calendar.length} mission{calendar.length > 1 ? 's' : ''} planifiée{calendar.length > 1 ? 's' : ''}
+      </span>
+    </div>
+
+    {loadingCalendar ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    ) : calendar.length === 0 ? (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">Aucune mission planifiée</p>
+        <p className="text-sm text-gray-500 mt-2">
+          Acceptez des missions pour les voir apparaître ici
+        </p>
+      </div>
+    ) : (
+      <div className="space-y-6">
+        {/* Grouper par date */}
+        {Object.entries(
+          calendar.reduce((acc, mission) => {
+            const date = mission.scheduled_date;
+            if (!acc[date]) acc[date] = [];
+            acc[date].push(mission);
+            return acc;
+          }, {})
+        ).map(([date, missions]) => (
+          <div key={date} className="bg-white border border-gray-200 rounded-lg p-5">
+            
+            {/* Header date */}
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b">
+              <div className="bg-green-100 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-green-600">
+                  {new Date(date).getDate()}
+                </p>
+                <p className="text-xs text-green-700">
+                  {new Date(date).toLocaleDateString('fr-FR', { month: 'short' })}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">
+                  {new Date(date).toLocaleDateString('fr-FR', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {missions.length} mission{missions.length > 1 ? 's' : ''} planifiée{missions.length > 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+
+            {/* Timeline des missions */}
+            <div className="space-y-3">
+              {missions
+                .sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time))
+                .map(mission => {
+                  const startTime = mission.scheduled_time.substring(0, 5);
+                  const duration = parseFloat(mission.duration_hours) || 2;
+                  const [hours, minutes] = mission.scheduled_time.split(':').map(Number);
+                  const endMinutes = hours * 60 + minutes + (duration * 60);
+                  const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+
+                  return (
+                    <div
+                      key={mission.id}
+                      className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                    >
+                      {/* Horaire */}
+                      <div className="text-center min-w-[80px]">
+                        <p className="text-lg font-bold text-green-600">{startTime}</p>
+                        <p className="text-xs text-gray-500">↓ {duration}h</p>
+                        <p className="text-sm text-gray-600">{endTime}</p>
+                      </div>
+
+                      {/* Infos mission */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-gray-900">{mission.cemetery_name}</h4>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            mission.status === 'accepted' ? 'bg-blue-100 text-blue-800' :
+                            mission.status === 'awaiting_validation' ? 'bg-orange-100 text-orange-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {mission.status === 'accepted' && '🔄 En cours'}
+                            {mission.status === 'awaiting_validation' && '⏰ À valider'}
+                            {mission.status === 'completed' && '✅ Terminée'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">📍 {mission.cemetery_city}</p>
+                        <p className="text-sm text-gray-600">🔧 {mission.service_name}</p>
+                        <p className="text-sm text-gray-600">🪦 {mission.cemetery_location}</p>
+                      </div>
+
+                      {/* Rémunération */}
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">Vous recevrez</p>
+                        <p className="text-lg font-bold text-green-600">
+                          {(parseFloat(mission.price) * 0.8).toFixed(2)}€
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+),
 
     available: (
       <div>
@@ -281,8 +452,14 @@ function DashboardPrestataire() {
                   </div>
                 </div>
 
-                <button onClick={() => handleAcceptMission(mission.id)} className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition">
-                  ✓ Accepter cette mission
+                <button 
+                  onClick={() => {
+                    console.log('🔘 Bouton cliqué !', mission);
+                    handleAcceptMission(mission);
+                  }} 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition"
+                >
+                  ✓ Accepter et planifier
                 </button>
               </div>
             ))}
@@ -693,6 +870,9 @@ function DashboardPrestataire() {
           <button onClick={() => setActiveSection('missions')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'missions' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Mes missions ({myMissions.length})
           </button>
+          <button onClick={() => setActiveSection('calendar')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'calendar' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Calendrier ({calendar.length})
+          </button>
           <button onClick={() => setActiveSection('history')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'history' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Historique ({history.length})
           </button>
@@ -715,6 +895,116 @@ function DashboardPrestataire() {
         </section>
 
       </main>
+      
+          {/* ===== MODAL PLANIFICATION ===== */}
+{showScheduleModal && missionToSchedule && (
+  <div
+    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    onClick={() => setShowScheduleModal(false)}
+  >
+    <div
+      className="bg-white rounded-xl max-w-md w-full shadow-2xl"
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between p-6 border-b">
+        <h3 className="text-xl font-bold text-gray-900">Planifier l'intervention</h3>
+        <button
+          onClick={() => setShowScheduleModal(false)}
+          className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="p-6 space-y-4">
+        {/* Mission info */}
+        <div className="bg-gray-50 rounded-lg p-4">
+          <p className="font-semibold text-gray-900">{missionToSchedule.cemetery_name}</p>
+          <p className="text-sm text-gray-600">{missionToSchedule.service_name}</p>
+          <p className="text-sm text-green-600 font-medium mt-2">
+            Durée estimée : {missionToSchedule.duration_hours || 2}h
+          </p>
+        </div>
+
+        {/* Date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Date d'intervention <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={e => setSelectedDate(e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+            max={new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            📅 Maximum 15 jours à l'avance
+          </p>
+        </div>
+
+        {/* Heure */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Heure de début <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={selectedTime}
+            onChange={e => setSelectedTime(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            {Array.from({ length: 12 }, (_, i) => {
+              const hour = i + 7; // 7h à 18h
+              return ['00', '30'].map(minutes => {
+                const time = `${String(hour).padStart(2, '0')}:${minutes}`;
+                return (
+                  <option key={time} value={time}>
+                    {time}
+                  </option>
+                );
+              });
+            }).flat()}
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            🕐 Horaires : 7h00 - 19h00 (la mission doit se terminer avant 19h)
+          </p>
+        </div>
+
+        {/* Erreur */}
+        {schedulingError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-sm text-red-800">{schedulingError}</p>
+          </div>
+        )}
+
+        {/* Aperçu */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-sm text-blue-800">
+            📍 Intervention prévue le{' '}
+            <strong>{new Date(selectedDate).toLocaleDateString('fr-FR')}</strong> à{' '}
+            <strong>{selectedTime}</strong>
+          </p>
+        </div>
+      </div>
+
+      <div className="p-6 border-t bg-gray-50 rounded-b-xl flex gap-3">
+        <button
+          onClick={() => setShowScheduleModal(false)}
+          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition"
+        >
+          Annuler
+        </button>
+        <button
+          onClick={confirmScheduleMission}
+          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+        >
+          ✅ Confirmer
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
     </div>
   );
