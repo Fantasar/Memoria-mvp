@@ -63,6 +63,31 @@ const createAdmin = async (req, res) => {
   }
 };
 
+
+/**
+ * @desc    Renvoie la liste des inscrit sur la plateforme
+ * @route   POST /api/admin
+ * @access  Private (Admin only)
+ */
+
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await authService.getAllUsers();
+    return res.status(200).json({
+      success: true,
+      data: users,
+      count: users.length
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: { code: 'SERVER_ERROR', message: 'Erreur serveur' }
+    });
+  }
+};
+
+
 module.exports = {
-  createAdmin
+  createAdmin,
+  getAllUsers
 };

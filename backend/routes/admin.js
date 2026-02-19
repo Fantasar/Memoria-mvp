@@ -16,4 +16,12 @@ const { authenticateToken, authenticateAdmin } = require('../middlewares/admin-a
  */
 router.post('/', authenticateToken, authenticateAdmin, adminController.createAdmin);
 
+/**
+ * @route   GET /api/admin//users
+ * @desc    Récupère la liste des utilisateurs inscrit sur la plateforme
+ * @access  Private (Admin only)
+ */
+router.get('/users', authenticateToken, authenticateAdmin, adminController.getAllUsers);
+
+
 module.exports = router;

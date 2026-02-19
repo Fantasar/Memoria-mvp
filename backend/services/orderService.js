@@ -12,7 +12,7 @@ const paymentRepository = require('../repositories/paymentRepository');
  * Créer une nouvelle commande (client uniquement)
  */
 const createOrder = async (clientId, orderData) => {
-  const { cemetery_id, service_category_id, cemetery_location, price } = orderData;
+  const { cemetery_id, service_category_id, cemetery_location } = orderData;
 
   // ============ VALIDATIONS MÉTIER ============
 
@@ -33,16 +33,36 @@ const createOrder = async (clientId, orderData) => {
   }
 
   // 2. Validation des données obligatoires
-  if (!cemetery_id || !service_category_id || !price) {
-    const error = new Error('Données manquantes (cemetery_id, service_category_id, price)');
+  if (!cemetery_id || !service_category_id) {
+    const error = new Error('Données manquantes (cemetery_id, service_category_id)');
     error.code = 'MISSING_FIELDS';
     error.statusCode = 400;
     throw error;
   }
 
-  // 3. Validation du prix
-  if (price <= 0) {
-    const error = new Error('Le prix doit être supérieur à 0');
+  // ✅ 3. RÉCUPÉRER LE PRIX DEPUIS LA BDD (sécurisé)
+  const serviceCategoryRepository = require('../repositories/serviceCategoryRepository');
+  const service = await serviceCategoryRepository.findById(service_category_id);
+
+  if (!service) {
+    const error = new Error('Service introuvable');
+    error.code = 'SERVICE_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (!service.is_active) {
+    const error = new Error('Ce service n\'est plus disponible');
+    error.code = 'SERVICE_INACTIVE';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const price = parseFloat(service.base_price);
+
+  // 4. Validation du prix
+  if (!price || price <= 0) {
+    const error = new Error('Prix du service invalide');
     error.code = 'INVALID_PRICE';
     error.statusCode = 400;
     throw error;

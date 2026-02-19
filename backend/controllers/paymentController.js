@@ -1,11 +1,5 @@
-// backend/controllers/paymentController.js
 const stripeService = require('../services/stripeService');
 const orderService = require('../services/orderService');
-
-/**
- * CONTROLLER PAIEMENT
- * Responsabilité : Gestion des endpoints de paiement
- */
 
 /**
  * @desc    Créer un Payment Intent Stripe + Commande
@@ -14,26 +8,52 @@ const orderService = require('../services/orderService');
  */
 const createPaymentIntent = async (req, res) => {
   try {
-    const { cemetery_id, service_category_id, cemetery_location, price } = req.body;
+    const { cemetery_id, service_category_id, cemetery_location } = req.body;
     const clientId = req.user.userId;
 
     // Validation des données
-    if (!cemetery_id || !service_category_id || !price) {
+    if (!cemetery_id || !service_category_id) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'MISSING_FIELDS',
-          message: 'Données manquantes (cemetery_id, service_category_id, price)',
+          message: 'Données manquantes (cemetery_id, service_category_id)',
         },
       });
     }
 
-    if (price <= 0) {
+    // ✅ RÉCUPÉRER LE PRIX DEPUIS LA BDD (sécurisé)
+    const serviceCategoryRepository = require('../repositories/serviceCategoryRepository');
+    const service = await serviceCategoryRepository.findById(service_category_id);
+
+    if (!service) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SERVICE_NOT_FOUND',
+          message: 'Service introuvable',
+        },
+      });
+    }
+
+    if (!service.is_active) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'SERVICE_INACTIVE',
+          message: 'Ce service n\'est plus disponible',
+        },
+      });
+    }
+
+    const price = parseFloat(service.base_price);
+
+    if (!price || price <= 0) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'INVALID_PRICE',
-          message: 'Le prix doit être supérieur à 0',
+          message: 'Prix du service invalide',
         },
       });
     }
@@ -52,6 +72,7 @@ const createPaymentIntent = async (req, res) => {
       data: {
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
+        amount: price // ✅ Renvoyer le prix pour affichage
       },
     });
   } catch (error) {
@@ -76,7 +97,6 @@ const confirmPayment = async (req, res) => {
   try {
     const { paymentIntentId } = req.body;
     const clientId = req.user.userId;
-
 
     if (!paymentIntentId) {
       return res.status(400).json({
@@ -105,18 +125,13 @@ const confirmPayment = async (req, res) => {
     // Récupérer les métadonnées de la commande
     const { cemetery_id, service_category_id, cemetery_location } = paymentIntent.metadata;
 
-
-    // Créer la commande en BDD
+    // ✅ Créer la commande SANS envoyer le prix (il sera récupéré dans orderService)
     const order = await orderService.createOrder(clientId, {
       cemetery_id: parseInt(cemetery_id),
       service_category_id: parseInt(service_category_id),
-      cemetery_location: cemetery_location || null,
-      price: paymentIntent.amount / 100, // Reconvertir centimes → euros
+      cemetery_location: cemetery_location || null
+      // ✅ Le prix sera récupéré depuis la BDD dans orderService
     });
-
-
-    // Enregistrer le paiement dans la table payments
-    // TODO: À implémenter si tu veux tracker les paiements
 
     return res.status(201).json({
       success: true,
@@ -127,6 +142,7 @@ const confirmPayment = async (req, res) => {
       message: 'Commande créée et paiement confirmé',
     });
   } catch (error) {
+    console.error('Erreur confirmPayment:', error);
 
     if (error.statusCode) {
       return res.status(error.statusCode).json({

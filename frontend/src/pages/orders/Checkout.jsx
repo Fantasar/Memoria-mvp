@@ -1,4 +1,3 @@
-// frontend/src/pages/orders/Checkout.jsx
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements } from '@stripe/react-stripe-js';
@@ -15,6 +14,7 @@ function Checkout() {
 
   const [clientSecret, setClientSecret] = useState('');
   const [paymentIntentId, setPaymentIntentId] = useState('');
+  const [amount, setAmount] = useState(0); // ✅ Récupérer le prix du backend
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -35,9 +35,15 @@ function Checkout() {
       try {
         setLoading(true);
 
+        // ✅ Envoyer seulement les IDs, pas le prix
         const response = await axios.post(
           `${API_URL}/api/payments/create-payment-intent`,
-          orderData,
+          {
+            cemetery_id: orderData.cemetery_id,
+            service_category_id: orderData.service_category_id,
+            cemetery_location: orderData.cemetery_location
+            // ✅ Le prix sera calculé côté backend
+          },
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -49,6 +55,7 @@ function Checkout() {
         if (response.data.success) {
           setClientSecret(response.data.data.clientSecret);
           setPaymentIntentId(response.data.data.paymentIntentId);
+          setAmount(response.data.data.amount); // ✅ Récupérer le prix du backend
         }
 
         setError(null);
@@ -137,7 +144,7 @@ function Checkout() {
             <div className="flex justify-between">
               <span className="text-gray-600">Montant à payer</span>
               <span className="font-bold text-2xl text-blue-600">
-                {orderData?.price?.toFixed(2)} €
+                {amount ? amount.toFixed(2) : '0.00'} €
               </span>
             </div>
           </div>

@@ -176,6 +176,30 @@ const rejectProvider = async (providerId, reason) => {
   return result.rows[0];
 };
 
+const getAllUsers = async () => {
+  const query = `
+    SELECT 
+      u.id,
+      u.prenom,
+      u.nom,
+      u.email,
+      u.created_at,
+      u.is_verified,
+      u.siret,
+      u.zone_intervention,
+      u.rating,
+      u.rejection_reason,
+      r.name as role
+    FROM users u
+    INNER JOIN roles r ON u.role_id = r.id
+    WHERE r.name != 'admin'
+    AND u.deleted_at IS NULL
+    ORDER BY u.created_at DESC
+  `;
+  const result = await pool.query(query);
+  return result.rows;
+};
+
 module.exports = {
   findByEmail,
   findById,
@@ -185,5 +209,6 @@ module.exports = {
   findPendingProviders,
   approveProvider,
   rejectProvider,
+  getAllUsers,
   deleteById
 };

@@ -39,7 +39,27 @@ const existsById = async (cemeteryId) => {
   return result.rows[0].exists;
 };
 
+
+/**
+ * Ajoute la possibilité de rajouter un cimetière
+ */
+const createCemetery = async ({ name, city, postal_code, department }) => {
+  const query = `
+    INSERT INTO cemeteries (name, city, postal_code, department)
+    VALUES ($1, $2, $3, $4)
+    RETURNING *
+  `;
+  const result = await pool.query(query, [
+    name, 
+    city, 
+    postal_code,
+    department || null
+  ]);
+  return result.rows[0];
+};
+
 module.exports = {
   findAllActive,
+  createCemetery,
   existsById
 };

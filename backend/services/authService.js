@@ -206,8 +206,14 @@ const createAdminUser = async (adminData, creatorEmail) => {
   };
 };
 
+    // ============ RETOURNER LA LISTE DES INSCRIT DE LA PLATEFORME ============
+  const getAllUsers = async () => {
+    return await userRepository.getAllUsers();
+};
+
 module.exports = {
   registerUser,
   loginUser,
-  createAdminUser
+  createAdminUser,
+  getAllUsers
 };

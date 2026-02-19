@@ -67,6 +67,28 @@ const uploadPhoto = async (req, res) => {
   }
 };
 
+const getAllPhotos = async (req, res) => {
+  try {
+    const photos = await photoService.getAllPhotos(
+      req.user.userId,
+      req.user.role
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: photos,
+      count: photos.length
+    });
+
+  } catch (error) {
+    console.error('Erreur récupération toutes photos:', error);
+    return res.status(500).json({
+      success: false,
+      error: { code: 'SERVER_ERROR', message: 'Erreur serveur' }
+    });
+  }
+};
+
 /**
  * @desc    Récupérer les photos d'une commande
  * @route   GET /api/photos/order/:orderId
@@ -113,5 +135,6 @@ const getOrderPhotos = async (req, res) => {
 
 module.exports = {
   uploadPhoto,
-  getOrderPhotos
+  getOrderPhotos,
+  getAllPhotos
 };

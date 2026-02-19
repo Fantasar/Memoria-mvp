@@ -53,8 +53,36 @@ const deleteById = async (photoId) => {
   return result.rows[0];
 };
 
+const getAllPhotos = async () => {
+  const query = `
+    SELECT 
+      p.*,
+      o.cemetery_id,
+      o.status as order_status,
+      o.price,
+      c.name as cemetery_name,
+      c.city as cemetery_city,
+      sc.name as service_name,
+      uc.email as client_email,
+      up.email as prestataire_email,
+      up.prenom as prestataire_prenom,
+      up.nom as prestataire_nom
+    FROM photos p
+    LEFT JOIN orders o ON p.order_id = o.id
+    LEFT JOIN cemeteries c ON o.cemetery_id = c.id
+    LEFT JOIN service_categories sc ON o.service_category_id = sc.id
+    LEFT JOIN users uc ON o.client_id = uc.id
+    LEFT JOIN users up ON o.prestataire_id = up.id
+    ORDER BY p.uploaded_at DESC
+  `;
+
+  const result = await pool.query(query);
+  return result.rows;
+};
+
 module.exports = {
   create,
   findByOrderId,
-  deleteById
+  deleteById,
+  getAllPhotos
 };
