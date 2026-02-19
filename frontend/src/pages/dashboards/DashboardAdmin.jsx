@@ -29,7 +29,7 @@ function DashboardAdmin() {
   //Gestion des cimetières - Ajout
   const [showAddCemetery, setShowAddCemetery] = useState(false);
   const [selectedCemetery, setSelectedCemetery] = useState(null);
-  const [newCemetery, setNewCemetery] = useState({ name: '', city: '', postal_code: '', department: '' });
+  const [newCemetery, setNewCemetery] = useState({ name: '', city: '', postal_code: '', department: '', address: '' });
   const [addingCemetery, setAddingCemetery] = useState(false);
 
   // Gestion des onglets finances - Cimetière - Service
@@ -1091,6 +1091,22 @@ cemeteries: (
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
             placeholder="Gironde"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Adresse complète (optionnel)
+          </label>
+          <input
+            type="text"
+            value={newCemetery.address}
+            onChange={e => setNewCemetery({ ...newCemetery, address: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="Ex: 123 Rue du Repos Éternel"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            💡 Si non renseignée, on utilisera le nom du cimetière pour la géolocalisation
+          </p>
         </div>
 
         <div className="flex gap-3 pt-4 border-t">
