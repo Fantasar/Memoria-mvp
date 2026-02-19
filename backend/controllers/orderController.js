@@ -509,6 +509,40 @@ const resolveDispute = async (req, res) => {
 };
 
 /**
+ * @route   GET /api/orders/calendar/:prestatairId
+ * @desc    Récupérer le calendrier d'un prestataire (admin)
+ * @access  Private (Admin)
+ */
+const getProviderCalendarForAdmin = async (req, res) => {
+  try {
+    const adminId = req.user.userId;
+    const { prestatairId } = req.params;
+    
+    const calendar = await orderService.getProviderCalendarForAdmin(adminId, prestatairId);
+
+    return res.status(200).json({
+      success: true,
+      data: calendar,
+      count: calendar.length
+    });
+  } catch (error) {
+    console.error('Erreur calendrier admin:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: { code: error.code, message: error.message }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: { code: 'SERVER_ERROR', message: 'Erreur serveur' }
+    });
+  }
+};
+
+/**
  * @route   GET /api/orders/calendar
  * @desc    Récupérer le calendrier du prestataire
  * @access  Private (Prestataire)
@@ -602,5 +636,6 @@ module.exports = {
   getDashboardStats,
   resolveDispute,
   getProviderHistory,
-  getProviderCalendar
+  getProviderCalendar,
+  getProviderCalendarForAdmin
 };

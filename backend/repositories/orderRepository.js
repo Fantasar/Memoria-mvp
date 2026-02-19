@@ -481,6 +481,39 @@ const getDashboardStats = async (userId) => {
   return stats;
 };
 
+/**
+ * Récupérer le calendrier d'un prestataire (pour admin)
+ */
+const findCalendarByPrestataireForAdmin = async (prestatairId) => {
+  const query = `
+    SELECT 
+      o.id,
+      o.scheduled_date,
+      o.scheduled_time,
+      o.status,
+      o.price,
+      o.cemetery_location,
+      c.name as cemetery_name,
+      c.city as cemetery_city,
+      sc.name as service_name,
+      sd.duration_hours,
+      uc.email as client_email,
+      uc.prenom as client_prenom,
+      uc.nom as client_nom
+    FROM orders o
+    LEFT JOIN cemeteries c ON o.cemetery_id = c.id
+    LEFT JOIN service_categories sc ON o.service_category_id = sc.id
+    LEFT JOIN service_durations sd ON sd.service_category_id = sc.id
+    LEFT JOIN users uc ON o.client_id = uc.id
+    WHERE o.prestataire_id = $1
+    AND o.scheduled_date IS NOT NULL
+    AND o.status IN ('accepted', 'awaiting_validation', 'completed')
+    ORDER BY o.scheduled_date ASC, o.scheduled_time ASC
+  `;
+  const result = await pool.query(query, [prestatairId]);
+  return result.rows;
+};
+
 
 module.exports = {
   create,
@@ -501,5 +534,6 @@ module.exports = {
   checkTimeSlotAvailability,
   assignPrestataireWithSchedule,
   findCalendarByPrestataire,
-  getServiceDuration
+  getServiceDuration,
+  findCalendarByPrestataireForAdmin
 };

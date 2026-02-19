@@ -591,6 +591,22 @@ const markOrderAsDisputed = async (orderId, adminId, reason) => {
 };
 
 /**
+ * Récupérer le calendrier d'un prestataire (admin)
+ */
+const getProviderCalendarForAdmin = async (adminId, prestatairId) => {
+  const admin = await userRepository.findById(adminId);
+  
+  if (!admin || admin.role !== 'admin') {
+    const error = new Error('Accès réservé aux administrateurs');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return await orderRepository.findCalendarByPrestataireForAdmin(prestatairId);
+};
+
+/**
  * Résoudre un litige (admin)
  */
 const resolveDispute = async (orderId, adminId, action) => {
@@ -694,5 +710,6 @@ module.exports = {
   markOrderAsDisputed,
   resolveDispute,
   getProviderHistory,
-  getProviderCalendar
+  getProviderCalendar,
+  getProviderCalendarForAdmin
 };

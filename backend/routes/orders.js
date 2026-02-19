@@ -99,6 +99,14 @@ router.get('/history', authenticateToken, orderController.getProviderHistory);
 router.get('/calendar', authenticateToken, orderController.getProviderCalendar);
 
 /**
+ * @route   GET /api//calendar/:prestatairId
+ * @desc    Récupérer le calendrier d'un prestataire
+ * @access  Admin - JWT REQUIS
+ */
+router.get('/calendar/:prestatairId', authenticateToken, orderController.getProviderCalendarForAdmin);
+
+
+/**
  * @route   GET /api/orders/:id
  * @desc    Récupérer les détails d'une commande
  * @access  Private (Tous) - JWT REQUIS
