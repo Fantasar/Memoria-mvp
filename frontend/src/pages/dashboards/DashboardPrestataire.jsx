@@ -2,35 +2,48 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import jsPDF from 'jspdf';
+
 
 function DashboardPrestataire() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('overview');
-
-  // States pour les données
-  const [stats, setStats] = useState(null);
+  
+  // Navigation entre onglets
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  // Missions disponibles
   const [availableMissions, setAvailableMissions] = useState([]);
-  const [myMissions, setMyMissions] = useState([]);
-
-  // Loading states
-  const [loadingStats, setLoadingStats] = useState(true);
   const [loadingAvailable, setLoadingAvailable] = useState(true);
+  
+  // Mes missions
+  const [myMissions, setMyMissions] = useState([]);
   const [loadingMissions, setLoadingMissions] = useState(true);
-
-  //States pour l'historique des commandes
+  
+  // Calendrier
+  const [calendar, setCalendar] = useState([]);
+  const [loadingCalendar, setLoadingCalendar] = useState(true);
+  
+  // Historique
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [historyFilter, setHistoryFilter] = useState('all');
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState(null);
-
-  //States pour le calendrier
-  const [calendar, setCalendar] = useState([]);
-  const [loadingCalendar, setLoadingCalendar] = useState(true);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  
+  // Finances
+  const [finances, setFinances] = useState(null);
+  const [loadingFinances, setLoadingFinances] = useState(true);
+  
+  // Stats overview
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  
+  // Modal planification
   const [missionToSchedule, setMissionToSchedule] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [submittingSchedule, setSubmittingSchedule] = useState(false);
   const [schedulingError, setSchedulingError] = useState('');
 
   // Charger les données au montage
@@ -40,6 +53,7 @@ function DashboardPrestataire() {
     fetchMyMissions();
     fetchHistory();
     fetchCalendar();
+    fetchFinances();
   }, []);
 
   // ============================================
@@ -116,6 +130,116 @@ function DashboardPrestataire() {
     }
   };
 
+  const fetchFinances = async () => {
+    setLoadingFinances(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/providers/finances', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFinances(response.data.data);
+    } catch (err) {
+      console.error('Erreur finances:', err);
+    } finally {
+      setLoadingFinances(false);
+    }
+  };
+
+  const exportFinancesPDF = () => {
+  if (!finances) return;
+
+  const doc = new jsPDF();
+  
+  // Header
+  doc.setFontSize(20);
+  doc.setTextColor(139, 92, 246); // Purple
+  doc.text('Mémoria - Relevé Financier', 20, 20);
+  
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Prestataire: ${user.prenom} ${user.nom}`, 20, 30);
+  doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, 20, 37);
+  
+  // Ligne de séparation
+  doc.setDrawColor(200, 200, 200);
+  doc.line(20, 42, 190, 42);
+  
+  // KPIs
+  doc.setFontSize(14);
+  doc.setTextColor(139, 92, 246);
+  doc.text('Résumé Financier', 20, 52);
+  
+  doc.setFontSize(11);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Total perçu: ${finances.total_earned.toFixed(2)}€`, 20, 62);
+  doc.text(`Missions complétées: ${finances.missions_completed}`, 20, 69);
+  doc.text(`En attente validation: ${finances.pending_validation.toFixed(2)}€`, 20, 76);
+  doc.text(`Moyenne par mission: ${finances.average_per_mission.toFixed(2)}€`, 20, 83);
+  
+  // Répartition mensuelle
+  if (finances.monthly_breakdown.length > 0) {
+    doc.setFontSize(14);
+    doc.setTextColor(139, 92, 246);
+    doc.text('Répartition Mensuelle', 20, 95);
+    
+    let y = 105;
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    
+    finances.monthly_breakdown.forEach(month => {
+      const monthName = new Date(month.month + '-01').toLocaleDateString('fr-FR', { 
+        year: 'numeric', 
+        month: 'long' 
+      });
+      doc.text(`${monthName}: ${month.count} missions - ${month.revenue.toFixed(2)}€`, 25, y);
+      y += 7;
+    });
+  }
+  
+  // Historique paiements
+  if (finances.recent_payments.length > 0) {
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setTextColor(139, 92, 246);
+    doc.text('Historique des Paiements', 20, 20);
+    
+    let y = 30;
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    
+      finances.recent_payments.forEach((payment, index) => {
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+      
+      const date = new Date(payment.completed_at).toLocaleDateString('fr-FR');
+        doc.text(`${date} | ${payment.cemetery_name}, ${payment.cemetery_city}`, 20, y);
+        doc.text(`${payment.service_name} - ${payment.amount_received.toFixed(2)}€`, 25, y + 5);
+      
+        y += 12;
+      
+        if (index < finances.recent_payments.length - 1) {
+          doc.setDrawColor(220, 220, 220);
+          doc.line(20, y - 2, 190, y - 2);
+        }
+      });
+    }
+  
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(`Page ${i} / ${pageCount}`, 105, 290, { align: 'center' });
+        doc.text('Mémoria - Plateforme de services funéraires', 105, 285, { align: 'center' });
+      }
+  
+    // Télécharger
+    doc.save(`Memoria_Finances_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   // ============================================
   // ACTIONS HANDLERS
   // ============================================
@@ -123,8 +247,6 @@ function DashboardPrestataire() {
 const handleAcceptMission = (mission) => {
   console.log('🔍 handleAcceptMission appelée avec:', mission);
   setMissionToSchedule(mission);
-  setShowScheduleModal(true);
-  setSchedulingError('');
   
   // Pré-remplir avec demain par défaut
   const tomorrow = new Date();
@@ -153,8 +275,9 @@ const confirmScheduleMission = async () => {
     );
 
     alert('Mission acceptée et planifiée !');
-    setShowScheduleModal(false);
     setMissionToSchedule(null);
+    setSelectedDate('');
+    setSelectedTime('');
     fetchAvailableMissions();
     fetchMyMissions();
     fetchCalendar();
@@ -467,7 +590,7 @@ const confirmScheduleMission = async () => {
         )}
       </div>
     ),
-
+  
     missions: (
       <div>
         <h2 className="text-2xl font-semibold mb-6">Mes missions</h2>
@@ -812,7 +935,124 @@ const confirmScheduleMission = async () => {
     )}
   </div>
 ),
-  };
+  finances: (
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Finances</h2>
+          <p className="text-sm text-gray-500 mt-1">Suivi de vos revenus</p>
+        </div>
+        <button
+          onClick={exportFinancesPDF}
+          disabled={!finances}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          📄 Export PDF
+        </button>
+      </div>
+
+      {loadingFinances ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      ) : !finances ? (
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <p className="text-gray-600">Impossible de charger les données financières</p>
+        </div>
+      ) : (
+        <>
+          {/* KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg">
+              <p className="text-sm opacity-90 mb-2">💰 Total perçu</p>
+              <p className="text-3xl font-bold">{finances.total_earned.toFixed(2)}€</p>
+              <p className="text-xs opacity-80 mt-2">{finances.missions_completed} missions</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-6 text-white shadow-lg">
+              <p className="text-sm opacity-90 mb-2">⏳ En attente</p>
+              <p className="text-3xl font-bold">{finances.pending_validation.toFixed(2)}€</p>
+              <p className="text-xs opacity-80 mt-2">Validation admin</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg">
+              <p className="text-sm opacity-90 mb-2">📊 Moyenne</p>
+              <p className="text-3xl font-bold">{finances.average_per_mission.toFixed(2)}€</p>
+              <p className="text-xs opacity-80 mt-2">Par mission</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+              <p className="text-sm opacity-90 mb-2">✅ Complétées</p>
+              <p className="text-3xl font-bold">{finances.missions_completed}</p>
+              <p className="text-xs opacity-80 mt-2">Missions validées</p>
+            </div>
+          </div>
+
+          {/* Répartition mensuelle */}
+          {finances.monthly_breakdown.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
+              <h3 className="text-lg font-semibold mb-4">📈 Répartition mensuelle</h3>
+              <div className="space-y-3">
+                {finances.monthly_breakdown.map(month => {
+                  const monthName = new Date(month.month + '-01').toLocaleDateString('fr-FR', { 
+                    year: 'numeric', 
+                    month: 'long' 
+                  });
+                  return (
+                    <div key={month.month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">{monthName}</p>
+                        <p className="text-sm text-gray-500">{month.count} mission{month.count > 1 ? 's' : ''}</p>
+                      </div>
+                      <p className="text-xl font-bold text-green-600">{month.revenue.toFixed(2)}€</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Historique paiements */}
+          {finances.recent_payments.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4">💸 Historique des paiements</h3>
+              <div className="space-y-3">
+                {finances.recent_payments.map(payment => (
+                  <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{payment.cemetery_name}</p>
+                      <p className="text-sm text-gray-600">{payment.cemetery_city} • {payment.service_name}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(payment.completed_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Prix total: {payment.price.toFixed(2)}€</p>
+                      <p className="text-lg font-bold text-green-600">+{payment.amount_received.toFixed(2)}€</p>
+                      <p className="text-xs text-gray-500">(80% commission)</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {finances.recent_payments.length === 0 && finances.missions_completed === 0 && (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <p className="text-gray-600">Aucune mission complétée pour le moment</p>
+              <p className="text-sm text-gray-500 mt-2">Vos revenus apparaîtront ici une fois vos missions validées</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+};
 
   
 
@@ -861,22 +1101,25 @@ const confirmScheduleMission = async () => {
         {/* Sidebar */}
         <aside className="w-1/3 bg-white border-l-4 border-green-600 rounded-lg p-6 space-y-4 shadow h-fit">
           <p className="text-gray-500 uppercase font-semibold text-sm mb-4">Sections</p>
-          <button onClick={() => setActiveSection('overview')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'overview' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+          <button onClick={() => setActiveTab('overview')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'overview' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Aperçu
           </button>
-          <button onClick={() => setActiveSection('available')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'available' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+          <button onClick={() => setActiveTab('available')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'available' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Missions disponibles ({availableMissions.length})
           </button>
-          <button onClick={() => setActiveSection('missions')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'missions' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+          <button onClick={() => setActiveTab('missions')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'missions' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Mes missions ({myMissions.length})
           </button>
-          <button onClick={() => setActiveSection('calendar')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'calendar' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+          <button onClick={() => setActiveTab('calendar')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'calendar' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Calendrier ({calendar.length})
           </button>
-          <button onClick={() => setActiveSection('history')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'history' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+          <button onClick={() => setActiveTab('finances')} className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'finances' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+            Finances
+          </button>
+          <button onClick={() => setActiveTab('history')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'history' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Historique ({history.length})
           </button>
-          <button onClick={() => setActiveSection('profile')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'profile' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+          <button onClick={() => setActiveTab('profile')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'profile' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Profil
           </button>
         </aside>
@@ -891,16 +1134,20 @@ const confirmScheduleMission = async () => {
           </div>
 
           {/* Contenu dynamique */}
-          {sections[activeSection]}
+          {sections[activeTab]}
         </section>
 
       </main>
       
-          {/* ===== MODAL PLANIFICATION ===== */}
-{showScheduleModal && missionToSchedule && (
+{/* ===== MODAL PLANIFICATION ===== */}
+{missionToSchedule && (
   <div
     className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-    onClick={() => setShowScheduleModal(false)}
+    onClick={() => {
+      setMissionToSchedule(null);
+      setSelectedDate('');
+      setSelectedTime('');
+    }}
   >
     <div
       className="bg-white rounded-xl max-w-md w-full shadow-2xl"
@@ -909,7 +1156,11 @@ const confirmScheduleMission = async () => {
       <div className="flex items-center justify-between p-6 border-b">
         <h3 className="text-xl font-bold text-gray-900">Planifier l'intervention</h3>
         <button
-          onClick={() => setShowScheduleModal(false)}
+          onClick={() => {
+            setMissionToSchedule(null);
+            setSelectedDate('');
+            setSelectedTime('');
+          }}
           className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
         >
           ✕
@@ -971,13 +1222,6 @@ const confirmScheduleMission = async () => {
           </p>
         </div>
 
-        {/* Erreur */}
-        {schedulingError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <p className="text-sm text-red-800">{schedulingError}</p>
-          </div>
-        )}
-
         {/* Aperçu */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <p className="text-sm text-blue-800">
@@ -990,7 +1234,11 @@ const confirmScheduleMission = async () => {
 
       <div className="p-6 border-t bg-gray-50 rounded-b-xl flex gap-3">
         <button
-          onClick={() => setShowScheduleModal(false)}
+          onClick={() => {
+            setMissionToSchedule(null);
+            setSelectedDate('');
+            setSelectedTime('');
+          }}
           className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition"
         >
           Annuler
@@ -1005,7 +1253,6 @@ const confirmScheduleMission = async () => {
     </div>
   </div>
 )}
-
     </div>
   );
 }

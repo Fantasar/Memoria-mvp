@@ -11,6 +11,9 @@ router.get(
   providerController.getPendingProviders
 );
 
+// GET /api/providers/finances - Finances du prestataire
+router.get('/finances', authenticateToken, providerController.getProviderFinances);
+
 // PATCH : Valider prestataire
 router.patch(
   '/:id/approve',

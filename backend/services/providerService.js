@@ -1,4 +1,5 @@
 const userRepository = require('../repositories/userRepository');
+const providerRepository = require('../repositories/providerRepository');
 
 /**
  * Récupérer les prestataires en attente
@@ -85,8 +86,34 @@ const rejectProvider = async (providerId, adminId, reason) => {
   return await userRepository.rejectProvider(providerId, reason);
 };
 
+/**
+ * Récupérer les finances d'un prestataire
+ */
+const getProviderFinances = async (userId) => {
+  // Vérifier que l'utilisateur est prestataire
+  const user = await userRepository.findById(userId);
+
+    console.log('🔍 DEBUG getProviderFinances:', {
+    userId,
+    user,
+    role: user?.role
+  });
+
+  if (!user || user.role !== 'prestataire') {
+    const error = new Error('Accès réservé aux prestataires');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const finances = await providerRepository.getProviderFinancialStats(userId);
+
+  return finances;
+};
+
 module.exports = {
   getPendingProviders,
   approveProvider,
-  rejectProvider
+  rejectProvider,
+  getProviderFinances
 };
