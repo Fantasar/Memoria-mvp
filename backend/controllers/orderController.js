@@ -526,6 +526,38 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+/**
+ * @route   GET /api/orders/history
+ * @desc    Récupérer l'historique des missions (prestataire)
+ * @access  Private (Prestataire)
+ */
+const getProviderHistory = async (req, res) => {
+  try {
+    const prestatairId = req.user.userId;
+    const history = await orderService.getProviderHistory(prestatairId);
+
+    return res.status(200).json({
+      success: true,
+      data: history,
+      count: history.length
+    });
+  } catch (error) {
+    console.error('Erreur getProviderHistory:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: { code: error.code, message: error.message }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: { code: 'SERVER_ERROR', message: 'Erreur serveur' }
+    });
+  }
+};
+
 
 module.exports = {
   createOrder,
@@ -540,5 +572,6 @@ module.exports = {
   getDisputedOrders,
   markAsDisputed,
   getDashboardStats,
-  resolveDispute
+  resolveDispute,
+  getProviderHistory
 };

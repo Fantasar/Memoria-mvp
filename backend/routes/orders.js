@@ -85,6 +85,13 @@ router.patch('/:id/resolve', authenticateToken, orderController.resolveDispute);
 router.get('/dashboard-stats', authenticateToken, orderController.getDashboardStats);
 
 /**
+ * @route   GET /api//history
+ * @desc    Récupérer l'historique des commandes prestataire
+ * @access  Prestataires - JWT REQUIS
+ */
+router.get('/history', authenticateToken, orderController.getProviderHistory);
+
+/**
  * @route   GET /api/orders/:id
  * @desc    Récupérer les détails d'une commande
  * @access  Private (Tous) - JWT REQUIS

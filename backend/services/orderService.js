@@ -231,6 +231,22 @@ if (zone) {
 };
 
 /**
+ * Récupérer l'historique des missions (prestataire)
+ */
+const getProviderHistory = async (prestatairId) => {
+  const user = await userRepository.findById(prestatairId);
+  
+  if (!user || user.role !== 'prestataire') {
+    const error = new Error('Accès réservé aux prestataires');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return await orderRepository.findHistoryByPrestataire(prestatairId);
+};
+
+/**
  * Compléter une mission (prestataire uniquement)
  */
 const completeOrder = async (orderId, prestatairId) => {
@@ -594,5 +610,6 @@ module.exports = {
   getPendingValidationOrders,
   getDisputedOrders,
   markOrderAsDisputed,
-  resolveDispute
+  resolveDispute,
+  getProviderHistory
 };

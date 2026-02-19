@@ -18,11 +18,18 @@ function DashboardPrestataire() {
   const [loadingAvailable, setLoadingAvailable] = useState(true);
   const [loadingMissions, setLoadingMissions] = useState(true);
 
+  //States pour l'historique des commandes
+  const [history, setHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [historyFilter, setHistoryFilter] = useState('all');
+  const [selectedHistoryOrder, setSelectedHistoryOrder] = useState(null);
+
   // Charger les données au montage
   useEffect(() => {
     fetchStats();
     fetchAvailableMissions();
     fetchMyMissions();
+    fetchHistory();
   }, []);
 
   // ============================================
@@ -71,6 +78,20 @@ function DashboardPrestataire() {
     }
   };
 
+  const fetchHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/orders/history', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setHistory(response.data.data || []);
+    } catch (err) {
+      console.error('Erreur historique:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   // ============================================
   // ACTIONS HANDLERS
   // ============================================
@@ -108,6 +129,14 @@ function DashboardPrestataire() {
     }
   };
 
+  // ============================================
+  // VARIABLES CALCULEES
+  // ============================================
+
+  const filteredHistory = historyFilter === 'all'
+  ? history
+  : history.filter(order => order.status === historyFilter);
+  
   // ============================================
   // SECTIONS CONTENT
   // ============================================
@@ -396,7 +425,219 @@ function DashboardPrestataire() {
         </div>
       </div>
     ),
+    history: (
+  <div>
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-2xl font-semibold">Historique des missions</h2>
+      <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+        {history.length} mission{history.length > 1 ? 's' : ''} terminée{history.length > 1 ? 's' : ''}
+      </span>
+    </div>
+
+    {/* Filtres */}
+    <div className="flex gap-3 mb-6">
+      <button
+        onClick={() => setHistoryFilter('all')}
+        className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+          historyFilter === 'all'
+            ? 'bg-green-600 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        }`}
+      >
+        Toutes ({history.length})
+      </button>
+      <button
+        onClick={() => setHistoryFilter('completed')}
+        className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+          historyFilter === 'completed'
+            ? 'bg-green-600 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        }`}
+      >
+        ✅ Validées ({history.filter(h => h.status === 'completed').length})
+      </button>
+      <button
+        onClick={() => setHistoryFilter('refunded')}
+        className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+          historyFilter === 'refunded'
+            ? 'bg-green-600 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        }`}
+      >
+        💸 Remboursées ({history.filter(h => h.status === 'refunded').length})
+      </button>
+    </div>
+
+    {loadingHistory ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    ) : filteredHistory.length === 0 ? (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">Aucune mission dans l'historique</p>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {filteredHistory.map(order => {
+          const gainPrestataire = parseFloat(order.price) * 0.8;
+          const commission = parseFloat(order.price) * 0.2;
+
+          return (
+            <div
+              key={order.id}
+              onClick={() => setSelectedHistoryOrder(order)}
+              className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-lg hover:border-green-300 transition cursor-pointer"
+            >
+              <div className="flex items-start justify-between">
+                
+                {/* Infos gauche */}
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">{order.cemetery_name}</h3>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      order.status === 'completed'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {order.status === 'completed' ? '✅ Validée' : '💸 Remboursée'}
+                    </span>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600 mb-1">
+                    📍 {order.cemetery_city} {order.cemetery_department && `(${order.cemetery_department})`}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    🪦 {order.cemetery_location}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-3">
+                    🔧 {order.service_name}
+                  </p>
+                  
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <span>📅 {new Date(order.updated_at).toLocaleDateString('fr-FR')}</span>
+                    <span>👤 {order.client_prenom} {order.client_nom}</span>
+                  </div>
+                </div>
+
+                {/* Montants droite */}
+                <div className="text-right ml-6">
+                  <p className="text-sm text-gray-500 mb-1">Vous avez reçu</p>
+                  <p className="text-2xl font-bold text-green-600 mb-2">
+                    {gainPrestataire.toFixed(2)}€
+                  </p>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <p>Prix total: {parseFloat(order.price).toFixed(2)}€</p>
+                    <p>Commission: {commission.toFixed(2)}€</p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+
+    {/* MODAL DÉTAILS + PHOTOS */}
+    {selectedHistoryOrder && (
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+        onClick={() => setSelectedHistoryOrder(null)}
+      >
+        <div
+          className="bg-white rounded-xl max-w-3xl w-full max-h-screen overflow-y-auto shadow-2xl"
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">{selectedHistoryOrder.cemetery_name}</h3>
+              <p className="text-sm text-gray-500">{selectedHistoryOrder.service_name}</p>
+            </div>
+            <button
+              onClick={() => setSelectedHistoryOrder(null)}
+              className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Contenu */}
+          <div className="p-6 space-y-6">
+            
+            {/* Infos mission */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Informations</h4>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-gray-500">Statut</p>
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                    selectedHistoryOrder.status === 'completed'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {selectedHistoryOrder.status === 'completed' ? '✅ Validée' : '💸 Remboursée'}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-gray-500">Date</p>
+                  <p className="font-medium">{new Date(selectedHistoryOrder.updated_at).toLocaleDateString('fr-FR')}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Client</p>
+                  <p className="font-medium">{selectedHistoryOrder.client_prenom} {selectedHistoryOrder.client_nom}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Localisation</p>
+                  <p className="font-medium">{selectedHistoryOrder.cemetery_location}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Finances */}
+            <div className="bg-green-50 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Finances</h4>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="bg-white rounded p-3">
+                  <p className="text-xs text-gray-500 mb-1">Prix total</p>
+                  <p className="text-lg font-bold text-gray-900">{parseFloat(selectedHistoryOrder.price).toFixed(2)}€</p>
+                </div>
+                <div className="bg-white rounded p-3">
+                  <p className="text-xs text-gray-500 mb-1">Vous avez reçu (80%)</p>
+                  <p className="text-lg font-bold text-green-600">{(parseFloat(selectedHistoryOrder.price) * 0.8).toFixed(2)}€</p>
+                </div>
+                <div className="bg-white rounded p-3">
+                  <p className="text-xs text-gray-500 mb-1">Commission (20%)</p>
+                  <p className="text-lg font-bold text-purple-600">{(parseFloat(selectedHistoryOrder.price) * 0.2).toFixed(2)}€</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Photos (on les chargera à l'étape suivante) */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Photos</h4>
+              <p className="text-sm text-gray-500">Chargement des photos à venir...</p>
+            </div>
+
+          </div>
+
+          {/* Footer */}
+          <div className="p-6 border-t bg-gray-50 rounded-b-xl">
+            <button
+              onClick={() => setSelectedHistoryOrder(null)}
+              className="w-full px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+),
   };
+
+  
 
   // ============================================
   // RENDER
@@ -451,6 +692,9 @@ function DashboardPrestataire() {
           </button>
           <button onClick={() => setActiveSection('missions')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'missions' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Mes missions ({myMissions.length})
+          </button>
+          <button onClick={() => setActiveSection('history')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'history' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Historique ({history.length})
           </button>
           <button onClick={() => setActiveSection('profile')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'profile' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Profil

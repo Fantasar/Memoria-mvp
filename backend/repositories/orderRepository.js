@@ -86,6 +86,39 @@ const findByClientId = async (clientId) => {
 };
 
 /**
+ * Récupérer l'historique des missions d'un prestataire (terminées/validées)
+ */
+const findHistoryByPrestataire = async (prestatairId) => {
+  const query = `
+    SELECT 
+      o.id,
+      o.status,
+      o.price,
+      o.cemetery_location,
+      o.scheduled_date,
+      o.created_at,
+      o.updated_at,
+      c.name as cemetery_name,
+      c.city as cemetery_city,
+      c.department as cemetery_department,
+      sc.name as service_name,
+      sc.description as service_description,
+      uc.email as client_email,
+      uc.prenom as client_prenom,
+      uc.nom as client_nom
+    FROM orders o
+    LEFT JOIN cemeteries c ON o.cemetery_id = c.id
+    LEFT JOIN service_categories sc ON o.service_category_id = sc.id
+    LEFT JOIN users uc ON o.client_id = uc.id
+    WHERE o.prestataire_id = $1
+    AND o.status IN ('completed', 'refunded')
+    ORDER BY o.updated_at DESC
+  `;
+  const result = await pool.query(query, [prestatairId]);
+  return result.rows;
+};
+
+/**
  * Récupérer toutes les commandes d'un prestataire
  */
 const findByPrestatairId = async (prestatairId) => {
@@ -357,5 +390,6 @@ module.exports = {
   findDisputed,
   resolveDispute,
   getDashboardStats,
-  markAsDisputed
+  markAsDisputed,
+  findHistoryByPrestataire
 };
