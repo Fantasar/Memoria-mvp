@@ -266,12 +266,20 @@ const acceptOrder = async (orderId, prestatairId, scheduledDate, scheduledTime) 
   // 8. Vérifier la zone
   const zone = user.zone_intervention;
   if (zone) {
-    const zoneMatch = 
-      (order.cemetery_department && order.cemetery_department.toLowerCase().includes(zone.toLowerCase())) ||
-      (order.cemetery_city && order.cemetery_city.toLowerCase().includes(zone.toLowerCase()));
-    
-    if (!zoneMatch) {
-      const error = new Error('Cette mission n\'est pas dans votre zone');
+    const prestataireZone = zone.toLowerCase();
+    const cemeteryCity = (order.cemetery_city || '').toLowerCase();
+    const cemeteryDepartment = (order.cemetery_department || '').toLowerCase();
+    const cemeteryPostalCode = (order.cemetery_postal_code || '');
+
+    const isInZone = 
+      cemeteryCity.includes(prestataireZone) || 
+      cemeteryDepartment.includes(prestataireZone) ||
+      prestataireZone.includes(cemeteryCity) ||
+      prestataireZone.includes(cemeteryDepartment) ||
+      cemeteryPostalCode.startsWith(prestataireZone);
+
+    if (!isInZone) {
+      const error = new Error(`Cette mission n'est pas dans votre zone (${zone}). Cimetière: ${order.cemetery_city} (${order.cemetery_department})`);
       error.code = 'ZONE_MISMATCH';
       error.statusCode = 403;
       throw error;

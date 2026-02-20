@@ -30,4 +30,7 @@ router.patch(
   providerController.rejectProvider
 );
 
+router.patch('/zone', authenticateToken, providerController.updateZone);
+router.get('/zone/stats', authenticateToken, providerController.getZoneStats);
+
 module.exports = router;
