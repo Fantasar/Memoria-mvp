@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import logoMemoria from '../../assets/Logos_Mémoria-remove.png';
 
 
 function DashboardPrestataire() {
@@ -145,100 +147,209 @@ function DashboardPrestataire() {
     }
   };
 
-  const exportFinancesPDF = () => {
+  const loadImageAsBase64 = (src) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = src;
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      resolve(canvas.toDataURL("image/png"));
+    };
+
+    img.onerror = reject;
+  });
+
+const exportFinancesPDF = async () => {
   if (!finances) return;
 
   const doc = new jsPDF();
-  
-  // Header
-  doc.setFontSize(20);
-  doc.setTextColor(139, 92, 246); // Purple
-  doc.text('Mémoria - Relevé Financier', 20, 20);
-  
-  doc.setFontSize(12);
-  doc.setTextColor(0, 0, 0);
-  doc.text(`Prestataire: ${user.prenom} ${user.nom}`, 20, 30);
-  doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, 20, 37);
-  
-  // Ligne de séparation
-  doc.setDrawColor(200, 200, 200);
-  doc.line(20, 42, 190, 42);
-  
-  // KPIs
-  doc.setFontSize(14);
-  doc.setTextColor(139, 92, 246);
-  doc.text('Résumé Financier', 20, 52);
-  
-  doc.setFontSize(11);
-  doc.setTextColor(0, 0, 0);
-  doc.text(`Total perçu: ${finances.total_earned.toFixed(2)}€`, 20, 62);
-  doc.text(`Missions complétées: ${finances.missions_completed}`, 20, 69);
-  doc.text(`En attente validation: ${finances.pending_validation.toFixed(2)}€`, 20, 76);
-  doc.text(`Moyenne par mission: ${finances.average_per_mission.toFixed(2)}€`, 20, 83);
-  
-  // Répartition mensuelle
-  if (finances.monthly_breakdown.length > 0) {
-    doc.setFontSize(14);
-    doc.setTextColor(139, 92, 246);
-    doc.text('Répartition Mensuelle', 20, 95);
-    
-    let y = 105;
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    
-    finances.monthly_breakdown.forEach(month => {
-      const monthName = new Date(month.month + '-01').toLocaleDateString('fr-FR', { 
-        year: 'numeric', 
-        month: 'long' 
-      });
-      doc.text(`${monthName}: ${month.count} missions - ${month.revenue.toFixed(2)}€`, 25, y);
-      y += 7;
-    });
-  }
-  
-  // Historique paiements
-  if (finances.recent_payments.length > 0) {
-    doc.addPage();
-    doc.setFontSize(14);
-    doc.setTextColor(139, 92, 246);
-    doc.text('Historique des Paiements', 20, 20);
-    
-    let y = 30;
-    doc.setFontSize(9);
-    doc.setTextColor(0, 0, 0);
-    
-      finances.recent_payments.forEach((payment, index) => {
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-      
-      const date = new Date(payment.completed_at).toLocaleDateString('fr-FR');
-        doc.text(`${date} | ${payment.cemetery_name}, ${payment.cemetery_city}`, 20, y);
-        doc.text(`${payment.service_name} - ${payment.amount_received.toFixed(2)}€`, 25, y + 5);
-      
-        y += 12;
-      
-        if (index < finances.recent_payments.length - 1) {
-          doc.setDrawColor(220, 220, 220);
-          doc.line(20, y - 2, 190, y - 2);
-        }
-      });
-    }
-  
-    // Footer
-    const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(128, 128, 128);
-        doc.text(`Page ${i} / ${pageCount}`, 105, 290, { align: 'center' });
-        doc.text('Mémoria - Plateforme de services funéraires', 105, 285, { align: 'center' });
-      }
-  
-    // Télécharger
-    doc.save(`Memoria_Finances_${new Date().toISOString().split('T')[0]}.pdf`);
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  /* ================= CONFIG ================= */
+
+  const mainColor = [124, 58, 237]; // Violet doux
+
+  const today = new Date().toLocaleDateString("fr-FR");
+
+  const formatDate = (date) => {
+    if (!date) return "Non renseignée";
+    return new Date(date).toLocaleDateString("fr-FR");
   };
+
+  /* ================= LOGO ================= */
+
+  const logoBase64 = await loadImageAsBase64(logoMemoria);
+
+  /* ================= HEADER ================= */
+
+  const headerHeight = 36;
+
+  doc.setFillColor(...mainColor);
+  doc.rect(0, 0, pageWidth, headerHeight, "F");
+
+  // Logo
+  const logoSize = 22;
+
+  doc.addImage(
+    logoBase64,
+    "PNG",
+    15,
+    (headerHeight - logoSize) / 2,
+    logoSize,
+    logoSize
+  );
+
+  // Titres
+  doc.setTextColor(255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+
+  doc.text("MÉMORIA", pageWidth / 2, 15, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+
+  doc.text("Relevé Financier Prestataire", pageWidth / 2, 25, {
+    align: "center",
+  });
+
+  /* ================= INFOS ================= */
+
+  let currentY = headerHeight + 18;
+
+  doc.setTextColor(0);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+
+  doc.text(`Prestataire : ${user.prenom} ${user.nom}`, 15, currentY);
+  currentY += 7;
+
+  doc.text(`SIRET : ${user.siret || "Non renseigné"}`, 15, currentY);
+  currentY += 7;
+
+  doc.text(`Date : ${today}`, 15, currentY);
+  currentY += 7;
+
+  currentY += 15;
+
+  /* ================= KPI TABLE ================= */
+
+  autoTable(doc, {
+    startY: currentY,
+
+    head: [["Indicateur", "Valeur"]],
+
+    body: [
+      ["Total perçu", `${finances.total_earned.toFixed(2)} €`],
+      ["Missions complétées", finances.missions_completed],
+      ["En attente validation", `${finances.pending_validation.toFixed(2)} €`],
+      ["Moyenne par mission", `${finances.average_per_mission.toFixed(2)} €`],
+    ],
+
+    theme: "grid",
+
+    styles: {
+      fontSize: 10,
+      cellPadding: 4,
+    },
+
+    headStyles: {
+      fillColor: mainColor,
+      textColor: 255,
+      fontStyle: "bold",
+    },
+
+    columnStyles: {
+      1: { halign: "right" },
+    },
+  });
+
+  currentY = doc.lastAutoTable.finalY + 15;
+
+  /* ================= HISTORY TITLE ================= */
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...mainColor);
+
+  doc.text("Historique des paiements", 15, currentY);
+
+  currentY += 6;
+
+  /* ================= HISTORY TABLE ================= */
+
+  autoTable(doc, {
+    startY: currentY,
+
+    head: [["Commande", "Date", "Lieu", "Service", "Montant"]],
+
+    body: finances.recent_payments.map((p) => [
+      p.order_id || p.id || "-",
+      formatDate(p.completed_at || p.updated_at || p.created_at),
+      `${p.cemetery_name}, ${p.cemetery_city}`,
+      p.service_name,
+      `${p.amount_received.toFixed(2)} €`,
+    ]),
+
+    theme: "striped",
+
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+    },
+
+    headStyles: {
+      fillColor: mainColor,
+      textColor: 255,
+      fontStyle: "bold",
+    },
+
+    columnStyles: {
+      0: { cellWidth: 35 }, // Commande
+      1: { cellWidth: 28 }, // Date
+      2: { cellWidth: 45 }, // Lieu
+      3: { cellWidth: 45 }, // Service
+      4: {
+        cellWidth: 30,
+        halign: "right",
+        fontStyle: "bold",
+        textColor: [34, 197, 94],
+      },
+    },
+  });
+
+  /* ================= FOOTER ================= */
+
+  const pageCount = doc.getNumberOfPages();
+
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+
+    doc.text(
+      `Mémoria © ${new Date().getFullYear()} — Page ${i}/${pageCount}`,
+      pageWidth / 2,
+      290,
+      { align: "center" }
+    );
+  }
+
+  /* ================= SAVE ================= */
+
+  const fileDate = new Date().toISOString().split("T")[0];
+
+  doc.save(`memoria-finances-${fileDate}.pdf`);
+};
 
   // ============================================
   // ACTIONS HANDLERS
