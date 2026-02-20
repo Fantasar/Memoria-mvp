@@ -511,17 +511,23 @@ const validateOrder = async (orderId, adminId) => {
     recipient_id: order.prestataire_id
   });
 
-  // 8. Mettre à jour le statut de la commande
-  const updatedOrder = await orderRepository.updateStatus(orderId, 'completed');
+// 8. Mettre à jour le statut de la commande
+console.log('🔄 AVANT UPDATE - Status:', order.status);
+const updateResult = await orderRepository.updateStatus(orderId, 'completed');
+console.log('🔄 APRÈS UPDATE - Result:', updateResult);
 
-  return {
-    order: updatedOrder,
-    transfer: {
-      amount: providerAmount,
-      transfer_id: simulatedTransferId,
-      recipient_id: order.prestataire_id
-    }
-  };
+// Récupérer l'order complet avec tous les détails
+const updatedOrder = await orderRepository.findById(orderId);
+console.log('🔄 ORDER APRÈS FINDBYID - Status:', updatedOrder.status);
+
+return {
+  order: updatedOrder,
+  transfer: {
+    amount: providerAmount,
+    transfer_id: simulatedTransferId,
+    recipient_id: order.prestataire_id
+  }
+};
 };
 
 /**

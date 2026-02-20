@@ -309,6 +309,7 @@ function DashboardAdmin() {
       });
       alert('Intervention validée !');
       fetchPendingOrders();
+      fetchStats();
     } catch (err) {
       alert(err.response?.data?.error?.message || 'Erreur');
     }
