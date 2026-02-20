@@ -363,20 +363,47 @@ const checkTimeSlotAvailability = async (prestatairId, scheduledDate, scheduledT
  * Assigner un prestataire avec date ET heure planifiée
  */
 const assignPrestataireWithSchedule = async (orderId, prestataireId, scheduledDate, scheduledTime) => {
-  const query = `
+  // 1. Faire l'update
+  const updateQuery = `
     UPDATE orders 
     SET prestataire_id = $1, 
         status = 'accepted',
         scheduled_date = $2,
         scheduled_time = $3,
+        accepted_at = NOW(),
         updated_at = NOW()
     WHERE id = $4 
       AND prestataire_id IS NULL
       AND status IN ('paid', 'pending')
     RETURNING *
   `;
-  const result = await pool.query(query, [prestataireId, scheduledDate, scheduledTime, orderId]);
-  return result.rows[0] || null;
+  
+  const updateResult = await pool.query(updateQuery, [prestataireId, scheduledDate, scheduledTime, orderId]);
+  
+  if (!updateResult.rows[0]) {
+    return null;
+  }
+
+  // 2. Récupérer les détails complets avec les jointures
+  const detailsQuery = `
+    SELECT 
+      o.*,
+      c.name as cemetery_name,
+      c.city as cemetery_city,
+      c.department as cemetery_department,
+      sc.name as service_name,
+      uc.email as client_email,
+      uc.prenom as client_prenom,
+      uc.nom as client_nom
+    FROM orders o
+    LEFT JOIN cemeteries c ON o.cemetery_id = c.id
+    LEFT JOIN service_categories sc ON o.service_category_id = sc.id
+    LEFT JOIN users uc ON o.client_id = uc.id
+    WHERE o.id = $1
+  `;
+  
+  const detailsResult = await pool.query(detailsQuery, [orderId]);
+  return detailsResult.rows[0];
 };
 
 /**

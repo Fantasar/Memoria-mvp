@@ -23,11 +23,13 @@ async function findByUserId(userId, limit = 50) {
   const query = `
     SELECT 
       n.*,
-      o.cemetery_name,
-      o.service_name,
+      c.name as cemetery_name,
+      sc.name as service_name,
       o.price
     FROM notifications n
     LEFT JOIN orders o ON n.order_id = o.id
+    LEFT JOIN cemeteries c ON o.cemetery_id = c.id
+    LEFT JOIN service_categories sc ON o.service_category_id = sc.id
     WHERE n.user_id = $1
     ORDER BY n.created_at DESC
     LIMIT $2

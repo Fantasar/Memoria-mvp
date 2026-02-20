@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const notificationController = require('../controllers/notificationController');
-const { authenticateToken } = require('../middleware/admin-auth');
+const { authenticateToken } = require('../middlewares/admin-auth');
 
 // GET /api/notifications - Récupérer les notifications
 router.get('/', authenticateToken, notificationController.getUserNotifications);
