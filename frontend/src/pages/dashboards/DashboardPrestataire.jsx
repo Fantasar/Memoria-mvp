@@ -35,6 +35,11 @@ function DashboardPrestataire() {
   // Finances
   const [finances, setFinances] = useState(null);
   const [loadingFinances, setLoadingFinances] = useState(true);
+
+  //Notification
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
   
   // Stats overview
   const [stats, setStats] = useState(null);
@@ -56,6 +61,7 @@ function DashboardPrestataire() {
     fetchHistory();
     fetchCalendar();
     fetchFinances();
+    fetchNotifications();
   }, []);
 
   // ============================================
@@ -144,6 +150,59 @@ function DashboardPrestataire() {
       console.error('Erreur finances:', err);
     } finally {
       setLoadingFinances(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    setLoadingNotifications(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/notifications', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(response.data.data.notifications || []);
+      setUnreadCount(response.data.data.unread_count || 0);
+    } catch (err) {
+      console.error('Erreur notifications:', err);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(`/api/notifications/${notificationId}/read`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchNotifications();
+    } catch (err) {
+      console.error('Erreur marquage notification:', err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch('/api/notifications/read-all', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchNotifications();
+    } catch (err) {
+      console.error('Erreur marquage toutes:', err);
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    if (!window.confirm('Supprimer cette notification ?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`/api/notifications/${notificationId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchNotifications(); // Recharger
+    } catch (err) {
+      console.error('Erreur suppression notification:', err);
     }
   };
 
@@ -1162,7 +1221,127 @@ const confirmScheduleMission = async () => {
         </>
       )}
     </div>
-  )
+  ),
+  alerts: (
+  <div>
+    {/* Header */}
+    <div className="flex items-center justify-between mb-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Alertes</h2>
+        <p className="text-sm text-gray-500 mt-1">Notifications importantes</p>
+      </div>
+      {unreadCount > 0 && (
+        <button
+          onClick={handleMarkAllAsRead}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition"
+        >
+          ✓ Tout marquer comme lu
+        </button>
+      )}
+    </div>
+
+    {loadingNotifications ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    ) : notifications.length === 0 ? (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">Aucune notification</p>
+        <p className="text-sm text-gray-500 mt-2">Vous serez notifié des événements importants ici</p>
+      </div>
+    ) : (
+      <div className="space-y-3">
+        {notifications.map(notification => {
+          // Déterminer l'icône et la couleur selon le type
+          const typeConfig = {
+            mission_validated: { icon: '✅', color: 'bg-green-100 border-green-300', iconColor: 'text-green-600' },
+            new_mission: { icon: '🆕', color: 'bg-blue-100 border-blue-300', iconColor: 'text-blue-600' },
+            dispute: { icon: '🚨', color: 'bg-red-100 border-red-300', iconColor: 'text-red-600' },
+            reminder: { icon: '📅', color: 'bg-yellow-100 border-yellow-300', iconColor: 'text-yellow-600' },
+            schedule_needed: { icon: '⏰', color: 'bg-orange-100 border-orange-300', iconColor: 'text-orange-600' }
+          };
+
+          const config = typeConfig[notification.type] || { 
+            icon: '🔔', 
+            color: 'bg-gray-100 border-gray-300', 
+            iconColor: 'text-gray-600' 
+          };
+
+          return (
+            <div
+              key={notification.id}
+              className={`border rounded-lg p-4 transition ${
+                notification.is_read 
+                  ? 'bg-white border-gray-200 opacity-70' 
+                  : `${config.color} border-2`
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                {/* Contenu */}
+                <div className="flex items-start gap-3 flex-1">
+                  <div className={`text-2xl ${config.iconColor}`}>
+                    {config.icon}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`font-semibold text-gray-900 mb-1 ${!notification.is_read && 'font-bold'}`}>
+                      {notification.title}
+                    </h3>
+                    <p className="text-sm text-gray-700 mb-2">
+                      {notification.message}
+                    </p>
+                    
+                    {/* Détails commande si disponible */}
+                    {notification.cemetery_name && (
+                      <div className="text-xs text-gray-600 mt-2 p-2 bg-white bg-opacity-50 rounded">
+                        <p>📍 {notification.cemetery_name}</p>
+                        {notification.service_name && <p>🔧 {notification.service_name}</p>}
+                        {notification.price && (
+                          <p className="font-medium text-green-600">
+                            💰 {(parseFloat(notification.price) * 0.8).toFixed(2)}€
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    
+                    <p className="text-xs text-gray-500 mt-2">
+                      {new Date(notification.created_at).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 ml-4">
+                  {!notification.is_read && (
+                    <button
+                      onClick={() => handleMarkAsRead(notification.id)}
+                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                      title="Marquer comme lu"
+                    >
+                      ✓
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeleteNotification(notification.id)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                    title="Supprimer"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+)
 };
 
   
@@ -1226,6 +1405,19 @@ const confirmScheduleMission = async () => {
           </button>
           <button onClick={() => setActiveTab('finances')} className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'finances' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
             Finances
+          </button>
+          <button 
+            onClick={() => setActiveTab('alerts')} 
+            className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'alerts' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          >
+            <div className="flex items-center justify-between">
+              <span>Alertes</span>
+              {unreadCount > 0 && (
+                <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                  {unreadCount}
+                </span>
+              )}
+            </div>
           </button>
           <button onClick={() => setActiveTab('history')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'history' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Historique ({history.length})
