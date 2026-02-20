@@ -200,6 +200,21 @@ const getAllUsers = async () => {
   return result.rows;
 };
 
+/**
+ * Mettre à jour la zone d'intervention d'un prestataire
+ */
+async function updateZone(userId, zone) {
+  const query = `
+    UPDATE users
+    SET zone_intervention = $1, updated_at = NOW()
+    WHERE id = $2
+    RETURNING *
+  `;
+  
+  const result = await pool.query(query, [zone, userId]);
+  return result.rows[0];
+}
+
 module.exports = {
   findByEmail,
   findById,
@@ -210,5 +225,6 @@ module.exports = {
   approveProvider,
   rejectProvider,
   getAllUsers,
-  deleteById
+  deleteById,
+  updateZone
 };
