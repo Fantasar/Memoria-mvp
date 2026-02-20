@@ -1,4 +1,5 @@
 const cemeteryRepository = require('../repositories/cemeteryRepository');
+const geocodingService = require('./geocodingService');
 
 const createCemetery = async (data) => {
   if (!data.name || !data.city || !data.postal_code) {
@@ -7,7 +8,26 @@ const createCemetery = async (data) => {
     error.code = 'MISSING_FIELDS';
     throw error;
   }
-  return await cemeteryRepository.createCemetery(data);
+
+  // ✅ Géocoder l'adresse automatiquement
+  const geocoded = await geocodingService.geocodeAddress(
+    data.address || data.name, // Utilise l'adresse si fournie, sinon le nom du cimetière
+    data.city,
+    data.postal_code
+  );
+
+  // Préparer les données avec coordonnées GPS
+  const cemeteryData = {
+    name: data.name,
+    city: data.city,
+    postal_code: data.postal_code,
+    department: data.department || null,
+    latitude: geocoded?.latitude || null,
+    longitude: geocoded?.longitude || null,
+    address: geocoded?.formatted_address || data.address || null
+  };
+
+  return await cemeteryRepository.createCemetery(cemeteryData);
 };
 
 module.exports = {

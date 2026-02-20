@@ -124,34 +124,30 @@ const getAvailableOrders = async (req, res) => {
  */
 const acceptOrder = async (req, res) => {
   try {
-    const orderId = req.params.id;
-    const result = await orderService.acceptOrder(orderId, req.user.userId);
+    const { id } = req.params;
+    const { scheduled_date, scheduled_time } = req.body; // ✅ Date ET heure
+    const prestatairId = req.user.userId;
+
+    const order = await orderService.acceptOrder(id, prestatairId, scheduled_date, scheduled_time);
 
     return res.status(200).json({
       success: true,
-      data: result,
-      message: 'Mission acceptée avec succès'
+      data: order,
+      message: 'Mission acceptée et planifiée'
     });
-
   } catch (error) {
     console.error('Erreur acceptation mission:', error);
 
     if (error.statusCode) {
       return res.status(error.statusCode).json({
         success: false,
-        error: {
-          code: error.code,
-          message: error.message
-        }
+        error: { code: error.code, message: error.message }
       });
     }
 
     return res.status(500).json({
       success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Erreur lors de l\'acceptation de la mission'
-      }
+      error: { code: 'SERVER_ERROR', message: 'Erreur serveur' }
     });
   }
 };
@@ -512,6 +508,72 @@ const resolveDispute = async (req, res) => {
   }
 };
 
+/**
+ * @route   GET /api/orders/calendar/:prestatairId
+ * @desc    Récupérer le calendrier d'un prestataire (admin)
+ * @access  Private (Admin)
+ */
+const getProviderCalendarForAdmin = async (req, res) => {
+  try {
+    const adminId = req.user.userId;
+    const { prestatairId } = req.params;
+    
+    const calendar = await orderService.getProviderCalendarForAdmin(adminId, prestatairId);
+
+    return res.status(200).json({
+      success: true,
+      data: calendar,
+      count: calendar.length
+    });
+  } catch (error) {
+    console.error('Erreur calendrier admin:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: { code: error.code, message: error.message }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: { code: 'SERVER_ERROR', message: 'Erreur serveur' }
+    });
+  }
+};
+
+/**
+ * @route   GET /api/orders/calendar
+ * @desc    Récupérer le calendrier du prestataire
+ * @access  Private (Prestataire)
+ */
+const getProviderCalendar = async (req, res) => {
+  try {
+    const prestatairId = req.user.userId;
+    const calendar = await orderService.getProviderCalendar(prestatairId);
+
+    return res.status(200).json({
+      success: true,
+      data: calendar,
+      count: calendar.length
+    });
+  } catch (error) {
+    console.error('Erreur calendrier:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: { code: error.code, message: error.message }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: { code: 'SERVER_ERROR', message: 'Erreur serveur' }
+    });
+  }
+};
+
 // Statistiques pour le dashboard client
 const getDashboardStats = async (req, res) => {
   try {
@@ -523,6 +585,38 @@ const getDashboardStats = async (req, res) => {
   } catch (err) {
     console.error('Erreur getDashboardStats:', err);
     res.status(500).json({ error: 'Erreur serveur lors de la récupération des stats' });
+  }
+};
+
+/**
+ * @route   GET /api/orders/history
+ * @desc    Récupérer l'historique des missions (prestataire)
+ * @access  Private (Prestataire)
+ */
+const getProviderHistory = async (req, res) => {
+  try {
+    const prestatairId = req.user.userId;
+    const history = await orderService.getProviderHistory(prestatairId);
+
+    return res.status(200).json({
+      success: true,
+      data: history,
+      count: history.length
+    });
+  } catch (error) {
+    console.error('Erreur getProviderHistory:', error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: { code: error.code, message: error.message }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: { code: 'SERVER_ERROR', message: 'Erreur serveur' }
+    });
   }
 };
 
@@ -540,5 +634,8 @@ module.exports = {
   getDisputedOrders,
   markAsDisputed,
   getDashboardStats,
-  resolveDispute
+  resolveDispute,
+  getProviderHistory,
+  getProviderCalendar,
+  getProviderCalendarForAdmin
 };

@@ -128,8 +128,26 @@ const rejectProvider = async (req, res) => {
   }
 };
 
+/**
+ * Récupérer les finances d'un prestataire
+ */
+const getProviderFinances = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const finances = await providerService.getProviderFinances(userId);
+
+    res.status(200).json({
+      success: true,
+      data: finances
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getPendingProviders,
   approveProvider,
-  rejectProvider
+  rejectProvider,
+  getProviderFinances
 };

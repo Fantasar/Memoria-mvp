@@ -2,27 +2,60 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import logoMemoria from '../../assets/Logos_Mémoria-remove.png';
+
 
 function DashboardPrestataire() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('overview');
-
-  // States pour les données
-  const [stats, setStats] = useState(null);
+  
+  // Navigation entre onglets
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  // Missions disponibles
   const [availableMissions, setAvailableMissions] = useState([]);
-  const [myMissions, setMyMissions] = useState([]);
-
-  // Loading states
-  const [loadingStats, setLoadingStats] = useState(true);
   const [loadingAvailable, setLoadingAvailable] = useState(true);
+  
+  // Mes missions
+  const [myMissions, setMyMissions] = useState([]);
   const [loadingMissions, setLoadingMissions] = useState(true);
+  
+  // Calendrier
+  const [calendar, setCalendar] = useState([]);
+  const [loadingCalendar, setLoadingCalendar] = useState(true);
+  
+  // Historique
+  const [history, setHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [historyFilter, setHistoryFilter] = useState('all');
+  const [selectedHistoryOrder, setSelectedHistoryOrder] = useState(null);
+  
+  // Finances
+  const [finances, setFinances] = useState(null);
+  const [loadingFinances, setLoadingFinances] = useState(true);
+  
+  // Stats overview
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  
+  // Modal planification
+  const [missionToSchedule, setMissionToSchedule] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [submittingSchedule, setSubmittingSchedule] = useState(false);
+  const [schedulingError, setSchedulingError] = useState('');
 
   // Charger les données au montage
   useEffect(() => {
     fetchStats();
     fetchAvailableMissions();
     fetchMyMissions();
+    fetchHistory();
+    fetchCalendar();
+    fetchFinances();
   }, []);
 
   // ============================================
@@ -71,26 +104,301 @@ function DashboardPrestataire() {
     }
   };
 
+  const fetchHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/orders/history', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setHistory(response.data.data || []);
+    } catch (err) {
+      console.error('Erreur historique:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const fetchCalendar = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/orders/calendar', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCalendar(response.data.data || []);
+    } catch (err) {
+      console.error('Erreur calendrier:', err);
+    } finally {
+      setLoadingCalendar(false);
+    }
+  };
+
+  const fetchFinances = async () => {
+    setLoadingFinances(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/providers/finances', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFinances(response.data.data);
+    } catch (err) {
+      console.error('Erreur finances:', err);
+    } finally {
+      setLoadingFinances(false);
+    }
+  };
+
+  const loadImageAsBase64 = (src) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = src;
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      resolve(canvas.toDataURL("image/png"));
+    };
+
+    img.onerror = reject;
+  });
+
+const exportFinancesPDF = async () => {
+  if (!finances) return;
+
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  /* ================= CONFIG ================= */
+
+  const mainColor = [124, 58, 237]; // Violet doux
+
+  const today = new Date().toLocaleDateString("fr-FR");
+
+  const formatDate = (date) => {
+    if (!date) return "Non renseignée";
+    return new Date(date).toLocaleDateString("fr-FR");
+  };
+
+  /* ================= LOGO ================= */
+
+  const logoBase64 = await loadImageAsBase64(logoMemoria);
+
+  /* ================= HEADER ================= */
+
+  const headerHeight = 36;
+
+  doc.setFillColor(...mainColor);
+  doc.rect(0, 0, pageWidth, headerHeight, "F");
+
+  // Logo
+  const logoSize = 22;
+
+  doc.addImage(
+    logoBase64,
+    "PNG",
+    15,
+    (headerHeight - logoSize) / 2,
+    logoSize,
+    logoSize
+  );
+
+  // Titres
+  doc.setTextColor(255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+
+  doc.text("MÉMORIA", pageWidth / 2, 15, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+
+  doc.text("Relevé Financier Prestataire", pageWidth / 2, 25, {
+    align: "center",
+  });
+
+  /* ================= INFOS ================= */
+
+  let currentY = headerHeight + 18;
+
+  doc.setTextColor(0);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+
+  doc.text(`Prestataire : ${user.prenom} ${user.nom}`, 15, currentY);
+  currentY += 7;
+
+  doc.text(`SIRET : ${user.siret || "Non renseigné"}`, 15, currentY);
+  currentY += 7;
+
+  doc.text(`Date : ${today}`, 15, currentY);
+  currentY += 7;
+
+  currentY += 15;
+
+  /* ================= KPI TABLE ================= */
+
+  autoTable(doc, {
+    startY: currentY,
+
+    head: [["Indicateur", "Valeur"]],
+
+    body: [
+      ["Total perçu", `${finances.total_earned.toFixed(2)} €`],
+      ["Missions complétées", finances.missions_completed],
+      ["En attente validation", `${finances.pending_validation.toFixed(2)} €`],
+      ["Moyenne par mission", `${finances.average_per_mission.toFixed(2)} €`],
+    ],
+
+    theme: "grid",
+
+    styles: {
+      fontSize: 10,
+      cellPadding: 4,
+    },
+
+    headStyles: {
+      fillColor: mainColor,
+      textColor: 255,
+      fontStyle: "bold",
+    },
+
+    columnStyles: {
+      1: { halign: "right" },
+    },
+  });
+
+  currentY = doc.lastAutoTable.finalY + 15;
+
+  /* ================= HISTORY TITLE ================= */
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...mainColor);
+
+  doc.text("Historique des paiements", 15, currentY);
+
+  currentY += 6;
+
+  /* ================= HISTORY TABLE ================= */
+
+  autoTable(doc, {
+    startY: currentY,
+
+    head: [["Commande", "Date", "Lieu", "Service", "Montant"]],
+
+    body: finances.recent_payments.map((p) => [
+      p.order_id || p.id || "-",
+      formatDate(p.completed_at || p.updated_at || p.created_at),
+      `${p.cemetery_name}, ${p.cemetery_city}`,
+      p.service_name,
+      `${p.amount_received.toFixed(2)} €`,
+    ]),
+
+    theme: "striped",
+
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+    },
+
+    headStyles: {
+      fillColor: mainColor,
+      textColor: 255,
+      fontStyle: "bold",
+    },
+
+    columnStyles: {
+      0: { cellWidth: 35 }, // Commande
+      1: { cellWidth: 28 }, // Date
+      2: { cellWidth: 45 }, // Lieu
+      3: { cellWidth: 45 }, // Service
+      4: {
+        cellWidth: 30,
+        halign: "right",
+        fontStyle: "bold",
+        textColor: [34, 197, 94],
+      },
+    },
+  });
+
+  /* ================= FOOTER ================= */
+
+  const pageCount = doc.getNumberOfPages();
+
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+
+    doc.text(
+      `Mémoria © ${new Date().getFullYear()} — Page ${i}/${pageCount}`,
+      pageWidth / 2,
+      290,
+      { align: "center" }
+    );
+  }
+
+  /* ================= SAVE ================= */
+
+  const fileDate = new Date().toISOString().split("T")[0];
+
+  doc.save(`memoria-finances-${fileDate}.pdf`);
+};
+
   // ============================================
   // ACTIONS HANDLERS
   // ============================================
 
-  const handleAcceptMission = async (missionId) => {
-    if (!window.confirm('Accepter cette mission ?')) return;
+const handleAcceptMission = (mission) => {
+  console.log('🔍 handleAcceptMission appelée avec:', mission);
+  setMissionToSchedule(mission);
+  
+  // Pré-remplir avec demain par défaut
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  setSelectedDate(tomorrow.toISOString().split('T')[0]);
+  setSelectedTime('09:00');
+};
 
-    try {
-      const token = localStorage.getItem('token');
-      await axios.patch(`/api/orders/${missionId}/accept`, {}, {
+const confirmScheduleMission = async () => {
+  if (!selectedDate || !selectedTime) {
+    setSchedulingError('Date et heure sont obligatoires');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    await axios.patch(
+      `/api/orders/${missionToSchedule.id}/accept`,
+      {
+        scheduled_date: selectedDate,
+        scheduled_time: selectedTime
+      },
+      {
         headers: { Authorization: `Bearer ${token}` }
-      });
-      alert('Mission acceptée !');
-      fetchAvailableMissions();
-      fetchMyMissions();
-      fetchStats();
-    } catch (err) {
-      alert(err.response?.data?.error?.message || 'Erreur');
-    }
-  };
+      }
+    );
+
+    alert('Mission acceptée et planifiée !');
+    setMissionToSchedule(null);
+    setSelectedDate('');
+    setSelectedTime('');
+    fetchAvailableMissions();
+    fetchMyMissions();
+    fetchCalendar();
+  } catch (err) {
+    console.error('Erreur planification:', err);
+    setSchedulingError(
+      err.response?.data?.error?.message || 'Erreur lors de la planification'
+    );
+  }
+};
 
   const handleCompleteMission = async (missionId) => {
     if (!window.confirm('Marquer cette mission comme terminée ?')) return;
@@ -108,6 +416,14 @@ function DashboardPrestataire() {
     }
   };
 
+  // ============================================
+  // VARIABLES CALCULEES
+  // ============================================
+
+  const filteredHistory = historyFilter === 'all'
+  ? history
+  : history.filter(order => order.status === historyFilter);
+  
   // ============================================
   // SECTIONS CONTENT
   // ============================================
@@ -211,6 +527,124 @@ function DashboardPrestataire() {
         )}
       </div>
     ),
+    calendar: (
+  <div>
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-2xl font-semibold">Calendrier</h2>
+      <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+        {calendar.length} mission{calendar.length > 1 ? 's' : ''} planifiée{calendar.length > 1 ? 's' : ''}
+      </span>
+    </div>
+
+    {loadingCalendar ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    ) : calendar.length === 0 ? (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">Aucune mission planifiée</p>
+        <p className="text-sm text-gray-500 mt-2">
+          Acceptez des missions pour les voir apparaître ici
+        </p>
+      </div>
+    ) : (
+      <div className="space-y-6">
+        {/* Grouper par date */}
+        {Object.entries(
+          calendar.reduce((acc, mission) => {
+            const date = mission.scheduled_date;
+            if (!acc[date]) acc[date] = [];
+            acc[date].push(mission);
+            return acc;
+          }, {})
+        ).map(([date, missions]) => (
+          <div key={date} className="bg-white border border-gray-200 rounded-lg p-5">
+            
+            {/* Header date */}
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b">
+              <div className="bg-green-100 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-green-600">
+                  {new Date(date).getDate()}
+                </p>
+                <p className="text-xs text-green-700">
+                  {new Date(date).toLocaleDateString('fr-FR', { month: 'short' })}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">
+                  {new Date(date).toLocaleDateString('fr-FR', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {missions.length} mission{missions.length > 1 ? 's' : ''} planifiée{missions.length > 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+
+            {/* Timeline des missions */}
+            <div className="space-y-3">
+              {missions
+                .sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time))
+                .map(mission => {
+                  const startTime = mission.scheduled_time.substring(0, 5);
+                  const duration = parseFloat(mission.duration_hours) || 2;
+                  const [hours, minutes] = mission.scheduled_time.split(':').map(Number);
+                  const endMinutes = hours * 60 + minutes + (duration * 60);
+                  const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+
+                  return (
+                    <div
+                      key={mission.id}
+                      className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                    >
+                      {/* Horaire */}
+                      <div className="text-center min-w-[80px]">
+                        <p className="text-lg font-bold text-green-600">{startTime}</p>
+                        <p className="text-xs text-gray-500">↓ {duration}h</p>
+                        <p className="text-sm text-gray-600">{endTime}</p>
+                      </div>
+
+                      {/* Infos mission */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-gray-900">{mission.cemetery_name}</h4>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            mission.status === 'accepted' ? 'bg-blue-100 text-blue-800' :
+                            mission.status === 'awaiting_validation' ? 'bg-orange-100 text-orange-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {mission.status === 'accepted' && '🔄 En cours'}
+                            {mission.status === 'awaiting_validation' && '⏰ À valider'}
+                            {mission.status === 'completed' && '✅ Terminée'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">📍 {mission.cemetery_city}</p>
+                        <p className="text-sm text-gray-600">🔧 {mission.service_name}</p>
+                        <p className="text-sm text-gray-600">🪦 {mission.cemetery_location}</p>
+                      </div>
+
+                      {/* Rémunération */}
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">Vous recevrez</p>
+                        <p className="text-lg font-bold text-green-600">
+                          {(parseFloat(mission.price) * 0.8).toFixed(2)}€
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+),
 
     available: (
       <div>
@@ -252,8 +686,14 @@ function DashboardPrestataire() {
                   </div>
                 </div>
 
-                <button onClick={() => handleAcceptMission(mission.id)} className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition">
-                  ✓ Accepter cette mission
+                <button 
+                  onClick={() => {
+                    console.log('🔘 Bouton cliqué !', mission);
+                    handleAcceptMission(mission);
+                  }} 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition"
+                >
+                  ✓ Accepter et planifier
                 </button>
               </div>
             ))}
@@ -261,7 +701,7 @@ function DashboardPrestataire() {
         )}
       </div>
     ),
-
+  
     missions: (
       <div>
         <h2 className="text-2xl font-semibold mb-6">Mes missions</h2>
@@ -396,7 +836,336 @@ function DashboardPrestataire() {
         </div>
       </div>
     ),
-  };
+    history: (
+  <div>
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-2xl font-semibold">Historique des missions</h2>
+      <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+        {history.length} mission{history.length > 1 ? 's' : ''} terminée{history.length > 1 ? 's' : ''}
+      </span>
+    </div>
+
+    {/* Filtres */}
+    <div className="flex gap-3 mb-6">
+      <button
+        onClick={() => setHistoryFilter('all')}
+        className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+          historyFilter === 'all'
+            ? 'bg-green-600 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        }`}
+      >
+        Toutes ({history.length})
+      </button>
+      <button
+        onClick={() => setHistoryFilter('completed')}
+        className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+          historyFilter === 'completed'
+            ? 'bg-green-600 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        }`}
+      >
+        ✅ Validées ({history.filter(h => h.status === 'completed').length})
+      </button>
+      <button
+        onClick={() => setHistoryFilter('refunded')}
+        className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+          historyFilter === 'refunded'
+            ? 'bg-green-600 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        }`}
+      >
+        💸 Remboursées ({history.filter(h => h.status === 'refunded').length})
+      </button>
+    </div>
+
+    {loadingHistory ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    ) : filteredHistory.length === 0 ? (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">Aucune mission dans l'historique</p>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {filteredHistory.map(order => {
+          const gainPrestataire = parseFloat(order.price) * 0.8;
+          const commission = parseFloat(order.price) * 0.2;
+
+          return (
+            <div
+              key={order.id}
+              onClick={() => setSelectedHistoryOrder(order)}
+              className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-lg hover:border-green-300 transition cursor-pointer"
+            >
+              <div className="flex items-start justify-between">
+                
+                {/* Infos gauche */}
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">{order.cemetery_name}</h3>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      order.status === 'completed'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {order.status === 'completed' ? '✅ Validée' : '💸 Remboursée'}
+                    </span>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600 mb-1">
+                    📍 {order.cemetery_city} {order.cemetery_department && `(${order.cemetery_department})`}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    🪦 {order.cemetery_location}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-3">
+                    🔧 {order.service_name}
+                  </p>
+                  
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <span>📅 {new Date(order.updated_at).toLocaleDateString('fr-FR')}</span>
+                    <span>👤 {order.client_prenom} {order.client_nom}</span>
+                  </div>
+                </div>
+
+                {/* Montants droite */}
+                <div className="text-right ml-6">
+                  <p className="text-sm text-gray-500 mb-1">Vous avez reçu</p>
+                  <p className="text-2xl font-bold text-green-600 mb-2">
+                    {gainPrestataire.toFixed(2)}€
+                  </p>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <p>Prix total: {parseFloat(order.price).toFixed(2)}€</p>
+                    <p>Commission: {commission.toFixed(2)}€</p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+
+    {/* MODAL DÉTAILS + PHOTOS */}
+    {selectedHistoryOrder && (
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+        onClick={() => setSelectedHistoryOrder(null)}
+      >
+        <div
+          className="bg-white rounded-xl max-w-3xl w-full max-h-screen overflow-y-auto shadow-2xl"
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">{selectedHistoryOrder.cemetery_name}</h3>
+              <p className="text-sm text-gray-500">{selectedHistoryOrder.service_name}</p>
+            </div>
+            <button
+              onClick={() => setSelectedHistoryOrder(null)}
+              className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Contenu */}
+          <div className="p-6 space-y-6">
+            
+            {/* Infos mission */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Informations</h4>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-gray-500">Statut</p>
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                    selectedHistoryOrder.status === 'completed'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {selectedHistoryOrder.status === 'completed' ? '✅ Validée' : '💸 Remboursée'}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-gray-500">Date</p>
+                  <p className="font-medium">{new Date(selectedHistoryOrder.updated_at).toLocaleDateString('fr-FR')}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Client</p>
+                  <p className="font-medium">{selectedHistoryOrder.client_prenom} {selectedHistoryOrder.client_nom}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Localisation</p>
+                  <p className="font-medium">{selectedHistoryOrder.cemetery_location}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Finances */}
+            <div className="bg-green-50 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Finances</h4>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="bg-white rounded p-3">
+                  <p className="text-xs text-gray-500 mb-1">Prix total</p>
+                  <p className="text-lg font-bold text-gray-900">{parseFloat(selectedHistoryOrder.price).toFixed(2)}€</p>
+                </div>
+                <div className="bg-white rounded p-3">
+                  <p className="text-xs text-gray-500 mb-1">Vous avez reçu (80%)</p>
+                  <p className="text-lg font-bold text-green-600">{(parseFloat(selectedHistoryOrder.price) * 0.8).toFixed(2)}€</p>
+                </div>
+                <div className="bg-white rounded p-3">
+                  <p className="text-xs text-gray-500 mb-1">Commission (20%)</p>
+                  <p className="text-lg font-bold text-purple-600">{(parseFloat(selectedHistoryOrder.price) * 0.2).toFixed(2)}€</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Photos (on les chargera à l'étape suivante) */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-3">Photos</h4>
+              <p className="text-sm text-gray-500">Chargement des photos à venir...</p>
+            </div>
+
+          </div>
+
+          {/* Footer */}
+          <div className="p-6 border-t bg-gray-50 rounded-b-xl">
+            <button
+              onClick={() => setSelectedHistoryOrder(null)}
+              className="w-full px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+),
+  finances: (
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Finances</h2>
+          <p className="text-sm text-gray-500 mt-1">Suivi de vos revenus</p>
+        </div>
+        <button
+          onClick={exportFinancesPDF}
+          disabled={!finances}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          📄 Export PDF
+        </button>
+      </div>
+
+      {loadingFinances ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      ) : !finances ? (
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <p className="text-gray-600">Impossible de charger les données financières</p>
+        </div>
+      ) : (
+        <>
+          {/* KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg">
+              <p className="text-sm opacity-90 mb-2">💰 Total perçu</p>
+              <p className="text-3xl font-bold">{finances.total_earned.toFixed(2)}€</p>
+              <p className="text-xs opacity-80 mt-2">{finances.missions_completed} missions</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-6 text-white shadow-lg">
+              <p className="text-sm opacity-90 mb-2">⏳ En attente</p>
+              <p className="text-3xl font-bold">{finances.pending_validation.toFixed(2)}€</p>
+              <p className="text-xs opacity-80 mt-2">Validation admin</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg">
+              <p className="text-sm opacity-90 mb-2">📊 Moyenne</p>
+              <p className="text-3xl font-bold">{finances.average_per_mission.toFixed(2)}€</p>
+              <p className="text-xs opacity-80 mt-2">Par mission</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+              <p className="text-sm opacity-90 mb-2">✅ Complétées</p>
+              <p className="text-3xl font-bold">{finances.missions_completed}</p>
+              <p className="text-xs opacity-80 mt-2">Missions validées</p>
+            </div>
+          </div>
+
+          {/* Répartition mensuelle */}
+          {finances.monthly_breakdown.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
+              <h3 className="text-lg font-semibold mb-4">📈 Répartition mensuelle</h3>
+              <div className="space-y-3">
+                {finances.monthly_breakdown.map(month => {
+                  const monthName = new Date(month.month + '-01').toLocaleDateString('fr-FR', { 
+                    year: 'numeric', 
+                    month: 'long' 
+                  });
+                  return (
+                    <div key={month.month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">{monthName}</p>
+                        <p className="text-sm text-gray-500">{month.count} mission{month.count > 1 ? 's' : ''}</p>
+                      </div>
+                      <p className="text-xl font-bold text-green-600">{month.revenue.toFixed(2)}€</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Historique paiements */}
+          {finances.recent_payments.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4">💸 Historique des paiements</h3>
+              <div className="space-y-3">
+                {finances.recent_payments.map(payment => (
+                  <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{payment.cemetery_name}</p>
+                      <p className="text-sm text-gray-600">{payment.cemetery_city} • {payment.service_name}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(payment.completed_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Prix total: {payment.price.toFixed(2)}€</p>
+                      <p className="text-lg font-bold text-green-600">+{payment.amount_received.toFixed(2)}€</p>
+                      <p className="text-xs text-gray-500">(80% commission)</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {finances.recent_payments.length === 0 && finances.missions_completed === 0 && (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <p className="text-gray-600">Aucune mission complétée pour le moment</p>
+              <p className="text-sm text-gray-500 mt-2">Vos revenus apparaîtront ici une fois vos missions validées</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+};
+
+  
 
   // ============================================
   // RENDER
@@ -443,16 +1212,25 @@ function DashboardPrestataire() {
         {/* Sidebar */}
         <aside className="w-1/3 bg-white border-l-4 border-green-600 rounded-lg p-6 space-y-4 shadow h-fit">
           <p className="text-gray-500 uppercase font-semibold text-sm mb-4">Sections</p>
-          <button onClick={() => setActiveSection('overview')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'overview' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+          <button onClick={() => setActiveTab('overview')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'overview' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Aperçu
           </button>
-          <button onClick={() => setActiveSection('available')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'available' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+          <button onClick={() => setActiveTab('available')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'available' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Missions disponibles ({availableMissions.length})
           </button>
-          <button onClick={() => setActiveSection('missions')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'missions' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+          <button onClick={() => setActiveTab('missions')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'missions' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Mes missions ({myMissions.length})
           </button>
-          <button onClick={() => setActiveSection('profile')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'profile' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+          <button onClick={() => setActiveTab('calendar')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'calendar' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Calendrier ({calendar.length})
+          </button>
+          <button onClick={() => setActiveTab('finances')} className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'finances' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+            Finances
+          </button>
+          <button onClick={() => setActiveTab('history')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'history' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            Historique ({history.length})
+          </button>
+          <button onClick={() => setActiveTab('profile')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'profile' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Profil
           </button>
         </aside>
@@ -467,11 +1245,125 @@ function DashboardPrestataire() {
           </div>
 
           {/* Contenu dynamique */}
-          {sections[activeSection]}
+          {sections[activeTab]}
         </section>
 
       </main>
+      
+{/* ===== MODAL PLANIFICATION ===== */}
+{missionToSchedule && (
+  <div
+    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    onClick={() => {
+      setMissionToSchedule(null);
+      setSelectedDate('');
+      setSelectedTime('');
+    }}
+  >
+    <div
+      className="bg-white rounded-xl max-w-md w-full shadow-2xl"
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between p-6 border-b">
+        <h3 className="text-xl font-bold text-gray-900">Planifier l'intervention</h3>
+        <button
+          onClick={() => {
+            setMissionToSchedule(null);
+            setSelectedDate('');
+            setSelectedTime('');
+          }}
+          className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+        >
+          ✕
+        </button>
+      </div>
 
+      <div className="p-6 space-y-4">
+        {/* Mission info */}
+        <div className="bg-gray-50 rounded-lg p-4">
+          <p className="font-semibold text-gray-900">{missionToSchedule.cemetery_name}</p>
+          <p className="text-sm text-gray-600">{missionToSchedule.service_name}</p>
+          <p className="text-sm text-green-600 font-medium mt-2">
+            Durée estimée : {missionToSchedule.duration_hours || 2}h
+          </p>
+        </div>
+
+        {/* Date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Date d'intervention <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={e => setSelectedDate(e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+            max={new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            📅 Maximum 15 jours à l'avance
+          </p>
+        </div>
+
+        {/* Heure */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Heure de début <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={selectedTime}
+            onChange={e => setSelectedTime(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            {Array.from({ length: 12 }, (_, i) => {
+              const hour = i + 7; // 7h à 18h
+              return ['00', '30'].map(minutes => {
+                const time = `${String(hour).padStart(2, '0')}:${minutes}`;
+                return (
+                  <option key={time} value={time}>
+                    {time}
+                  </option>
+                );
+              });
+            }).flat()}
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            🕐 Horaires : 7h00 - 19h00 (la mission doit se terminer avant 19h)
+          </p>
+        </div>
+
+        {/* Aperçu */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-sm text-blue-800">
+            📍 Intervention prévue le{' '}
+            <strong>{new Date(selectedDate).toLocaleDateString('fr-FR')}</strong> à{' '}
+            <strong>{selectedTime}</strong>
+          </p>
+        </div>
+      </div>
+
+      <div className="p-6 border-t bg-gray-50 rounded-b-xl flex gap-3">
+        <button
+          onClick={() => {
+            setMissionToSchedule(null);
+            setSelectedDate('');
+            setSelectedTime('');
+          }}
+          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition"
+        >
+          Annuler
+        </button>
+        <button
+          onClick={confirmScheduleMission}
+          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+        >
+          ✅ Confirmer
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
