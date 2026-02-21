@@ -73,7 +73,8 @@ const findByClientId = async (clientId) => {
       up.email as prestataire_email,
       c.name as cemetery_name,
       c.city as cemetery_city,
-      sc.name as service_name
+      sc.name as service_name,
+      EXISTS(SELECT 1 FROM reviews WHERE order_id = o.id) as has_review
     FROM orders o
     LEFT JOIN users up ON o.prestataire_id = up.id
     LEFT JOIN cemeteries c ON o.cemetery_id = c.id
