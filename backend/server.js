@@ -41,6 +41,7 @@ const photoRoutes = require('./routes/photoRoutes');
 const providerRoutes = require('./routes/providerRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 
 // ============================================
 // UTILISATION DES ROUTES
@@ -55,6 +56,7 @@ app.use('/api/photos', photoRoutes);
 app.use('/api/providers', providerRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // ============================================
 // ROUTES DE BASE (utilitaires uniquement)
