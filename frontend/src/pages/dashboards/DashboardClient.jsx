@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import OrderListPreview from '../../components/orders/OrderListPreview';
 import OrderListFull from '../../components/orders/OrderListFull';
+import axios from 'axios';
 
 function DashboardClient() {
   const { user, logout } = useAuth();
@@ -16,6 +17,13 @@ function DashboardClient() {
     orders_completed: 0,
     last_order_date: null,
   });
+
+  // ✅ STATES POUR LES ÉVALUATIONS
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [orderToReview, setOrderToReview] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   // Afficher message de succès si redirection depuis NewOrder
   useEffect(() => {
@@ -42,6 +50,58 @@ function DashboardClient() {
     };
     fetchStats();
   }, []);
+
+  // ✅ FONCTION POUR SOUMETTRE L'ÉVALUATION
+  const handleSubmitReview = async () => {
+    if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
+      alert('Veuillez sélectionner une note entre 1 et 5 étoiles');
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('/api/reviews', {
+        order_id: orderToReview.id,
+        rating: reviewRating,
+        comment: reviewComment.trim() || null
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      alert('Merci pour votre évaluation ! 🌟');
+      setShowReviewModal(false);
+      setOrderToReview(null);
+      setReviewRating(5);
+      setReviewComment('');
+      
+      // Recharger les stats pour mettre à jour l'affichage
+      const response = await fetch('/api/orders/dashboard-stats', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDashboardStats(data);
+      }
+    } catch (err) {
+      console.error('Erreur évaluation:', err);
+      if (err.response?.data?.error?.code === 'ALREADY_REVIEWED') {
+        alert('Vous avez déjà évalué cette mission');
+      } else {
+        alert(err.response?.data?.error?.message || 'Erreur lors de l\'évaluation');
+      }
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  // ✅ FONCTION POUR OUVRIR LE MODAL D'ÉVALUATION
+  const openReviewModal = (order) => {
+    setOrderToReview(order);
+    setReviewRating(5);
+    setReviewComment('');
+    setShowReviewModal(true);
+  };
 
   // Composants des sections du dashboard
   const sections = {
@@ -74,14 +134,14 @@ function DashboardClient() {
         </div>
 
         {/* Aperçu des commandes */}
-        <OrderListPreview />
+        <OrderListPreview onReview={openReviewModal} />
       </div>
     ),
 
     orders: (
       <div>
         <h2 className="text-2xl font-semibold mb-6">Historique des commandes</h2>
-        <OrderListFull />
+        <OrderListFull onReview={openReviewModal} />
       </div>
     ),
 
@@ -255,6 +315,91 @@ function DashboardClient() {
         </section>
 
       </main>
+
+      {/* ✅ MODAL D'ÉVALUATION */}
+      {showReviewModal && orderToReview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full p-6">
+            <h3 className="text-xl font-bold mb-4">Évaluer cette mission</h3>
+            
+            {/* Infos commande */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-600 mb-1">Mission</p>
+              <p className="font-medium">{orderToReview.service_name}</p>
+              <p className="text-sm text-gray-600 mt-2">
+                {orderToReview.cemetery_name} - {orderToReview.cemetery_city}
+              </p>
+            </div>
+
+            {/* Sélection étoiles */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Votre note *
+              </label>
+              <div className="flex gap-2 justify-center">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    className="text-5xl transition-transform hover:scale-110 focus:outline-none"
+                  >
+                    {star <= reviewRating ? '⭐' : '☆'}
+                  </button>
+                ))}
+              </div>
+              <p className="text-center text-sm text-gray-600 mt-2">
+                {reviewRating === 5 && '⭐ Excellent'}
+                {reviewRating === 4 && '😊 Très bien'}
+                {reviewRating === 3 && '🙂 Bien'}
+                {reviewRating === 2 && '😐 Moyen'}
+                {reviewRating === 1 && '😞 Décevant'}
+              </p>
+            </div>
+
+            {/* Commentaire */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Votre commentaire (optionnel)
+              </label>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Partagez votre expérience avec ce prestataire..."
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="4"
+                maxLength="500"
+              ></textarea>
+              <p className="text-xs text-gray-500 mt-1 text-right">
+                {reviewComment.length}/500 caractères
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowReviewModal(false);
+                  setOrderToReview(null);
+                  setReviewRating(5);
+                  setReviewComment('');
+                }}
+                disabled={submittingReview}
+                className="flex-1 bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSubmitReview}
+                disabled={submittingReview || !reviewRating}
+                className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submittingReview ? 'Envoi...' : '✅ Envoyer l\'évaluation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

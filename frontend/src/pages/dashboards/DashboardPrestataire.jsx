@@ -47,6 +47,12 @@ function DashboardPrestataire() {
   const [loadingZoneStats, setLoadingZoneStats] = useState(true);
   const [newZone, setNewZone] = useState('');
   const [updatingZone, setUpdatingZone] = useState(false);
+
+  // States pour évaluations
+  const [reviews, setReviews] = useState([]);
+  const [reviewsStats, setReviewsStats] = useState({ average_rating: 0, total_reviews: 0 });
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [reviewFilter, setReviewFilter] = useState('all');
   
   // Stats overview
   const [stats, setStats] = useState(null);
@@ -70,6 +76,7 @@ function DashboardPrestataire() {
     fetchFinances();
     fetchNotifications();
     fetchZoneStats();
+    fetchReviews();
   }, []);
 
   // ============================================
@@ -213,6 +220,25 @@ function DashboardPrestataire() {
       alert(err.response?.data?.error?.message || 'Erreur lors de la mise à jour');
     } finally {
       setUpdatingZone(false);
+    }
+  };
+
+  const fetchReviews = async () => {
+    setLoadingReviews(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/reviews/provider', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setReviews(response.data.data.reviews || []);
+      setReviewsStats({
+        average_rating: response.data.data.average_rating || 0,
+        total_reviews: response.data.data.total_reviews || 0
+      });
+    } catch (err) {
+      console.error('Erreur évaluations:', err);
+    } finally {
+      setLoadingReviews(false);
     }
   };
 
@@ -1545,7 +1571,153 @@ zone: (
       </div>
     )}
   </div>
+  ),
+evaluations: (
+  <div>
+    {/* Header */}
+    <div className="mb-6">
+      <h2 className="text-2xl font-bold text-gray-900">Évaluations clients</h2>
+      <p className="text-sm text-gray-500 mt-1">Consultez les avis de vos clients</p>
+    </div>
+
+    {loadingReviews ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    ) : (
+      <div className="space-y-6">
+        
+        {/* Stats globales */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Note moyenne */}
+          <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg p-6 text-white">
+            <p className="text-sm opacity-90 mb-2">Note moyenne</p>
+            <div className="flex items-center gap-3">
+              <p className="text-5xl font-bold">{reviewsStats.average_rating.toFixed(1)}</p>
+              <div className="flex flex-col">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <span key={star} className={`text-2xl ${star <= Math.round(reviewsStats.average_rating) ? '⭐' : '☆'}`}>
+                      {star <= Math.round(reviewsStats.average_rating) ? '⭐' : '☆'}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-sm opacity-90 mt-1">{reviewsStats.total_reviews} avis</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Répartition */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <p className="text-sm font-medium text-gray-700 mb-4">Répartition des notes</p>
+            <div className="space-y-2">
+              {[5, 4, 3, 2, 1].map(rating => {
+                const count = reviews.filter(r => r.rating === rating).length;
+                const percentage = reviewsStats.total_reviews > 0 ? (count / reviewsStats.total_reviews) * 100 : 0;
+                return (
+                  <div key={rating} className="flex items-center gap-3">
+                    <span className="text-sm w-8">{rating}⭐</span>
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-yellow-500 h-2 rounded-full transition-all" 
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm text-gray-600 w-12 text-right">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Filtres */}
+        {reviewsStats.total_reviews > 0 && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => setReviewFilter('all')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${reviewFilter === 'all' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            >
+              Tous ({reviewsStats.total_reviews})
+            </button>
+            {[5, 4, 3, 2, 1].map(rating => {
+              const count = reviews.filter(r => r.rating === rating).length;
+              if (count === 0) return null;
+              return (
+                <button
+                  key={rating}
+                  onClick={() => setReviewFilter(rating)}
+                  className={`px-4 py-2 rounded-lg font-medium transition ${reviewFilter === rating ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  {rating}⭐ ({count})
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Liste des avis */}
+        {reviewsStats.total_reviews === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <p className="text-xl mb-2">⭐</p>
+            <p className="text-gray-600 font-medium">Aucune évaluation pour le moment</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Vos clients pourront vous évaluer après la validation de leurs missions
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {reviews
+              .filter(review => reviewFilter === 'all' || review.rating === reviewFilter)
+              .map(review => (
+                <div
+                  key={review.id}
+                  className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition"
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium text-gray-900">
+                          {review.client_prenom} {review.client_nom?.charAt(0)}.
+                        </p>
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <span key={star} className="text-lg">
+                              {star <= review.rating ? '⭐' : '☆'}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {review.service_name} - {review.cemetery_name}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {new Date(review.created_at).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+
+                  {/* Commentaire */}
+                  {review.comment && (
+                    <div className="bg-gray-50 rounded-lg p-4 mt-3">
+                      <p className="text-gray-700 italic">"{review.comment}"</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+          </div>
+        )}
+
+      </div>
+    )}
+  </div>
 )
+
 };
 
   
@@ -1625,6 +1797,16 @@ zone: (
           </button>
           <button onClick={() => setActiveTab('zone')} className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'zone' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
             Zone d'intervention
+          </button>
+          <button onClick={() => setActiveTab('evaluations')} className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'evaluations' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+            <div className="flex items-center justify-between">
+              <span>Évaluations</span>
+              {reviewsStats.total_reviews > 0 && (
+                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+                  {reviewsStats.average_rating.toFixed(1)}★
+                </span>
+              )}
+            </div>
           </button>
           <button onClick={() => setActiveTab('history')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'history' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Historique ({history.length})

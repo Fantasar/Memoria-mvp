@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function OrderListFull() {
+function OrderListFull({ onReview }) { // ✅ Garde la prop onReview
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -78,48 +78,75 @@ function OrderListFull() {
       {orders.map(order => (
         <div 
           key={order.id} 
-          className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => navigate(`/orders/${order.id}`)}
+          className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
         >
-          <div className="flex items-start justify-between">
-            
-            {/* Infos principales */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {order.service_name || 'Service non défini'}
-                </h3>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig[order.status]?.color || 'bg-gray-100 text-gray-800'}`}>
-                  {statusConfig[order.status]?.label || order.status}
-                </span>
-              </div>
+          {/* ✅ Partie cliquable pour navigation */}
+          <div 
+            className="cursor-pointer"
+            onClick={() => navigate(`/orders/${order.id}`)}
+          >
+            <div className="flex items-start justify-between">
+              
+              {/* Infos principales */}
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {order.service_name || 'Service non défini'}
+                  </h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig[order.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                    {statusConfig[order.status]?.label || order.status}
+                  </span>
+                </div>
 
-              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                <div>
-                  <span className="font-medium">📍 Cimetière :</span> {order.cemetery_name || 'Non spécifié'}
-                </div>
-                <div>
-                  <span className="font-medium">📅 Date :</span> {new Date(order.created_at).toLocaleDateString('fr-FR')}
-                </div>
-                <div>
-                  <span className="font-medium">💰 Prix :</span> {order.price ? `${order.price}€` : 'Non défini'}
-                </div>
-                {order.prestataire_email && (
+                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                   <div>
-                    <span className="font-medium">👤 Prestataire :</span> {order.prestataire_email}
+                    <span className="font-medium">📍 Cimetière :</span> {order.cemetery_name || 'Non spécifié'}
                   </div>
-                )}
+                  <div>
+                    <span className="font-medium">📅 Date :</span> {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                  </div>
+                  <div>
+                    <span className="font-medium">💰 Prix :</span> {order.price ? `${order.price}€` : 'Non défini'}
+                  </div>
+                  {order.prestataire_email && (
+                    <div>
+                      <span className="font-medium">👤 Prestataire :</span> {order.prestataire_email}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Flèche */}
-            <div className="ml-4">
-              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
+              {/* Flèche */}
+              <div className="ml-4">
+                <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
 
+            </div>
           </div>
+
+          {/* ✅ BOUTON ÉVALUER (missions terminées uniquement) */}
+          {order.status === 'completed' && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              {!order.has_review ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // Empêche la navigation
+                    onReview(order);
+                  }}
+                  className="w-full bg-yellow-500 text-white px-4 py-3 rounded-lg hover:bg-yellow-600 transition font-medium"
+                >
+                  ⭐ Évaluer cette mission
+                </button>
+              ) : (
+                <div className="w-full bg-green-100 text-green-800 px-4 py-3 rounded-lg text-center font-medium">
+                  ✅ Évaluation envoyée
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       ))}
     </div>
