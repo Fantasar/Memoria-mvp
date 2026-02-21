@@ -145,9 +145,48 @@ const getProviderFinances = async (req, res, next) => {
   }
 };
 
+/**
+ * Mettre à jour la zone d'intervention
+ */
+const updateZone = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { zone_intervention } = req.body;
+    
+    const result = await providerService.updateZone(userId, zone_intervention);
+    
+    res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Zone d\'intervention mise à jour'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Récupérer les stats de la zone
+ */
+const getZoneStats = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const stats = await providerService.getZoneStats(userId);
+    
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getPendingProviders,
   approveProvider,
   rejectProvider,
-  getProviderFinances
+  getProviderFinances,
+  updateZone,
+  getZoneStats 
 };

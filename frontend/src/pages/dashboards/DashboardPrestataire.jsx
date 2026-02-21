@@ -5,6 +5,7 @@ import axios from 'axios';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoMemoria from '../../assets/Logos_Mémoria-remove.png';
+import ZoneMap from '../../components/maps/ZoneMap';
 
 
 function DashboardPrestataire() {
@@ -40,6 +41,12 @@ function DashboardPrestataire() {
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  //Zone d'intervention
+  const [zoneStats, setZoneStats] = useState(null);
+  const [loadingZoneStats, setLoadingZoneStats] = useState(true);
+  const [newZone, setNewZone] = useState('');
+  const [updatingZone, setUpdatingZone] = useState(false);
   
   // Stats overview
   const [stats, setStats] = useState(null);
@@ -62,6 +69,7 @@ function DashboardPrestataire() {
     fetchCalendar();
     fetchFinances();
     fetchNotifications();
+    fetchZoneStats();
   }, []);
 
   // ============================================
@@ -166,6 +174,45 @@ function DashboardPrestataire() {
       console.error('Erreur notifications:', err);
     } finally {
       setLoadingNotifications(false);
+    }
+  };
+
+  const fetchZoneStats = async () => {
+    setLoadingZoneStats(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/providers/zone/stats', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setZoneStats(response.data.data);
+      setNewZone(response.data.data.zone); // Pré-remplir avec la zone actuelle
+    } catch (err) {
+      console.error('Erreur zone stats:', err);
+    } finally {
+      setLoadingZoneStats(false);
+    }
+  };
+
+  const handleUpdateZone = async () => {
+    if (!newZone || newZone.trim().length < 2) {
+      alert('Zone invalide (minimum 2 caractères)');
+      return;
+    }
+  
+    setUpdatingZone(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch('/api/providers/zone', 
+        { zone_intervention: newZone.trim() },
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+      alert('Zone d\'intervention mise à jour !');
+      fetchZoneStats(); // Recharger les stats
+    } catch (err) {
+      console.error('Erreur mise à jour zone:', err);
+      alert(err.response?.data?.error?.message || 'Erreur lors de la mise à jour');
+    } finally {
+      setUpdatingZone(false);
     }
   };
 
@@ -1341,6 +1388,163 @@ const confirmScheduleMission = async () => {
       </div>
     )}
   </div>
+),
+zone: (
+  <div>
+    {/* Header */}
+    <div className="mb-6">
+      <h2 className="text-2xl font-bold text-gray-900">Zone d'intervention</h2>
+      <p className="text-sm text-gray-500 mt-1">Gérez votre zone géographique de travail</p>
+    </div>
+
+    {loadingZoneStats ? (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    ) : !zoneStats ? (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">Impossible de charger les données de zone</p>
+      </div>
+    ) : (
+      <div className="space-y-6">
+        
+        {/* 1. Modifier la zone */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">📍 Votre zone actuelle</h3>
+          
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <p className="text-2xl font-bold text-green-800">{zoneStats.zone}</p>
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700">
+              Nouvelle zone d'intervention
+            </label>
+            <input
+              type="text"
+              value={newZone}
+              onChange={(e) => setNewZone(e.target.value)}
+              placeholder="Exemples : Gironde, Bordeaux, 33000"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <p className="text-xs text-gray-500">
+              💡 Vous pouvez indiquer un département (Gironde), une ville (Bordeaux) ou un code postal (33000)
+            </p>
+            <button
+              onClick={handleUpdateZone}
+              disabled={updatingZone || !newZone || newZone.trim() === zoneStats.zone}
+              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {updatingZone ? 'Mise à jour...' : '💾 Sauvegarder'}
+            </button>
+          </div>
+        </div>
+
+        {/* 2. Statistiques */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">📊 Votre zone couvre</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white">
+              <p className="text-sm opacity-90 mb-1">Cimetières disponibles</p>
+              <p className="text-3xl font-bold">{zoneStats.cemetery_count}</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+              <p className="text-sm opacity-90 mb-1">Missions potentielles (30j)</p>
+              <p className="text-3xl font-bold">{zoneStats.potential_missions}</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+              <p className="text-sm opacity-90 mb-1">Villes principales</p>
+              <p className="text-3xl font-bold">{zoneStats.main_cities.length}</p>
+            </div>
+          </div>
+
+          {zoneStats.main_cities.length > 0 && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600 mb-2">🏙️ Principales villes :</p>
+              <p className="text-gray-900 font-medium">
+                {zoneStats.main_cities.join(', ')}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* 3. Carte Google Maps */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">🗺️ Carte des cimetières</h3>
+          
+          {zoneStats.cemeteries.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <p className="text-gray-600">Aucun cimetière dans cette zone</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Essayez d'élargir votre zone d'intervention
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  📍 {zoneStats.cemeteries.length} cimetière{zoneStats.cemeteries.length > 1 ? 's' : ''} disponible{zoneStats.cemeteries.length > 1 ? 's' : ''} où vous pouvez intervenir
+                </p>
+              </div>
+              
+              {console.log('🎯 AVANT ZoneMap - cemeteries:', zoneStats.cemeteries)}
+
+              <ZoneMap cemeteries={zoneStats.cemeteries} />
+            </>
+          )}
+        </div>
+
+        {/* 4. Liste des cimetières */}
+        {zoneStats.cemeteries.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">📋 Liste des cimetières</h3>
+            
+            <div className="space-y-2">
+              {zoneStats.cemeteries.map(cemetery => (
+                <div
+                  key={cemetery.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                >
+                  <div>
+                    <p className="font-medium text-gray-900">{cemetery.name}</p>
+                    <p className="text-sm text-gray-600">
+                      {cemetery.city} ({cemetery.postal_code})
+                      {cemetery.department && ` - ${cemetery.department}`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">
+                      {cemetery.missions_last_month || 0} mission{cemetery.missions_last_month > 1 ? 's' : ''}
+                    </p>
+                    <p className="text-xs text-gray-400">30 derniers jours</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 5. Suggestion d'ajout (bonus) */}
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-2 text-orange-900">🆕 Un cimetière manque ?</h3>
+          <p className="text-sm text-orange-800 mb-4">
+            Si vous souhaitez intervenir dans un cimetière qui n'apparaît pas dans la liste, 
+            contactez l'administrateur pour demander son ajout.
+          </p>
+          <button
+            onClick={() => alert('Fonctionnalité à venir : envoi d\'un email à l\'admin')}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition"
+          >
+            ✉️ Suggérer un cimetière
+          </button>
+        </div>
+
+      </div>
+    )}
+  </div>
 )
 };
 
@@ -1418,6 +1622,9 @@ const confirmScheduleMission = async () => {
                 </span>
               )}
             </div>
+          </button>
+          <button onClick={() => setActiveTab('zone')} className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'zone' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+            Zone d'intervention
           </button>
           <button onClick={() => setActiveTab('history')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === 'history' ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'}`}>
             Historique ({history.length})
