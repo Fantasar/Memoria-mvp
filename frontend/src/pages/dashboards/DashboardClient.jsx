@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import OrderListPreview from '../../components/orders/OrderListPreview';
 import OrderListFull from '../../components/orders/OrderListFull';
 import axios from 'axios';
+import PhotoGallery from '../../components/client/PhotoGallery';
 
 function DashboardClient() {
   const { user, logout } = useAuth();
@@ -144,7 +145,11 @@ function DashboardClient() {
         <OrderListFull onReview={openReviewModal} />
       </div>
     ),
-
+    gallery: (
+      <div>
+        <PhotoGallery />
+      </div>
+    ),
     profile: (
       <div>
         <h2 className="text-2xl font-semibold mb-6">Mon profil</h2>
@@ -287,6 +292,7 @@ function DashboardClient() {
         <aside className="w-1/3 bg-white border-l-4 border-blue-600 rounded-lg p-6 space-y-4 shadow h-fit">
           <p className="text-gray-500 uppercase font-semibold text-sm mb-4">Sections</p>
           <button onClick={() => setActiveSection('overview')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'overview' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>Aperçu</button>
+            <button onClick={() => setActiveSection('gallery')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'gallery' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>Galerie photos</button>
           <button onClick={() => setActiveSection('orders')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'orders' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>Historique des commandes</button>
           <button onClick={() => setActiveSection('profile')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'profile' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>Profil</button>
         </aside>
