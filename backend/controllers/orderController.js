@@ -123,7 +123,6 @@ const getAvailableOrders = async (req, res) => {
  * @route   PATCH /api/orders/:id/accept
  * @access  Private (Prestataire uniquement)
  */
-
 const acceptOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -133,13 +132,21 @@ const acceptOrder = async (req, res) => {
     // Accepter et planifier la mission
     const order = await orderService.acceptOrder(id, prestatairId, scheduled_date, scheduled_time);
 
-    // Créer une notification pour le prestataire
-    const notificationService = require('../services/notificationService');
+    // ✅ Notification pour le prestataire
     await notificationService.createNotification({
       user_id: prestatairId,
       type: 'schedule_needed',
       title: '✅ Mission acceptée',
       message: `Commande #${order.id.substring(0, 8)} - Vous avez accepté une mission au ${order.cemetery_name}. Intervention prévue le ${new Date(scheduled_date).toLocaleDateString('fr-FR')} à ${scheduled_time}.`,
+      order_id: order.id
+    });
+
+    // ✅ NOTIFICATION POUR LE CLIENT
+    await notificationService.createNotification({
+      user_id: order.client_id,
+      type: 'mission_accepted',
+      title: '✅ Votre mission a été acceptée',
+      message: `Un prestataire a accepté votre mission au ${order.cemetery_name}. Intervention prévue le ${new Date(scheduled_date).toLocaleDateString('fr-FR')}.`,
       order_id: order.id
     });
 
@@ -174,6 +181,15 @@ const completeOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
     const result = await orderService.completeOrder(orderId, req.user.userId);
+
+    // ✅ NOTIFICATION POUR LE CLIENT - Photos disponibles
+    await notificationService.createNotification({
+      user_id: result.client_id,
+      type: 'photos_available',
+      title: '📷 Photos disponibles',
+      message: `Le prestataire a terminé l'intervention au ${result.cemetery_name}. Les photos avant/après sont disponibles.`,
+      order_id: orderId
+    });
 
     return res.status(200).json({
       success: true,
@@ -353,25 +369,29 @@ const validateOrder = async (req, res) => {
 
     // Valider la mission
     const result = await orderService.validateOrder(orderId, adminId);
-    const order = result.order; // ✅ EXTRAIRE order de l'objet result
+    const order = result.order;
 
-    console.log('🔍 ORDER EXTRAIT:', order);
-    console.log('🔍 order.prestataire_id:', order.prestataire_id); // ✅ Maintenant défini
-    console.log('🔍 order.cemetery_name:', order.cemetery_name); // ✅ Maintenant défini
-
-    // ✅ Créer une notification pour le prestataire
-    const notificationService = require('../services/notificationService');
+    // ✅ Notification pour le prestataire
     await notificationService.createNotification({
-      user_id: order.prestataire_id, // ✅ Maintenant disponible
+      user_id: order.prestataire_id,
       type: 'mission_validated',
       title: '✅ Mission validée - Paiement en cours',
       message: `Félicitations ! Votre mission au ${order.cemetery_name} a été validée par l'administrateur. Le paiement de ${(parseFloat(order.price) * 0.8).toFixed(2)}€ vous sera versé sous 48h.`,
       order_id: order.id
     });
 
+    // ✅ NOTIFICATION POUR LE CLIENT - Mission terminée
+    await notificationService.createNotification({
+      user_id: order.client_id,
+      type: 'mission_completed',
+      title: '🎉 Mission validée',
+      message: `Votre mission au ${order.cemetery_name} a été validée avec succès. N'hésitez pas à évaluer le prestataire !`,
+      order_id: order.id
+    });
+
     return res.status(200).json({
       success: true,
-      data: result, // Retourne tout : order + transfer
+      data: result,
       message: 'Intervention validée et paiement prestataire effectué'
     });
 
@@ -397,7 +417,6 @@ const validateOrder = async (req, res) => {
     });
   }
 };
-
 
 /**
  * @desc    Récupérer les commandes en litige
@@ -448,7 +467,6 @@ const markAsDisputed = async (req, res) => {
     const { reason } = req.body;
     const adminId = req.user.userId;
 
-    // Validation du motif
     if (!reason || reason.trim().length < 10) {
       return res.status(400).json({
         success: false,
@@ -459,11 +477,9 @@ const markAsDisputed = async (req, res) => {
       });
     }
 
-    // Marquer la commande comme litigieuse
     const order = await orderService.markOrderAsDisputed(orderId, adminId, reason);
 
-    // ✅ Créer une notification pour le prestataire
-    const notificationService = require('../services/notificationService');
+    // Notification pour le prestataire
     await notificationService.createNotification({
       user_id: order.prestataire_id,
       type: 'dispute',
@@ -512,7 +528,6 @@ const resolveDispute = async (req, res) => {
     const { action } = req.body;
     const adminId = req.user.userId;
 
-    // Validation de l'action
     if (!['validate', 'refund', 'request_correction'].includes(action)) {
       return res.status(400).json({
         success: false,
@@ -523,13 +538,12 @@ const resolveDispute = async (req, res) => {
       });
     }
 
-    // Résoudre le litige
-    const order = await orderService.resolveDispute(orderId, adminId, action);
+    const result = await orderService.resolveDispute(orderId, adminId, action);
+    const order = result.order;
 
-    // ✅ Créer une notification selon l'action choisie
-    const notificationService = require('../services/notificationService');
-    
+    // ✅ Notifications selon l'action
     if (action === 'validate') {
+      // Notification prestataire
       await notificationService.createNotification({
         user_id: order.prestataire_id,
         type: 'mission_validated',
@@ -537,7 +551,18 @@ const resolveDispute = async (req, res) => {
         message: `Le litige sur votre mission au ${order.cemetery_name} a été résolu en votre faveur. Le paiement de ${(parseFloat(order.price) * 0.8).toFixed(2)}€ vous sera versé sous 48h.`,
         order_id: order.id
       });
+
+      // ✅ NOTIFICATION CLIENT
+      await notificationService.createNotification({
+        user_id: order.client_id,
+        type: 'dispute_resolved',
+        title: '✅ Litige résolu',
+        message: `Votre litige concernant la mission au ${order.cemetery_name} a été examiné. L'intervention a été validée.`,
+        order_id: orderId
+      });
+
     } else if (action === 'refund') {
+      // Notification prestataire
       await notificationService.createNotification({
         user_id: order.prestataire_id,
         type: 'dispute',
@@ -545,7 +570,18 @@ const resolveDispute = async (req, res) => {
         message: `Le litige sur votre mission au ${order.cemetery_name} a été résolu en faveur du client. La commande a été remboursée. Vous ne serez pas rémunéré pour cette intervention.`,
         order_id: order.id
       });
+
+      // ✅ NOTIFICATION CLIENT
+      await notificationService.createNotification({
+        user_id: order.client_id,
+        type: 'refund_processed',
+        title: '💸 Remboursement effectué',
+        message: `Suite à votre signalement, vous avez été remboursé de ${order.price}€ pour la mission au ${order.cemetery_name}.`,
+        order_id: orderId
+      });
+
     } else if (action === 'request_correction') {
+      // Notification prestataire
       await notificationService.createNotification({
         user_id: order.prestataire_id,
         type: 'dispute',
@@ -553,11 +589,20 @@ const resolveDispute = async (req, res) => {
         message: `L'administrateur demande une correction sur votre mission au ${order.cemetery_name}. Merci de retourner sur place pour effectuer les ajustements nécessaires.`,
         order_id: order.id
       });
+
+      // ✅ NOTIFICATION CLIENT
+      await notificationService.createNotification({
+        user_id: order.client_id,
+        type: 'correction_requested',
+        title: '🔄 Correction en cours',
+        message: `Suite à votre signalement, une correction a été demandée au prestataire pour la mission au ${order.cemetery_name}.`,
+        order_id: orderId
+      });
     }
 
     return res.status(200).json({
       success: true,
-      data: order,
+      data: result,
       message: 'Litige résolu avec succès'
     });
 
@@ -650,13 +695,13 @@ const getProviderCalendar = async (req, res) => {
   }
 };
 
-// Statistiques pour le dashboard client
+/**
+ * Statistiques pour le dashboard client
+ */
 const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user.userId;
-
     const stats = await orderRepository.getDashboardStats(userId);
-
     res.json(stats);
   } catch (err) {
     console.error('Erreur getDashboardStats:', err);
@@ -711,27 +756,19 @@ const getCompletedOrdersWithPhotos = async (req, res, next) => {
       });
     }
 
-    // Récupérer les commandes terminées
     const orderRepository = require('../repositories/orderRepository');
     const photoRepository = require('../repositories/photoRepository');
 
     const orders = await orderRepository.findByClientId(userId);
-    
-    // Filtrer uniquement les commandes terminées
     const completedOrders = orders.filter(order => order.status === 'completed');
 
-    // Récupérer les photos pour chaque commande
     const ordersWithPhotos = await Promise.all(
       completedOrders.map(async (order) => {
         const photos = await photoRepository.findByOrderId(order.id);
-        return {
-          ...order,
-          photos
-        };
+        return { ...order, photos };
       })
     );
 
-    // Ne garder que les commandes qui ont des photos
     const ordersWithPhotosOnly = ordersWithPhotos.filter(order => order.photos.length > 0);
 
     res.status(200).json({
@@ -743,6 +780,79 @@ const getCompletedOrdersWithPhotos = async (req, res, next) => {
   }
 };
 
+/**
+ * Signaler un litige sur une commande (client uniquement)
+ */
+const reportDispute = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+    const { orderId } = req.params;
+    const { reason } = req.body;
+
+    if (userRole !== 'client') {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Seuls les clients peuvent signaler des litiges', code: 'FORBIDDEN' }
+      });
+    }
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Veuillez décrire le problème', code: 'MISSING_REASON' }
+      });
+    }
+
+    const orderRepository = require('../repositories/orderRepository');
+    const order = await orderRepository.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Commande introuvable', code: 'ORDER_NOT_FOUND' }
+      });
+    }
+
+    if (order.client_id !== userId) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Cette commande ne vous appartient pas', code: 'FORBIDDEN' }
+      });
+    }
+
+    if (order.status !== 'completed') {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Seules les missions terminées peuvent être contestées', code: 'INVALID_STATUS' }
+      });
+    }
+
+    const updatedOrder = await orderRepository.markAsDisputed(orderId, reason.trim());
+
+    // Notification pour les admins
+    const userRepository = require('../repositories/userRepository');
+    const admins = await userRepository.findByRole('admin');
+    
+    for (const admin of admins) {
+      await notificationService.createNotification({
+        user_id: admin.id,
+        type: 'dispute',
+        title: '🚨 Nouveau litige signalé',
+        message: `Mission au ${order.cemetery_name}. Client: ${order.client_prenom} ${order.client_nom}. Motif: ${reason.trim()}`,
+        order_id: orderId
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: updatedOrder,
+      message: 'Litige signalé avec succès. Un administrateur va examiner votre demande.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   createOrder,
@@ -761,5 +871,6 @@ module.exports = {
   getProviderHistory,
   getProviderCalendar,
   getProviderCalendarForAdmin,
-  getCompletedOrdersWithPhotos
+  getCompletedOrdersWithPhotos,
+  reportDispute
 };
