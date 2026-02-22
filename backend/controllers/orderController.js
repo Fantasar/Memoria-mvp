@@ -696,6 +696,53 @@ const getProviderHistory = async (req, res) => {
   }
 };
 
+/**
+ * Récupérer toutes les commandes terminées avec photos (client)
+ */
+const getCompletedOrdersWithPhotos = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+
+    if (userRole !== 'client') {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Accès réservé aux clients', code: 'FORBIDDEN' }
+      });
+    }
+
+    // Récupérer les commandes terminées
+    const orderRepository = require('../repositories/orderRepository');
+    const photoRepository = require('../repositories/photoRepository');
+
+    const orders = await orderRepository.findByClientId(userId);
+    
+    // Filtrer uniquement les commandes terminées
+    const completedOrders = orders.filter(order => order.status === 'completed');
+
+    // Récupérer les photos pour chaque commande
+    const ordersWithPhotos = await Promise.all(
+      completedOrders.map(async (order) => {
+        const photos = await photoRepository.findByOrderId(order.id);
+        return {
+          ...order,
+          photos
+        };
+      })
+    );
+
+    // Ne garder que les commandes qui ont des photos
+    const ordersWithPhotosOnly = ordersWithPhotos.filter(order => order.photos.length > 0);
+
+    res.status(200).json({
+      success: true,
+      data: ordersWithPhotosOnly
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 module.exports = {
   createOrder,
@@ -713,5 +760,6 @@ module.exports = {
   resolveDispute,
   getProviderHistory,
   getProviderCalendar,
-  getProviderCalendarForAdmin
+  getProviderCalendarForAdmin,
+  getCompletedOrdersWithPhotos
 };

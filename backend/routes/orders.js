@@ -92,6 +92,13 @@ router.get('/dashboard-stats', authenticateToken, orderController.getDashboardSt
 router.get('/history', authenticateToken, orderController.getProviderHistory);
 
 /**
+ * @route   GET /api/gallery
+ * @desc    Récupérer la gallerie des photos utilisateurs
+ * @access  Utilisaters - JWT REQUIS
+ */
+router.get('/gallery', authenticateToken, orderController.getCompletedOrdersWithPhotos);
+
+/**
  * @route   GET /api/calendar
  * @desc    Récupérer le calendrier d'un prestataire
  * @access  Prestataires - JWT REQUIS
