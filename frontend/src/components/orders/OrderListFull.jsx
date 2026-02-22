@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-function OrderListFull({ onReview }) { // ✅ Garde la prop onReview
+function OrderListFull({ onReview }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  // ✅ AJOUTE CES STATES
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [orderPhotos, setOrderPhotos] = useState({});
+  const [loadingPhotos, setLoadingPhotos] = useState({});
 
   // Badges de statut
   const statusConfig = {
@@ -17,28 +23,54 @@ function OrderListFull({ onReview }) { // ✅ Garde la prop onReview
     completed: { label: 'Terminée', color: 'bg-green-200 text-green-900' },
     cancelled: { label: 'Annulée', color: 'bg-red-100 text-red-800' },
     refunded: { label: 'Remboursée', color: 'bg-gray-100 text-gray-800' },
+    disputed: { label: 'Litige en cours', color: 'bg-red-100 text-red-800' },
   };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch('/api/orders', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        });
-
-        if (!response.ok) throw new Error('Erreur lors du chargement');
-
-        const data = await response.json();
-        setOrders(data.data || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOrders();
   }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch('/api/orders', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+
+      if (!response.ok) throw new Error('Erreur lors du chargement');
+
+      const data = await response.json();
+      setOrders(data.data || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ FONCTION POUR RÉCUPÉRER LES PHOTOS
+  const fetchPhotos = async (orderId) => {
+    if (orderPhotos[orderId]) {
+      // Déjà chargées, juste toggle l'affichage
+      setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
+      return;
+    }
+
+    setLoadingPhotos(prev => ({ ...prev, [orderId]: true }));
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/photos/order/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setOrderPhotos(prev => ({ ...prev, [orderId]: response.data.data || [] }));
+      setExpandedOrderId(orderId);
+    } catch (err) {
+      console.error('Erreur photos:', err);
+      alert('Erreur lors du chargement des photos');
+    } finally {
+      setLoadingPhotos(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
 
   if (loading) {
     return (
@@ -75,80 +107,147 @@ function OrderListFull({ onReview }) { // ✅ Garde la prop onReview
 
   return (
     <div className="space-y-4">
-      {orders.map(order => (
-        <div 
-          key={order.id} 
-          className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
-        >
-          {/* ✅ Partie cliquable pour navigation */}
+      {orders.map(order => {
+        const photos = orderPhotos[order.id] || [];
+        const beforePhoto = photos.find(p => p.type === 'before');
+        const afterPhoto = photos.find(p => p.type === 'after');
+        const isExpanded = expandedOrderId === order.id;
+
+        return (
           <div 
-            className="cursor-pointer"
-            onClick={() => navigate(`/orders/${order.id}`)}
+            key={order.id} 
+            className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
           >
-            <div className="flex items-start justify-between">
-              
-              {/* Infos principales */}
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {order.service_name || 'Service non défini'}
-                  </h3>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig[order.status]?.color || 'bg-gray-100 text-gray-800'}`}>
-                    {statusConfig[order.status]?.label || order.status}
-                  </span>
+            {/* Partie cliquable pour navigation */}
+            <div 
+              className="cursor-pointer p-6"
+              onClick={() => navigate(`/orders/${order.id}`)}
+            >
+              <div className="flex items-start justify-between">
+                
+                {/* Infos principales */}
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {order.service_name || 'Service non défini'}
+                    </h3>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig[order.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                      {statusConfig[order.status]?.label || order.status}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                    <div>
+                      <span className="font-medium">📍 Cimetière :</span> {order.cemetery_name || 'Non spécifié'}
+                    </div>
+                    <div>
+                      <span className="font-medium">📅 Date :</span> {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                    </div>
+                    <div>
+                      <span className="font-medium">💰 Prix :</span> {order.price ? `${order.price}€` : 'Non défini'}
+                    </div>
+                    {order.prestataire_email && (
+                      <div>
+                        <span className="font-medium">👤 Prestataire :</span> {order.prestataire_email}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                  <div>
-                    <span className="font-medium">📍 Cimetière :</span> {order.cemetery_name || 'Non spécifié'}
-                  </div>
-                  <div>
-                    <span className="font-medium">📅 Date :</span> {new Date(order.created_at).toLocaleDateString('fr-FR')}
-                  </div>
-                  <div>
-                    <span className="font-medium">💰 Prix :</span> {order.price ? `${order.price}€` : 'Non défini'}
-                  </div>
-                  {order.prestataire_email && (
-                    <div>
-                      <span className="font-medium">👤 Prestataire :</span> {order.prestataire_email}
+                {/* Flèche */}
+                <div className="ml-4">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+
+              </div>
+            </div>
+
+            {/* ✅ ACTIONS (missions terminées ou en attente validation) */}
+            {(order.status === 'completed' || order.status === 'awaiting_validation' || order.status === 'disputed') && (
+              <div className="px-6 pb-4 pt-0 border-t border-gray-200">
+                <div className="flex gap-2 mt-4">
+                  {/* Bouton Voir les photos */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fetchPhotos(order.id);
+                    }}
+                    disabled={loadingPhotos[order.id]}
+                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
+                  >
+                    {loadingPhotos[order.id] ? '⏳ Chargement...' : isExpanded ? '🔼 Masquer photos' : '📷 Voir les photos'}
+                  </button>
+
+                  {/* Bouton Évaluer (uniquement si completed) */}
+                  {order.status === 'completed' && (
+                    !order.has_review ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onReview(order);
+                        }}
+                        className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition font-medium"
+                      >
+                        ⭐ Évaluer
+                      </button>
+                    ) : (
+                      <div className="flex-1 bg-green-100 text-green-800 px-4 py-2 rounded-lg text-center font-medium">
+                        ✅ Évalué
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ✅ AFFICHAGE DES PHOTOS */}
+            {isExpanded && photos.length > 0 && (
+              <div className="px-6 pb-6">
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  {/* Photo avant */}
+                  {beforePhoto && (
+                    <div className="relative">
+                      <img 
+                        src={beforePhoto.url} 
+                        alt="Avant" 
+                        className="w-full h-64 object-cover rounded-lg border-2 border-gray-200"
+                      />
+                      <span className="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm font-medium">
+                        📷 Avant
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Photo après */}
+                  {afterPhoto && (
+                    <div className="relative">
+                      <img 
+                        src={afterPhoto.url} 
+                        alt="Après" 
+                        className="w-full h-64 object-cover rounded-lg border-2 border-green-200"
+                      />
+                      <span className="absolute top-2 left-2 bg-green-600 bg-opacity-90 text-white px-3 py-1 rounded text-sm font-medium">
+                        ✨ Après
+                      </span>
                     </div>
                   )}
                 </div>
               </div>
+            )}
 
-              {/* Flèche */}
-              <div className="ml-4">
-                <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-
-            </div>
-          </div>
-
-          {/* ✅ BOUTON ÉVALUER (missions terminées uniquement) */}
-          {order.status === 'completed' && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              {!order.has_review ? (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation(); // Empêche la navigation
-                    onReview(order);
-                  }}
-                  className="w-full bg-yellow-500 text-white px-4 py-3 rounded-lg hover:bg-yellow-600 transition font-medium"
-                >
-                  ⭐ Évaluer cette mission
-                </button>
-              ) : (
-                <div className="w-full bg-green-100 text-green-800 px-4 py-3 rounded-lg text-center font-medium">
-                  ✅ Évaluation envoyée
+            {isExpanded && photos.length === 0 && (
+              <div className="px-6 pb-6">
+                <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-600">
+                  Aucune photo disponible pour cette intervention
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
 
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
