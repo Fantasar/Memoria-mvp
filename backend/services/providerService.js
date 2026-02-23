@@ -1,171 +1,205 @@
-const userRepository = require('../repositories/userRepository');
+// backend/services/providerService.js
+const userRepository     = require('../repositories/userRepository');
 const providerRepository = require('../repositories/providerRepository');
-const zoneRepository = require('../repositories/zoneRepository');
-
+const zoneRepository     = require('../repositories/zoneRepository');
 
 /**
- * Récupérer les prestataires en attente
+ * Service de gestion des prestataires.
+ * Gère la validation admin, les finances, la zone d'intervention
+ * et les statistiques géographiques des prestataires.
+ */
+
+/**
+ * Vérifie qu'un utilisateur a le rôle admin
+ * Factorisé car utilisé dans getPendingProviders, approveProvider et rejectProvider
+ * @param {number} adminId
+ */
+const checkAdminAccess = async (adminId) => {
+  const admin = await userRepository.findById(adminId);
+  if (!admin || admin.role !== 'admin') {
+    const error = new Error('Accès réservé aux administrateurs');
+    error.code = 'FORBIDDEN';
+    error.statusCode = 403;
+    throw error;
+  }
+};
+
+/**
+ * Récupère les prestataires en attente de validation
+ * @param {number} adminId
+ * @returns {Array}
  */
 const getPendingProviders = async (adminId) => {
-  // Vérifier que c'est un admin
-  const admin = await userRepository.findById(adminId);
-  
-  if (!admin || admin.role !== 'admin') {
-    const error = new Error('Accès réservé aux administrateurs');
-    error.code = 'FORBIDDEN';
-    error.statusCode = 403;
-    throw error;
+  try {
+    await checkAdminAccess(adminId);
+    return await userRepository.findPendingProviders();
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`providerService.getPendingProviders : ${error.message}`);
   }
-
-  return await userRepository.findPendingProviders();
 };
 
 /**
- * Valider un prestataire
+ * Valide un prestataire (activation du compte)
+ * Vérifie que le prestataire existe, a le bon rôle et n'est pas déjà validé
+ * @param {number} providerId
+ * @param {number} adminId
+ * @returns {Object} - Le prestataire mis à jour
  */
 const approveProvider = async (providerId, adminId) => {
-  // Vérifier que c'est un admin
-  const admin = await userRepository.findById(adminId);
-  
-  if (!admin || admin.role !== 'admin') {
-    const error = new Error('Accès réservé aux administrateurs');
-    error.code = 'FORBIDDEN';
-    error.statusCode = 403;
-    throw error;
-  }
+  try {
+    await checkAdminAccess(adminId);
 
-  // Vérifier que le prestataire existe
-  const provider = await userRepository.findById(providerId);
-  
-  if (!provider) {
-    const error = new Error('Prestataire introuvable');
-    error.code = 'PROVIDER_NOT_FOUND';
-    error.statusCode = 404;
-    throw error;
-  }
+    const provider = await userRepository.findById(providerId);
+    if (!provider) {
+      const error = new Error('Prestataire introuvable');
+      error.code = 'PROVIDER_NOT_FOUND';
+      error.statusCode = 404;
+      throw error;
+    }
 
-  if (provider.role !== 'prestataire') {
-    const error = new Error('Cet utilisateur n\'est pas un prestataire');
-    error.code = 'INVALID_ROLE';
-    error.statusCode = 400;
-    throw error;
-  }
+    if (provider.role !== 'prestataire') {
+      const error = new Error('Cet utilisateur n\'est pas un prestataire');
+      error.code = 'INVALID_ROLE';
+      error.statusCode = 400;
+      throw error;
+    }
 
-  if (provider.is_verified) {
-    const error = new Error('Ce prestataire est déjà validé');
-    error.code = 'ALREADY_VERIFIED';
-    error.statusCode = 400;
-    throw error;
-  }
+    if (provider.is_verified) {
+      const error = new Error('Ce prestataire est déjà validé');
+      error.code = 'ALREADY_VERIFIED';
+      error.statusCode = 400;
+      throw error;
+    }
 
-  return await userRepository.approveProvider(providerId);
+    return await userRepository.approveProvider(providerId);
+
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`providerService.approveProvider : ${error.message}`);
+  }
 };
 
 /**
- * Rejeter un prestataire
+ * Rejette un prestataire avec un motif
+ * @param {number} providerId
+ * @param {number} adminId
+ * @param {string} reason - Motif du rejet communiqué au prestataire
+ * @returns {Object} - Le prestataire mis à jour
  */
 const rejectProvider = async (providerId, adminId, reason) => {
-  // Vérifier que c'est un admin
-  const admin = await userRepository.findById(adminId);
-  
-  if (!admin || admin.role !== 'admin') {
-    const error = new Error('Accès réservé aux administrateurs');
-    error.code = 'FORBIDDEN';
-    error.statusCode = 403;
-    throw error;
-  }
+  try {
+    await checkAdminAccess(adminId);
 
-  // Vérifier que le prestataire existe
-  const provider = await userRepository.findById(providerId);
-  
-  if (!provider) {
-    const error = new Error('Prestataire introuvable');
-    error.code = 'PROVIDER_NOT_FOUND';
-    error.statusCode = 404;
-    throw error;
-  }
+    const provider = await userRepository.findById(providerId);
+    if (!provider) {
+      const error = new Error('Prestataire introuvable');
+      error.code = 'PROVIDER_NOT_FOUND';
+      error.statusCode = 404;
+      throw error;
+    }
 
-  return await userRepository.rejectProvider(providerId, reason);
+    return await userRepository.rejectProvider(providerId, reason);
+
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`providerService.rejectProvider : ${error.message}`);
+  }
 };
 
 /**
- * Récupérer les finances d'un prestataire
+ * Récupère les statistiques financières d'un prestataire
+ * @param {number} userId
+ * @returns {Object} - { total_earned, missions_completed, monthly_breakdown, ... }
  */
 const getProviderFinances = async (userId) => {
-  // Vérifier que l'utilisateur est prestataire
-  const user = await userRepository.findById(userId);
+  try {
+    const user = await userRepository.findById(userId);
+    if (!user || user.role !== 'prestataire') {
+      const error = new Error('Accès réservé aux prestataires');
+      error.code = 'FORBIDDEN';
+      error.statusCode = 403;
+      throw error;
+    }
 
-    console.log('🔍 DEBUG getProviderFinances:', {
-    userId,
-    user,
-    role: user?.role
-  });
+    return await providerRepository.getProviderFinancialStats(userId);
 
-  if (!user || user.role !== 'prestataire') {
-    const error = new Error('Accès réservé aux prestataires');
-    error.code = 'FORBIDDEN';
-    error.statusCode = 403;
-    throw error;
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`providerService.getProviderFinances : ${error.message}`);
   }
-
-  const finances = await providerRepository.getProviderFinancialStats(userId);
-
-  return finances;
 };
 
 /**
- * Mettre à jour la zone d'intervention
+ * Met à jour la zone d'intervention d'un prestataire
+ * @param {number} userId
+ * @param {string} zone - Département ou ville (minimum 2 caractères)
+ * @returns {Object} - { zone }
  */
 const updateZone = async (userId, zone) => {
-  const user = await userRepository.findById(userId);
-  
-  if (!user || user.role !== 'prestataire') {
-    const error = new Error('Accès réservé aux prestataires');
-    error.code = 'FORBIDDEN';
-    error.statusCode = 403;
-    throw error;
+  try {
+    const user = await userRepository.findById(userId);
+    if (!user || user.role !== 'prestataire') {
+      const error = new Error('Accès réservé aux prestataires');
+      error.code = 'FORBIDDEN';
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (!zone || zone.trim().length < 2) {
+      const error = new Error('Zone invalide (minimum 2 caractères)');
+      error.code = 'INVALID_ZONE';
+      error.statusCode = 400;
+      throw error;
+    }
+
+    await userRepository.updateZone(userId, zone.trim());
+    return { zone: zone.trim() };
+
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`providerService.updateZone : ${error.message}`);
   }
-  
-  if (!zone || zone.trim().length < 2) {
-    const error = new Error('Zone invalide (minimum 2 caractères)');
-    error.code = 'INVALID_ZONE';
-    error.statusCode = 400;
-    throw error;
-  }
-  
-  // Mettre à jour la zone
-  await userRepository.updateZone(userId, zone.trim());
-  
-  return { zone: zone.trim() };
 };
 
 /**
- * Récupérer les statistiques de la zone
+ * Récupère les statistiques géographiques de la zone d'un prestataire
+ * Les 3 requêtes sont indépendantes, exécutées en parallèle
+ * @param {number} userId
+ * @returns {Object} - { zone, cemeteries, cemetery_count, potential_missions, main_cities }
  */
 const getZoneStats = async (userId) => {
-  const user = await userRepository.findById(userId);
-  
-  if (!user || user.role !== 'prestataire') {
-    const error = new Error('Accès réservé aux prestataires');
-    error.code = 'FORBIDDEN';
-    error.statusCode = 403;
-    throw error;
+  try {
+    const user = await userRepository.findById(userId);
+    if (!user || user.role !== 'prestataire') {
+      const error = new Error('Accès réservé aux prestataires');
+      error.code = 'FORBIDDEN';
+      error.statusCode = 403;
+      throw error;
+    }
+
+    // Utilise la Gironde comme zone par défaut si non définie
+    const zone = user.zone_intervention || 'Gironde';
+
+    // Les 3 requêtes sont indépendantes — exécution parallèle
+    const [cemeteries, potentialMissions, mainCities] = await Promise.all([
+      zoneRepository.getCemeteriesInZone(zone),
+      zoneRepository.countPotentialMissions(zone),
+      zoneRepository.getMainCitiesInZone(zone)
+    ]);
+
+    return {
+      zone,
+      cemeteries,
+      cemetery_count:     cemeteries.length,
+      potential_missions: potentialMissions,
+      main_cities:        mainCities.map(c => c.city)
+    };
+
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`providerService.getZoneStats : ${error.message}`);
   }
-  
-  const zone = user.zone_intervention || 'Gironde';
-  
-  // Récupérer les données
-  const cemeteries = await zoneRepository.getCemeteriesInZone(zone);
-  const potentialMissions = await zoneRepository.countPotentialMissions(zone);
-  const mainCities = await zoneRepository.getMainCitiesInZone(zone);
-  
-  return {
-    zone,
-    cemeteries,
-    cemetery_count: cemeteries.length,
-    potential_missions: potentialMissions,
-    main_cities: mainCities.map(c => c.city)
-  };
 };
 
 module.exports = {
@@ -174,5 +208,5 @@ module.exports = {
   rejectProvider,
   getProviderFinances,
   updateZone,
-  getZoneStats 
+  getZoneStats
 };
