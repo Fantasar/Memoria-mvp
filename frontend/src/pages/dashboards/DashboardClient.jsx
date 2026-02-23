@@ -5,6 +5,8 @@ import OrderListPreview from '../../components/orders/OrderListPreview';
 import OrderListFull from '../../components/orders/OrderListFull';
 import axios from 'axios';
 import PhotoGallery from '../../components/client/PhotoGallery';
+import CurrentMission from '../../components/client/CurrentMission';
+import ClientNotifications from '../../components/client/ClientNotifications';
 
 function DashboardClient() {
   const { user, logout } = useAuth();
@@ -26,6 +28,9 @@ function DashboardClient() {
   const [reviewComment, setReviewComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  // ✅ STATE POUR LE BADGE NOTIFICATIONS
+  const [unreadCount, setUnreadCount] = useState(0);
+
   // Afficher message de succès si redirection depuis NewOrder
   useEffect(() => {
     const state = window.history.state?.usr;
@@ -34,6 +39,23 @@ function DashboardClient() {
       setTimeout(() => setSuccessMessage(''), 5000);
     }
   }, []);
+
+  // ✅ FONCTION POUR RÉCUPÉRER LE COUNT DES NOTIFICATIONS NON LUES
+const fetchUnreadCount = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get('/api/notifications', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    // ✅ CORRECTION : Le tableau est dans data.notifications
+    const notifications = response.data.data?.notifications || [];
+    const unread = notifications.filter(n => !n.is_read).length;
+    setUnreadCount(unread);
+  } catch (err) {
+    console.error('Erreur count notifications:', err);
+  }
+};
 
   // Récupérer les stats depuis le backend
   useEffect(() => {
@@ -49,7 +71,9 @@ function DashboardClient() {
         console.error(err);
       }
     };
+    
     fetchStats();
+    fetchUnreadCount(); // ✅ AJOUTE
   }, []);
 
   // ✅ FONCTION POUR SOUMETTRE L'ÉVALUATION
@@ -139,17 +163,31 @@ function DashboardClient() {
       </div>
     ),
 
+    currentMission: (
+      <div>
+        <CurrentMission />
+      </div>
+    ),
+
     orders: (
       <div>
         <h2 className="text-2xl font-semibold mb-6">Historique des commandes</h2>
         <OrderListFull onReview={openReviewModal} />
       </div>
     ),
+
     gallery: (
       <div>
         <PhotoGallery />
       </div>
     ),
+
+    notifications: (
+      <div>
+        <ClientNotifications onNotificationRead={fetchUnreadCount} /> {/* ✅ Callback pour refresh count */}
+      </div>
+    ),
+
     profile: (
       <div>
         <h2 className="text-2xl font-semibold mb-6">Mon profil</h2>
@@ -291,10 +329,38 @@ function DashboardClient() {
         {/* Sidebar gauche */}
         <aside className="w-1/3 bg-white border-l-4 border-blue-600 rounded-lg p-6 space-y-4 shadow h-fit">
           <p className="text-gray-500 uppercase font-semibold text-sm mb-4">Sections</p>
-          <button onClick={() => setActiveSection('overview')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'overview' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>Aperçu</button>
-            <button onClick={() => setActiveSection('gallery')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'gallery' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>Galerie photos</button>
-          <button onClick={() => setActiveSection('orders')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'orders' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>Historique des commandes</button>
-          <button onClick={() => setActiveSection('profile')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'profile' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>Profil</button>
+          
+          <button onClick={() => setActiveSection('overview')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'overview' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            📊 Aperçu
+          </button>
+          
+          <button onClick={() => setActiveSection('currentMission')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'currentMission' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            🔄 Mission en cours
+          </button>
+          
+          <button onClick={() => setActiveSection('orders')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'orders' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            📋 Historique des commandes
+          </button>
+          
+          <button onClick={() => setActiveSection('gallery')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'gallery' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            📷 Galerie photos
+          </button>
+          
+          {/* ✅ BOUTON NOTIFICATIONS AVEC BADGE */}
+          <button onClick={() => setActiveSection('notifications')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'notifications' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            <div className="flex items-center justify-between">
+              <span>🔔 Notifications</span>
+              {unreadCount > 0 && (
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {unreadCount}
+                </span>
+              )}
+            </div>
+          </button>
+          
+          <button onClick={() => setActiveSection('profile')} className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === 'profile' ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>
+            👤 Profil
+          </button>
         </aside>
 
         {/* Contenu principal */}
