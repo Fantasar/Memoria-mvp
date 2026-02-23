@@ -1,22 +1,18 @@
 // backend/routes/cemeteries.js
-const express = require('express');
-const router = express.Router();
-const cemeteryController = require('../controllers/cemeteryController');
+const express             = require('express');
+const router              = express.Router();
+const cemeteryController  = require('../controllers/cemeteryController');
 const { authenticateToken, authenticateAdmin } = require('../middlewares/admin-auth');
 
 /**
- * @route   GET /api/cemeteries
- * @desc    Récupérer la liste des cimetières actifs
- * @access  Public (ou Private si tu veux protéger)
+ * Routes des cimetières
+ * Base : /api/cemeteries
  */
+
+// GET /api/cemeteries — Liste des cimetières actifs (public — utilisé dans le formulaire de commande)
 router.get('/', cemeteryController.getAllCemeteries);
 
-
-/**
- * @route   POST /api/cemeteries
- * @desc    Ajouter un cimetières dans la liste.
- * @access  Admin
- */
+// POST /api/cemeteries — Ajoute un cimetière avec géocodage automatique (admin uniquement)
 router.post('/', authenticateToken, authenticateAdmin, cemeteryController.createCemetery);
 
 module.exports = router;
