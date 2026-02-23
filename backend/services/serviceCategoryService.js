@@ -63,8 +63,38 @@ const createServiceCategory = async (data) => {
   }
 };
 
+/**
+ * Récupère tous les cimetières actifs
+ * Utilisé dans le formulaire de création de commande côté client
+ * @returns {Array} - [{ id, name, city, postal_code, latitude, longitude }, ...]
+ */
+const getAllCemeteries = async () => {
+  try {
+    return await cemeteryRepository.findAllActive();
+  } catch (error) {
+    throw new Error(`cemeteryService.getAllCemeteries : ${error.message}`);
+  }
+};
+
+/**
+ * Récupère un service par son ID
+ * Utilisé par paymentController pour vérifier le prix avant création du PaymentIntent
+ * Le prix est toujours lu depuis la BDD — jamais depuis le frontend
+ * @param {number} id
+ * @returns {Object|undefined} - { id, name, base_price, is_active } ou undefined
+ */
+const getServiceById = async (id) => {
+  try {
+    return await serviceCategoryRepository.findById(id);
+  } catch (error) {
+    throw new Error(`serviceCategoryService.getServiceById : ${error.message}`);
+  }
+};
+
 module.exports = {
   getAllActiveServiceCategories,
   getAllServiceCategoriesWithCount,
-  createServiceCategory
+  createServiceCategory,
+  getAllCemeteries,
+  getServiceById
 };

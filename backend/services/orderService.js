@@ -713,6 +713,87 @@ const resolveDispute = async (orderId, adminId, action) => {
   }
 };
 
+/**
+ * Récupère les statistiques agrégées du dashboard client
+ * (commandes par statut, montants, etc.)
+ * @param {number} userId
+ * @returns {Object} - Statistiques de l'utilisateur
+ */
+const getDashboardStats = async (userId) => {
+  try {
+    return await orderRepository.getDashboardStats(userId);
+  } catch (error) {
+    throw new Error(`orderService.getDashboardStats : ${error.message}`);
+  }
+};
+
+/**
+ * Récupère les commandes terminées du client qui ont au moins une photo
+ * Utilisé dans le dashboard client pour la galerie photo des interventions
+ * @param {number} userId
+ * @returns {Array} - [{ ...order, photos: [...] }, ...]
+ */
+const getCompletedOrdersWithPhotos = async (userId) => {
+  try {
+    const orders    = await orderRepository.findByClientId(userId);
+    const completed = orders.filter(o => o.status === 'completed');
+
+    const withPhotos = await Promise.all(
+      completed.map(async (order) => {
+        const photos = await photoRepository.findByOrderId(order.id);
+        return { ...order, photos };
+      })
+    );
+
+    // Ne retourne que les commandes qui ont effectivement des photos uploadées
+    return withPhotos.filter(o => o.photos.length > 0);
+  } catch (error) {
+    throw new Error(`orderService.getCompletedOrdersWithPhotos : ${error.message}`);
+  }
+};
+
+/**
+ * Permet à un client de signaler un litige sur une mission terminée
+ * Vérifie que la commande appartient bien au client et qu'elle est au bon statut
+ * Les notifications aux admins sont envoyées depuis le contrôleur
+ * @param {number} orderId
+ * @param {number} userId - ID du client qui signale
+ * @param {string} reason - Motif du litige
+ * @returns {Object} - La commande mise à jour en statut 'disputed'
+ */
+const reportDispute = async (orderId, userId, reason) => {
+  try {
+    const order = await orderRepository.findById(orderId);
+    if (!order) {
+      const error = new Error('Commande introuvable');
+      error.code = 'ORDER_NOT_FOUND';
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (order.client_id !== userId) {
+      const error = new Error('Cette commande ne vous appartient pas');
+      error.code = 'FORBIDDEN';
+      error.statusCode = 403;
+      throw error;
+    }
+
+    // Seules les missions validées peuvent être contestées
+    if (order.status !== 'completed') {
+      const error = new Error('Seules les missions terminées peuvent être contestées');
+      error.code = 'INVALID_STATUS';
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return await orderRepository.markAsDisputed(orderId, reason);
+
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`orderService.reportDispute : ${error.message}`);
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
@@ -728,5 +809,8 @@ module.exports = {
   resolveDispute,
   getProviderHistory,
   getProviderCalendar,
-  getProviderCalendarForAdmin
+  getProviderCalendarForAdmin,
+  getDashboardStats,
+  getCompletedOrdersWithPhotos,
+  reportDispute
 };
