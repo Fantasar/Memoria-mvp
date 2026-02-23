@@ -1,9 +1,32 @@
+// backend/controllers/statsController.js
 const statsService = require('../services/statsService');
 
 /**
- * @desc    Récupérer les statistiques de la plateforme
+ * Contrôleur des statistiques.
+ * Responsabilité : extraire les données de req, appeler statsService, formater res.
+ */
+
+/**
+ * Gestion d'erreur uniforme pour ce contrôleur
+ */
+const handleError = (error, res, fallbackMessage) => {
+  if (error.statusCode) {
+    return res.status(error.statusCode).json({
+      success: false,
+      error: { code: error.code, message: error.message }
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    error: { code: 'SERVER_ERROR', message: fallbackMessage }
+  });
+};
+
+/**
+ * @desc    Récupère les statistiques globales de la plateforme
  * @route   GET /api/stats
- * @access  Private (Admin uniquement)
+ * @access  Admin uniquement
  */
 const getPlatformStats = async (req, res) => {
   try {
@@ -11,36 +34,18 @@ const getPlatformStats = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: stats
+      data:    stats
     });
 
   } catch (error) {
-    console.error('Erreur récupération stats:', error);
-
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        success: false,
-        error: {
-          code: error.code,
-          message: error.message
-        }
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Erreur lors de la récupération des statistiques'
-      }
-    });
+    return handleError(error, res, 'Erreur lors de la récupération des statistiques');
   }
 };
 
 /**
- * @desc    Récupérer les statistiques d'un prestataire
+ * @desc    Récupère les statistiques individuelles du prestataire connecté
  * @route   GET /api/stats/provider
- * @access  Private (Prestataire uniquement)
+ * @access  Prestataire uniquement
  */
 const getProviderStats = async (req, res) => {
   try {
@@ -48,29 +53,11 @@ const getProviderStats = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: stats
+      data:    stats
     });
 
   } catch (error) {
-    console.error('Erreur récupération stats prestataire:', error);
-
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        success: false,
-        error: {
-          code: error.code,
-          message: error.message
-        }
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Erreur lors de la récupération des statistiques'
-      }
-    });
+    return handleError(error, res, 'Erreur lors de la récupération des statistiques prestataire');
   }
 };
 

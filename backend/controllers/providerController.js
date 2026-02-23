@@ -1,182 +1,148 @@
+// backend/controllers/providerController.js
 const providerService = require('../services/providerService');
 
 /**
- * @desc    Récupérer les prestataires en attente
- * @route   GET /api/providers/pending
- * @access  Private (Admin uniquement)
+ * Contrôleur des prestataires.
+ * Responsabilité : extraire les données de req, appeler providerService, formater res.
+ * Utilise next(error) pour déléguer la gestion d'erreur au middleware Express global.
  */
-const getPendingProviders = async (req, res) => {
+
+/**
+ * @desc    Récupère les prestataires en attente de validation admin
+ * @route   GET /api/providers/pending
+ * @access  Admin uniquement
+ */
+const getPendingProviders = async (req, res, next) => {
   try {
     const providers = await providerService.getPendingProviders(req.user.userId);
 
     return res.status(200).json({
       success: true,
-      data: providers,
-      count: providers.length
+      count:   providers.length,
+      data:    providers
     });
 
   } catch (error) {
-    console.error('Erreur récupération prestataires:', error);
-
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        success: false,
-        error: {
-          code: error.code,
-          message: error.message
-        }
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Erreur lors de la récupération des prestataires'
-      }
-    });
+    next(error);
   }
 };
 
 /**
- * @desc    Valider un prestataire
+ * @desc    Valide un prestataire (activation du compte)
  * @route   PATCH /api/providers/:id/approve
- * @access  Private (Admin uniquement)
+ * @access  Admin uniquement
  */
-const approveProvider = async (req, res) => {
+const approveProvider = async (req, res, next) => {
   try {
-    const providerId = req.params.id;
-    const result = await providerService.approveProvider(providerId, req.user.userId);
+    const result = await providerService.approveProvider(
+      req.params.id,
+      req.user.userId
+    );
 
     return res.status(200).json({
       success: true,
-      data: result,
+      data:    result,
       message: 'Prestataire validé avec succès'
     });
 
   } catch (error) {
-    console.error('Erreur validation prestataire:', error);
-
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        success: false,
-        error: {
-          code: error.code,
-          message: error.message
-        }
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Erreur lors de la validation'
-      }
-    });
+    next(error);
   }
 };
 
 /**
- * @desc    Rejeter un prestataire
+ * @desc    Rejette un prestataire avec un motif obligatoire
  * @route   PATCH /api/providers/:id/reject
- * @access  Private (Admin uniquement)
+ * @access  Admin uniquement
  */
-const rejectProvider = async (req, res) => {
+const rejectProvider = async (req, res, next) => {
   try {
-    const providerId = req.params.id;
     const { reason } = req.body;
 
+    // Validation du motif ici car c'est une règle de format HTTP, pas métier
     if (!reason || reason.trim().length < 10) {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'INVALID_REASON',
+          code:    'INVALID_REASON',
           message: 'Le motif doit contenir au moins 10 caractères'
         }
       });
     }
 
-    const result = await providerService.rejectProvider(providerId, req.user.userId, reason);
+    const result = await providerService.rejectProvider(
+      req.params.id,
+      req.user.userId,
+      reason
+    );
 
     return res.status(200).json({
       success: true,
-      data: result,
+      data:    result,
       message: 'Prestataire rejeté'
     });
 
   } catch (error) {
-    console.error('Erreur rejet prestataire:', error);
-
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        success: false,
-        error: {
-          code: error.code,
-          message: error.message
-        }
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Erreur lors du rejet'
-      }
-    });
+    next(error);
   }
 };
 
 /**
- * Récupérer les finances d'un prestataire
+ * @desc    Récupère les statistiques financières du prestataire connecté
+ * @route   GET /api/providers/finances
+ * @access  Prestataire uniquement
  */
 const getProviderFinances = async (req, res, next) => {
   try {
-    const userId = req.user.userId;
-    const finances = await providerService.getProviderFinances(userId);
+    const finances = await providerService.getProviderFinances(req.user.userId);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      data: finances
+      data:    finances
     });
+
   } catch (error) {
     next(error);
   }
 };
 
 /**
- * Mettre à jour la zone d'intervention
+ * @desc    Met à jour la zone d'intervention du prestataire connecté
+ * @route   PATCH /api/providers/zone
+ * @access  Prestataire uniquement
  */
 const updateZone = async (req, res, next) => {
   try {
-    const userId = req.user.userId;
-    const { zone_intervention } = req.body;
-    
-    const result = await providerService.updateZone(userId, zone_intervention);
-    
-    res.status(200).json({
+    const result = await providerService.updateZone(
+      req.user.userId,
+      req.body.zone_intervention
+    );
+
+    return res.status(200).json({
       success: true,
-      data: result,
+      data:    result,
       message: 'Zone d\'intervention mise à jour'
     });
+
   } catch (error) {
     next(error);
   }
 };
 
 /**
- * Récupérer les stats de la zone
+ * @desc    Récupère les statistiques géographiques de la zone du prestataire
+ * @route   GET /api/providers/zone/stats
+ * @access  Prestataire uniquement
  */
 const getZoneStats = async (req, res, next) => {
   try {
-    const userId = req.user.userId;
-    const stats = await providerService.getZoneStats(userId);
-    
-    res.status(200).json({
+    const stats = await providerService.getZoneStats(req.user.userId);
+
+    return res.status(200).json({
       success: true,
-      data: stats
+      data:    stats
     });
+
   } catch (error) {
     next(error);
   }
@@ -188,5 +154,5 @@ module.exports = {
   rejectProvider,
   getProviderFinances,
   updateZone,
-  getZoneStats 
+  getZoneStats
 };

@@ -1,170 +1,156 @@
+// backend/controllers/paymentController.js
 const stripeService = require('../services/stripeService');
-const orderService = require('../services/orderService');
+const orderService  = require('../services/orderService');
+const serviceCategoryService = require('../services/serviceCategoryService');
 
 /**
- * @desc    Créer un Payment Intent Stripe + Commande
+ * Contrôleur des paiements Stripe.
+ * Responsabilité : orchestrer les deux étapes du tunnel de paiement.
+ * Étape 1 — createPaymentIntent : récupère le prix et crée l'intention de paiement
+ * Étape 2 — confirmPayment : vérifie le succès Stripe et crée la commande en base
+ */
+
+/**
+ * Gestion d'erreur uniforme pour ce contrôleur
+ */
+const handleError = (error, res, fallbackMessage) => {
+  if (error.statusCode) {
+    return res.status(error.statusCode).json({
+      success: false,
+      error: { code: error.code, message: error.message }
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    error: { code: 'SERVER_ERROR', message: fallbackMessage }
+  });
+};
+
+/**
+ * @desc    Crée un PaymentIntent Stripe pour initier le paiement
+ *          Le prix est récupéré depuis la BDD — jamais depuis le frontend
  * @route   POST /api/payments/create-payment-intent
- * @access  Private (Client uniquement)
+ * @access  Client uniquement
  */
 const createPaymentIntent = async (req, res) => {
   try {
     const { cemetery_id, service_category_id, cemetery_location } = req.body;
-    const clientId = req.user.userId;
 
-    // Validation des données
     if (!cemetery_id || !service_category_id) {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'MISSING_FIELDS',
-          message: 'Données manquantes (cemetery_id, service_category_id)',
-        },
+          code:    'MISSING_FIELDS',
+          message: 'Données manquantes (cemetery_id, service_category_id)'
+        }
       });
     }
 
-    // ✅ RÉCUPÉRER LE PRIX DEPUIS LA BDD (sécurisé)
-    const serviceCategoryRepository = require('../repositories/serviceCategoryRepository');
-    const service = await serviceCategoryRepository.findById(service_category_id);
+    // Délègue la vérification du service et le calcul du prix au service
+    const service = await serviceCategoryService.getServiceById(service_category_id);
 
     if (!service) {
       return res.status(404).json({
         success: false,
-        error: {
-          code: 'SERVICE_NOT_FOUND',
-          message: 'Service introuvable',
-        },
+        error: { code: 'SERVICE_NOT_FOUND', message: 'Service introuvable' }
       });
     }
 
     if (!service.is_active) {
       return res.status(400).json({
         success: false,
-        error: {
-          code: 'SERVICE_INACTIVE',
-          message: 'Ce service n\'est plus disponible',
-        },
+        error: { code: 'SERVICE_INACTIVE', message: 'Ce service n\'est plus disponible' }
       });
     }
 
     const price = parseFloat(service.base_price);
-
     if (!price || price <= 0) {
       return res.status(400).json({
         success: false,
-        error: {
-          code: 'INVALID_PRICE',
-          message: 'Prix du service invalide',
-        },
+        error: { code: 'INVALID_PRICE', message: 'Prix du service invalide' }
       });
     }
 
-    // Créer le Payment Intent Stripe
     const paymentIntent = await stripeService.createPaymentIntent(price, {
-      client_id: clientId,
-      cemetery_id: cemetery_id.toString(),
+      client_id:           req.user.userId.toString(),
+      cemetery_id:         cemetery_id.toString(),
       service_category_id: service_category_id.toString(),
-      cemetery_location: cemetery_location || '',
+      cemetery_location:   cemetery_location || ''
     });
 
-    // Retourner le client_secret au frontend
     return res.status(200).json({
       success: true,
       data: {
-        clientSecret: paymentIntent.client_secret,
+        clientSecret:    paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
-        amount: price // ✅ Renvoyer le prix pour affichage
-      },
+        amount:          price
+      }
     });
-  } catch (error) {
-    console.error('Erreur création Payment Intent:', error);
 
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'PAYMENT_ERROR',
-        message: 'Erreur lors de la création du paiement',
-      },
-    });
+  } catch (error) {
+    return handleError(error, res, 'Erreur lors de la création du paiement');
   }
 };
 
 /**
- * @desc    Confirmer le paiement et créer la commande
+ * @desc    Confirme le paiement Stripe et crée la commande en base
+ *          Appelé par le frontend après succès de stripe.confirmPayment()
  * @route   POST /api/payments/confirm
- * @access  Private (Client uniquement)
+ * @access  Client uniquement
  */
 const confirmPayment = async (req, res) => {
   try {
     const { paymentIntentId } = req.body;
-    const clientId = req.user.userId;
 
     if (!paymentIntentId) {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'MISSING_PAYMENT_INTENT_ID',
-          message: 'Payment Intent ID manquant',
-        },
+          code:    'MISSING_PAYMENT_INTENT_ID',
+          message: 'Payment Intent ID manquant'
+        }
       });
     }
 
-    // Récupérer le Payment Intent depuis Stripe
+    // Vérifie le statut du paiement directement auprès de Stripe
     const paymentIntent = await stripeService.retrievePaymentIntent(paymentIntentId);
 
-    // Vérifier que le paiement a réussi
     if (paymentIntent.status !== 'succeeded') {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'PAYMENT_NOT_SUCCEEDED',
-          message: 'Le paiement n\'a pas abouti',
-        },
+          code:    'PAYMENT_NOT_SUCCEEDED',
+          message: 'Le paiement n\'a pas abouti'
+        }
       });
     }
 
-    // Récupérer les métadonnées de la commande
+    // Récupère les données de commande depuis les métadonnées Stripe
     const { cemetery_id, service_category_id, cemetery_location } = paymentIntent.metadata;
 
-    // ✅ Créer la commande SANS envoyer le prix (il sera récupéré dans orderService)
-    const order = await orderService.createOrder(clientId, {
-      cemetery_id: parseInt(cemetery_id),
+    // Le prix est récupéré depuis la BDD dans orderService — pas depuis Stripe
+    const order = await orderService.createOrder(req.user.userId, {
+      cemetery_id:         parseInt(cemetery_id),
       service_category_id: parseInt(service_category_id),
-      cemetery_location: cemetery_location || null
-      // ✅ Le prix sera récupéré depuis la BDD dans orderService
+      cemetery_location:   cemetery_location || null
     });
 
     return res.status(201).json({
       success: true,
       data: {
-        order: order,
-        paymentIntentId: paymentIntentId,
+        order,
+        paymentIntentId
       },
-      message: 'Commande créée et paiement confirmé',
+      message: 'Commande créée et paiement confirmé'
     });
+
   } catch (error) {
-    console.error('Erreur confirmPayment:', error);
-
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        success: false,
-        error: {
-          code: error.code,
-          message: error.message,
-        },
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Erreur lors de la confirmation du paiement',
-      },
-    });
+    return handleError(error, res, 'Erreur lors de la confirmation du paiement');
   }
 };
 
 module.exports = {
   createPaymentIntent,
-  confirmPayment,
+  confirmPayment
 };
