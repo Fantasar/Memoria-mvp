@@ -1,27 +1,19 @@
 // backend/routes/admin.js
-const express = require('express');
-const router = express.Router();
-const adminController = require('../controllers/adminController');
+const express          = require('express');
+const router           = express.Router();
+const adminController  = require('../controllers/adminController');
 const { authenticateToken, authenticateAdmin } = require('../middlewares/admin-auth');
 
 /**
- * @route   POST /api/admin/create
- * @desc    Créer un nouveau compte administrateur
- * @access  Private (Admin only)
- * 
- * Middlewares chain:
- * 1. authenticateToken → Vérifie le JWT et extrait req.user
- * 2. authenticateAdmin → Vérifie que req.user.role === 'admin'
- * 3. adminController.createAdmin → Crée l'admin
+ * Routes d'administration — accès restreint aux admins
+ * Base : /api/admin
+ * Chaîne de middlewares : authenticateToken → authenticateAdmin → controller
  */
-router.post('/', authenticateToken, authenticateAdmin, adminController.createAdmin);
 
-/**
- * @route   GET /api/admin//users
- * @desc    Récupère la liste des utilisateurs inscrit sur la plateforme
- * @access  Private (Admin only)
- */
+// POST /api/admin/create — Crée un nouveau compte administrateur
+router.post('/create', authenticateToken, authenticateAdmin, adminController.createAdmin);
+
+// GET /api/admin/users — Récupère la liste de tous les utilisateurs inscrits
 router.get('/users', authenticateToken, authenticateAdmin, adminController.getAllUsers);
-
 
 module.exports = router;

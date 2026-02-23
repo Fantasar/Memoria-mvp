@@ -2,9 +2,37 @@
 const authService = require('../services/authService');
 
 /**
- * CONTROLLER : Orchestration des requêtes/réponses HTTP
- * Responsabilité : Recevoir req, appeler service, formatter res
+ * Contrôleur d'authentification.
+ * Responsabilité : extraire les données de req, appeler authService, formater res.
+ * Aucune logique métier ici — tout est délégué au service.
  */
+
+/**
+ * Gère les erreurs de façon uniforme pour tous les handlers de ce contrôleur
+ * Distingue les erreurs métier (statusCode défini) des erreurs serveur inattendues
+ * @param {Error} error
+ * @param {Object} res
+ * @param {string} fallbackMessage - Message générique si erreur serveur
+ */
+const handleError = (error, res, fallbackMessage) => {
+  if (error.statusCode) {
+    return res.status(error.statusCode).json({
+      success: false,
+      error: {
+        code:    error.code,
+        message: error.message
+      }
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    error: {
+      code:    'SERVER_ERROR',
+      message: fallbackMessage
+    }
+  });
+};
 
 /**
  * @desc    Inscription d'un nouvel utilisateur
@@ -13,10 +41,8 @@ const authService = require('../services/authService');
  */
 const register = async (req, res) => {
   try {
-    // Déléguer la logique au service
     const result = await authService.registerUser(req.body);
 
-    // Formatter la réponse HTTP
     return res.status(201).json({
       success: true,
       data: {
@@ -26,52 +52,20 @@ const register = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur lors de l\'inscription:', error);
-
-    // Gestion des erreurs métier
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        success: false,
-        error: {
-          code: error.code,
-          message: error.message
-        }
-      });
-    }
-
-    // Erreur serveur inattendue
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Erreur lors de l\'inscription'
-      }
-    });
+    return handleError(error, res, 'Erreur lors de l\'inscription');
   }
 };
 
 /**
- * @desc    Connexion d'un utilisateur
+ * @desc    Connexion d'un utilisateur existant
  * @route   POST /api/auth/login
  * @access  Public
  */
 const login = async (req, res) => {
   try {
-    // Validation basique (peut être faite en middleware)
-    if (!req.body.email || !req.body.password) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'MISSING_FIELDS',
-          message: 'Email et mot de passe sont obligatoires'
-        }
-      });
-    }
-
-    // Déléguer la logique au service
+    // La validation email/password est déjà assurée par le middleware validateLogin
     const result = await authService.loginUser(req.body);
 
-    // Formatter la réponse HTTP
     return res.status(200).json({
       success: true,
       data: {
@@ -81,27 +75,7 @@ const login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur lors de la connexion:', error);
-
-    // Gestion des erreurs métier
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        success: false,
-        error: {
-          code: error.code,
-          message: error.message
-        }
-      });
-    }
-
-    // Erreur serveur inattendue
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Erreur lors de la connexion'
-      }
-    });
+    return handleError(error, res, 'Erreur lors de la connexion');
   }
 };
 

@@ -1,131 +1,74 @@
 // backend/routes/orders.js
-const express = require('express');
-const router = express.Router();
-const { authenticateToken } = require('../middlewares/admin-auth');
-const orderController = require('../controllers/orderController');
+const express          = require('express');
+const router           = express.Router();
+const orderController  = require('../controllers/orderController');
+const { authenticateToken, authenticateAdmin } = require('../middlewares/admin-auth');
 
 /**
- * @route   POST /api/orders
- * @desc    Créer une nouvelle commande
- * @access  Private (Client) - JWT REQUIS
+ * Routes des commandes
+ * Base : /api/orders
+ *
+ * ⚠️ ORDRE CRITIQUE : les routes statiques DOIVENT être déclarées
+ * avant les routes dynamiques (:id) pour éviter les conflits Express.
+ * Ex: /available doit être avant /:id, sinon "available" est lu comme un ID.
  */
-router.post('/', authenticateToken, orderController.createOrder);
 
-/**
- * @route   GET /api/orders/available
- * @desc    Missions disponibles (prestataires)
- * @access  Private (Prestataire) - JWT REQUIS
- * 
- * ⚠️ IMPORTANT : Cette route DOIT être AVANT /api/orders/:id
- * sinon Express va confondre "available" avec un ID !
- */
+// ─── ROUTES STATIQUES (avant toute route avec :id) ────────────────────────────
+
+// GET  /api/orders                    — Commandes de l'utilisateur connecté (tous rôles)
+router.get('/', authenticateToken, orderController.getMyOrders);
+
+// GET  /api/orders/available          — Missions disponibles dans la zone (prestataire)
 router.get('/available', authenticateToken, orderController.getAvailableOrders);
 
-/**
- * @route   PATCH /api/orders/:id/accept
- * @desc    Accepter une mission
- * @access  Private (Prestataire) - JWT REQUIS
- */
-router.patch('/:id/accept', authenticateToken, orderController.acceptOrder);
+// GET  /api/orders/pending-validation — Commandes en attente de validation (admin)
+router.get('/pending-validation', authenticateToken, authenticateAdmin, orderController.getPendingValidation);
 
-/**
- * @route   PATCH /api/orders/:id/complete
- * @desc    Compléter mission
- * @access  Private (Prestataire) - JWT REQUIS
- */
-router.patch('/:id/complete', authenticateToken, orderController.completeOrder);
+// GET  /api/orders/disputed           — Commandes en litige (admin)
+router.get('/disputed', authenticateToken, authenticateAdmin, orderController.getDisputedOrders);
 
-/**
- * @route   PATCH /api/orders//:id/cancel
- * @desc    Annuler une mission
- * @access  Private (Prestataire) - JWT REQUIS
- */
-router.patch('/:id/cancel', authenticateToken, orderController.cancelOrder);
-
-/**
- * @route   GET /api/orders//pending-validation
- * @desc    Intervention en attente de validation
- * @access  Private (Admin) - JWT REQUIS
- */
-router.get('/pending-validation', authenticateToken, orderController.getPendingValidation);
-
-/**
- * @route   PATCH /api/orders/:id/validate
- * @desc    Valider une intervention
- * @access  Private (admin) - JWT REQUIS
- */
-router.patch('/:id/validate', authenticateToken, orderController.validateOrder);
-
-/**
- * @route   GET /api/orders//disputed
- * @desc    Gestion des litiges
- * @access  Private (admin) - JWT REQUIS
- */
-router.get('/disputed', authenticateToken, orderController.getDisputedOrders);
-
-/**
- * @route   PATCH /api/orders//:id/dispute'
- * @desc    Marquer comme litigieux
- * @access  Private (admin) - JWT REQUIS
- */
-router.patch('/:id/dispute', authenticateToken, orderController.markAsDisputed);
-
-/**
- * @route   PATCH /api/orders/:id/resolve'
- * @desc    Résoudre le litige
- * @access  Private (admin) - JWT REQUIS
- */
-router.patch('/:id/resolve', authenticateToken, orderController.resolveDispute);
-
-/**
- * @route   GET /api//dashboard-stats
- * @desc    Récupérer les statistique
- * @access  Private (Tous) - JWT REQUIS
- */
+// GET  /api/orders/dashboard-stats    — Statistiques du dashboard client
 router.get('/dashboard-stats', authenticateToken, orderController.getDashboardStats);
 
-/**
- * @route   GET /api/history
- * @desc    Récupérer l'historique des commandes prestataire
- * @access  Prestataires - JWT REQUIS
- */
+// GET  /api/orders/history            — Historique des missions terminées (prestataire)
 router.get('/history', authenticateToken, orderController.getProviderHistory);
 
-/**
- * @route   GET /api/gallery
- * @desc    Récupérer la gallerie des photos utilisateurs
- * @access  Utilisaters - JWT REQUIS
- */
+// GET  /api/orders/gallery            — Commandes terminées avec photos (client)
 router.get('/gallery', authenticateToken, orderController.getCompletedOrdersWithPhotos);
 
-/**
- * @route   GET /api/calendar
- * @desc    Récupérer le calendrier d'un prestataire
- * @access  Prestataires - JWT REQUIS
- */
+// GET  /api/orders/calendar           — Calendrier du prestataire connecté
 router.get('/calendar', authenticateToken, orderController.getProviderCalendar);
 
-/**
- * @route   GET /api//calendar/:prestatairId
- * @desc    Récupérer le calendrier d'un prestataire
- * @access  Admin - JWT REQUIS
- */
-router.get('/calendar/:prestatairId', authenticateToken, orderController.getProviderCalendarForAdmin);
+// GET  /api/orders/calendar/:prestataireId — Calendrier d'un prestataire spécifique (admin)
+router.get('/calendar/:prestataireId', authenticateToken, authenticateAdmin, orderController.getProviderCalendarForAdmin);
 
+// POST /api/orders                    — Crée une nouvelle commande (client)
+router.post('/', authenticateToken, orderController.createOrder);
 
-/**
- * @route   GET /api/orders/:id
- * @desc    Récupérer les détails d'une commande
- * @access  Private (Tous) - JWT REQUIS
- */
+// ─── ROUTES DYNAMIQUES (avec :id) ─────────────────────────────────────────────
+
+// GET   /api/orders/:id               — Détails d'une commande (tous rôles, filtré par ownership)
 router.get('/:id', authenticateToken, orderController.getOrderById);
 
+// PATCH /api/orders/:id/accept        — Accepte une mission avec planning (prestataire)
+router.patch('/:id/accept', authenticateToken, orderController.acceptOrder);
 
-/**
- * @route   GET /api/orders
- * @desc    Récupérer mes commandes
- * @access  Private (Tous) - JWT REQUIS
- */
-router.get('/', authenticateToken, orderController.getMyOrders);
+// PATCH /api/orders/:id/complete      — Marque une mission comme terminée (prestataire)
+router.patch('/:id/complete', authenticateToken, orderController.completeOrder);
+
+// PATCH /api/orders/:id/cancel        — Annule une mission acceptée (prestataire)
+router.patch('/:id/cancel', authenticateToken, orderController.cancelOrder);
+
+// PATCH /api/orders/:id/validate      — Valide une intervention et paie le prestataire (admin)
+router.patch('/:id/validate', authenticateToken, authenticateAdmin, orderController.validateOrder);
+
+// PATCH /api/orders/:id/dispute       — Marque une commande comme litigieuse (admin)
+router.patch('/:id/dispute', authenticateToken, authenticateAdmin, orderController.markAsDisputed);
+
+// PATCH /api/orders/:id/resolve       — Résout un litige (admin)
+router.patch('/:id/resolve', authenticateToken, authenticateAdmin, orderController.resolveDispute);
+
+// PATCH /api/orders/:orderId/report-dispute — Signale un litige côté client
+router.patch('/:orderId/report-dispute', authenticateToken, orderController.reportDispute);
 
 module.exports = router;

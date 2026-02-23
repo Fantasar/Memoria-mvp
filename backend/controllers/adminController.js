@@ -2,34 +2,41 @@
 const authService = require('../services/authService');
 
 /**
- * CONTROLLER : Orchestration admin
+ * Contrôleur d'administration.
+ * Responsabilité : extraire les données de req, appeler authService, formater res.
+ * Restreint aux utilisateurs avec le rôle admin via le middleware authenticateAdmin.
  */
 
 /**
- * @desc    Créer un nouveau compte administrateur
+ * Gestion d'erreur uniforme pour ce contrôleur
+ */
+const handleError = (error, res, fallbackMessage) => {
+  if (error.statusCode) {
+    return res.status(error.statusCode).json({
+      success: false,
+      error: { code: error.code, message: error.message }
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    error: { code: 'SERVER_ERROR', message: fallbackMessage }
+  });
+};
+
+/**
+ * @desc    Crée un nouveau compte administrateur
+ *          L'email du créateur est tracé dans le log de sécurité du service
  * @route   POST /api/admin/create
- * @access  Private (Admin only)
+ * @access  Admin uniquement
  */
 const createAdmin = async (req, res) => {
   try {
-    // Validation basique
-    if (!req.body.email || !req.body.password) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'MISSING_FIELDS',
-          message: 'Email et mot de passe sont obligatoires'
-        }
-      });
-    }
-
-    // Déléguer au service avec email du créateur
     const result = await authService.createAdminUser(
       req.body,
-      req.user.email // Provient du middleware authenticateToken
+      req.user.email // Transmis au service pour le log de sécurité
     );
 
-    // Formatter la réponse HTTP
     return res.status(201).json({
       success: true,
       data: {
@@ -39,53 +46,29 @@ const createAdmin = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur lors de la création admin:', error);
-
-    // Gestion des erreurs métier
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        success: false,
-        error: {
-          code: error.code,
-          message: error.message
-        }
-      });
-    }
-
-    // Erreur serveur inattendue
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Erreur lors de la création du compte administrateur'
-      }
-    });
+    return handleError(error, res, 'Erreur lors de la création du compte administrateur');
   }
 };
 
-
 /**
- * @desc    Renvoie la liste des inscrit sur la plateforme
- * @route   POST /api/admin
- * @access  Private (Admin only)
+ * @desc    Récupère la liste de tous les utilisateurs inscrits sur la plateforme
+ * @route   GET /api/admin/users
+ * @access  Admin uniquement
  */
-
 const getAllUsers = async (req, res) => {
   try {
     const users = await authService.getAllUsers();
+
     return res.status(200).json({
       success: true,
-      data: users,
-      count: users.length
+      count: users.length,
+      data:  users
     });
+
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: { code: 'SERVER_ERROR', message: 'Erreur serveur' }
-    });
+    return handleError(error, res, 'Erreur lors de la récupération des utilisateurs');
   }
 };
-
 
 module.exports = {
   createAdmin,
