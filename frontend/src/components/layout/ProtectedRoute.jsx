@@ -1,45 +1,48 @@
+// frontend/src/components/layout/ProtectedRoute.jsx
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * Composant pour protéger les routes selon l'authentification et le rôle
- * @param {Object} props
- * @param {React.ReactNode} props.children - Composant à rendre si autorisé
- * @param {string[]} props.allowedRoles - Rôles autorisés à accéder à cette route
+ * Protège une route selon l'authentification et le rôle utilisateur.
+ * - Affiche un spinner pendant la restauration de session (localStorage)
+ * - Redirige vers /login si non authentifié
+ * - Redirige vers le dashboard du rôle si accès non autorisé
+ *
+ * @param {React.ReactNode} children     - Page à afficher si accès autorisé
+ * @param {string[]}        allowedRoles - Rôles autorisés (optionnel — si absent, tout utilisateur connecté passe)
  */
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
 
-  // Afficher un loader pendant la vérification du token
+  // Attend que localStorage soit lu avant de décider
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
           <p className="mt-4 text-gray-600">Vérification...</p>
         </div>
       </div>
     );
   }
 
-  // Rediriger vers login si pas authentifié
+  // Non authentifié — redirige vers login
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Vérifier si le rôle de l'utilisateur est autorisé
+  // Rôle non autorisé — redirige vers le dashboard approprié
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Rediriger vers le dashboard approprié selon le rôle
-    const redirectPath = 
-      user.role === 'client' ? '/dashboard/client' :
-      user.role === 'prestataire' ? '/dashboard/prestataire' :
-      user.role === 'admin' ? '/dashboard/admin' :
-      '/';
-    
+    const dashboardByRole = {
+      client:      '/dashboard/client',
+      prestataire: '/dashboard/prestataire',
+      admin:       '/dashboard/admin'
+    };
+    const redirectPath = dashboardByRole[user.role] ?? '/';
+
     return <Navigate to={redirectPath} replace />;
   }
 
-  // Autoriser l'accès
   return children;
 };
 

@@ -4,88 +4,83 @@ import { useNavigate } from 'react-router-dom';
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { useAuth } from '../../hooks/useAuth';
 import axios from 'axios';
-import API_URL from '../../config/api';
 
+/**
+ * Formulaire de paiement Stripe — étape finale du tunnel de commande.
+ *
+ * Flux en 3 étapes :
+ * 1. Confirmation du paiement côté Stripe (carte, 3DS...)
+ * 2. Vérification du statut du PaymentIntent
+ * 3. Confirmation côté backend pour créer la commande en BDD
+ *
+ * @param {string} paymentIntentId - ID du PaymentIntent Stripe (créé côté backend)
+ * @param {Object} orderData       - Données de la commande (price, service...)
+ */
 function CheckoutForm({ paymentIntentId, orderData }) {
-  const stripe = useStripe();
+  const stripe   = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
   const { token } = useAuth();
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [isProcessing,  setIsProcessing]  = useState(false);
+  const [errorMessage,  setErrorMessage]  = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
+    if (!stripe || !elements) return;
 
     setIsProcessing(true);
     setErrorMessage(null);
 
-    // ============ ÉTAPE 1 : CONFIRMER LE PAIEMENT AVEC STRIPE ============
-    
+    // Étape 1 — Confirmation du paiement côté Stripe
     const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/orders/success`,
+        return_url: `${window.location.origin}/orders/success`
       },
-      redirect: 'if_required',
+      redirect: 'if_required'
     });
 
-    // Erreur Stripe (carte refusée, etc.)
     if (stripeError) {
-      console.error('❌ Erreur Stripe:', stripeError);
       setErrorMessage(stripeError.message);
       setIsProcessing(false);
       return;
     }
 
-    // ============ ÉTAPE 2 : VÉRIFIER QUE LE PAIEMENT A RÉUSSI ============
-
-    console.log('✅ Payment Intent confirmé:', paymentIntent);
-
+    // Étape 2 — Vérification du statut du PaymentIntent
     if (paymentIntent.status !== 'succeeded') {
-      console.error('❌ Paiement non réussi:', paymentIntent.status);
-      setErrorMessage(`Le paiement n'a pas abouti (statut: ${paymentIntent.status})`);
+      setErrorMessage(`Le paiement n'a pas abouti (statut : ${paymentIntent.status})`);
       setIsProcessing(false);
       return;
     }
 
-    // ============ ÉTAPE 3 : CRÉER LA COMMANDE EN BDD ============
-
+    // Étape 3 — Confirmation côté backend et création de la commande en BDD
     try {
       const response = await axios.post(
-        `${API_URL}/api/payments/confirm`,
+        `/api/payments/confirm`,
         { paymentIntentId: paymentIntent.id },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+            Authorization:  `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
       );
 
       if (response.data.success) {
-        console.log('✅ Commande créée:', response.data);
-        
-        // Redirection vers dashboard avec message de succès
         navigate('/dashboard/client', {
-          state: {
-            message: '✅ Commande créée et paiement confirmé avec succès !',
-          },
+          state: { message: '✅ Commande créée et paiement confirmé avec succès !' }
         });
       }
     } catch (err) {
-      console.error('❌ Erreur confirmation commande:', err);
-      
-      if (err.response?.data?.error) {
-        setErrorMessage(`Paiement réussi mais erreur : ${err.response.data.error.message}`);
-      } else {
-        setErrorMessage('Paiement réussi mais erreur lors de la création de la commande. Contactez le support.');
-      }
+      // Le paiement Stripe a réussi mais la commande n'a pas été créée en BDD
+      // L'utilisateur doit contacter le support avec son PaymentIntent ID
+      const detail = err.response?.data?.error?.message;
+      setErrorMessage(
+        detail
+          ? `Paiement réussi mais erreur : ${detail}`
+          : 'Paiement réussi mais erreur lors de la création de la commande. Contactez le support.'
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -97,12 +92,12 @@ function CheckoutForm({ paymentIntentId, orderData }) {
         Informations de paiement
       </h2>
 
-      {/* Stripe Payment Element */}
+      {/* Formulaire Stripe — carte, Apple Pay, etc. */}
       <div className="mb-6">
         <PaymentElement />
       </div>
 
-      {/* Message d'erreur */}
+      {/* Erreur de paiement */}
       {errorMessage && (
         <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800 text-sm">{errorMessage}</p>
@@ -118,7 +113,6 @@ function CheckoutForm({ paymentIntentId, orderData }) {
         {isProcessing ? 'Traitement en cours...' : `Payer ${orderData?.price?.toFixed(2)} €`}
       </button>
 
-      {/* Info sécurité */}
       <div className="mt-4 text-center text-xs text-gray-500">
         🔒 Paiement sécurisé par Stripe
       </div>

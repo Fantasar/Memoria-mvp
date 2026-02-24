@@ -1,37 +1,98 @@
+// frontend/src/components/orders/PhotoUpload.jsx
 import { useState } from 'react';
 import axios from 'axios';
+import { useAuth } from '../../hooks/useAuth';
 
+const authHeaders = () => ({
+  Authorization: `Bearer ${localStorage.getItem('token')}`
+});
+
+/**
+ * Icône d'upload — SVG réutilisé pour les deux zones de dépôt
+ */
+const UploadIcon = () => (
+  <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+    <path
+      d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    />
+  </svg>
+);
+
+/**
+ * Zone de dépôt photo avec prévisualisation.
+ */
+const PhotoDropZone = ({ label, preview, onChange, onClear }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors">
+      {preview ? (
+        <div className="relative">
+          <img src={preview} alt={label} className="w-full h-48 object-cover rounded-lg" />
+          <button
+            onClick={onClear}
+            className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 hover:bg-red-700"
+          >
+            ✕
+          </button>
+        </div>
+      ) : (
+        <label className="cursor-pointer block">
+          <UploadIcon />
+          <p className="mt-2 text-sm text-gray-600">Cliquez pour choisir une photo</p>
+          <input type="file" accept="image/*" onChange={onChange} className="hidden" />
+        </label>
+      )}
+    </div>
+  </div>
+);
+
+/**
+ * Formulaire d'upload des photos avant/après pour une mission prestataire.
+ * Envoie deux requêtes multipart séquentielles vers /api/photos/upload.
+ *
+ * @param {string}   orderId         - UUID de la commande concernée
+ * @param {Function} onUploadSuccess - Callback déclenché après upload réussi
+ */
 const PhotoUpload = ({ orderId, onUploadSuccess }) => {
-  const [beforePhoto, setBeforePhoto] = useState(null);
-  const [afterPhoto, setAfterPhoto] = useState(null);
+  const [beforePhoto,   setBeforePhoto]   = useState(null);
+  const [afterPhoto,    setAfterPhoto]    = useState(null);
   const [beforePreview, setBeforePreview] = useState(null);
-  const [afterPreview, setAfterPreview] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState(null);
+  const [afterPreview,  setAfterPreview]  = useState(null);
+  const [uploading,     setUploading]     = useState(false);
+  const [error,         setError]         = useState(null);
+  const [success,       setSuccess]       = useState(false);
 
-  // Gérer sélection photo "avant"
-  const handleBeforePhotoChange = (e) => {
+  const handlePhotoChange = (setter, previewSetter) => (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setBeforePhoto(file);
-      setBeforePreview(URL.createObjectURL(file));
-      setError(null);
-    }
+    if (!file) return;
+    setter(file);
+    previewSetter(URL.createObjectURL(file));
+    setError(null);
+    setSuccess(false);
   };
 
-  // Gérer sélection photo "après"
-  const handleAfterPhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setAfterPhoto(file);
-      setAfterPreview(URL.createObjectURL(file));
-      setError(null);
-    }
+  const clearPhoto = (setter, previewSetter) => () => {
+    setter(null);
+    previewSetter(null);
   };
 
-  // Upload des photos
+  const uploadPhoto = async (file, photoType) => {
+    const formData = new FormData();
+    formData.append('photo',       file);
+    formData.append('order_id',    orderId);
+    formData.append('photo_type',  photoType);
+
+    // URL relative — fonctionne en dev (proxy Vite) et en production
+    await axios.post('/api/photos/upload', formData, {
+      headers: {
+        ...authHeaders(),
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  };
+
   const handleUpload = async () => {
-    // Validation
     if (!beforePhoto || !afterPhoto) {
       setError('Vous devez fournir une photo avant ET après');
       return;
@@ -41,61 +102,22 @@ const PhotoUpload = ({ orderId, onUploadSuccess }) => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
+      // Upload séquentiel — before d'abord, after ensuite
+      await uploadPhoto(beforePhoto, 'before');
+      await uploadPhoto(afterPhoto,  'after');
 
-      // Upload photo "avant"
-      const beforeFormData = new FormData();
-      beforeFormData.append('photo', beforePhoto);
-      beforeFormData.append('order_id', orderId);
-      beforeFormData.append('photo_type', 'before');
-
-      await axios.post(
-        'http://localhost:5500/api/photos/upload',
-        beforeFormData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-
-      // Upload photo "après"
-      const afterFormData = new FormData();
-      afterFormData.append('photo', afterPhoto);
-      afterFormData.append('order_id', orderId);
-      afterFormData.append('photo_type', 'after');
-
-      await axios.post(
-        'http://localhost:5500/api/photos/upload',
-        afterFormData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-
-      // Succès
-      alert('Photos uploadées avec succès !');
-      
-      // Reset
+      // Reset du formulaire
       setBeforePhoto(null);
       setAfterPhoto(null);
       setBeforePreview(null);
       setAfterPreview(null);
+      setSuccess(true);
 
-      // Callback parent
-      if (onUploadSuccess) {
-        onUploadSuccess();
-      }
-
+      onUploadSuccess?.();
     } catch (err) {
-      console.error('Erreur upload photos:', err);
       setError(
-        err.response?.data?.error?.message || 
-        'Erreur lors de l\'upload des photos'
+        err.response?.data?.error?.message ||
+        "Erreur lors de l'upload des photos"
       );
     } finally {
       setUploading(false);
@@ -108,101 +130,37 @@ const PhotoUpload = ({ orderId, onUploadSuccess }) => {
         Upload des photos d'intervention
       </h3>
 
+      {/* Message d'erreur */}
       {error && (
         <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800 text-sm">{error}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* Photo AVANT */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Photo AVANT intervention
-          </label>
-          
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors">
-            {beforePreview ? (
-              <div className="relative">
-                <img 
-                  src={beforePreview} 
-                  alt="Preview avant" 
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                <button
-                  onClick={() => {
-                    setBeforePhoto(null);
-                    setBeforePreview(null);
-                  }}
-                  className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 hover:bg-red-700"
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <label className="cursor-pointer block">
-                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <p className="mt-2 text-sm text-gray-600">
-                  Cliquez pour choisir une photo
-                </p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleBeforePhotoChange}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
+      {/* Message de succès */}
+      {success && (
+        <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-green-800 text-sm">✅ Photos uploadées avec succès !</p>
         </div>
+      )}
 
-        {/* Photo APRÈS */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Photo APRÈS intervention
-          </label>
-          
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors">
-            {afterPreview ? (
-              <div className="relative">
-                <img 
-                  src={afterPreview} 
-                  alt="Preview après" 
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                <button
-                  onClick={() => {
-                    setAfterPhoto(null);
-                    setAfterPreview(null);
-                  }}
-                  className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 hover:bg-red-700"
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <label className="cursor-pointer block">
-                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <p className="mt-2 text-sm text-gray-600">
-                  Cliquez pour choisir une photo
-                </p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAfterPhotoChange}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
-        </div>
+      {/* Zones de dépôt */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <PhotoDropZone
+          label="Photo AVANT intervention"
+          preview={beforePreview}
+          onChange={handlePhotoChange(setBeforePhoto, setBeforePreview)}
+          onClear={clearPhoto(setBeforePhoto, setBeforePreview)}
+        />
+        <PhotoDropZone
+          label="Photo APRÈS intervention"
+          preview={afterPreview}
+          onChange={handlePhotoChange(setAfterPhoto, setAfterPreview)}
+          onClear={clearPhoto(setAfterPhoto, setAfterPreview)}
+        />
       </div>
 
-      {/* Bouton Upload */}
+      {/* Bouton upload */}
       <button
         onClick={handleUpload}
         disabled={!beforePhoto || !afterPhoto || uploading}
@@ -213,10 +171,11 @@ const PhotoUpload = ({ orderId, onUploadSuccess }) => {
         }`}
       >
         {uploading ? (
-          <span className="flex items-center justify-center">
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <span className="flex items-center justify-center gap-3">
+            <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
             Upload en cours...
           </span>
