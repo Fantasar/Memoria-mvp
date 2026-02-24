@@ -8,6 +8,15 @@ const geocodingService   = require('./geocodingService');
  * Utilisé par le dashboard admin pour alimenter le catalogue de cimetières.
  */
 
+
+/**
+ * Récupère tous les cimetières actifs
+ * @returns {Array}
+ */
+const getAllCemeteries = async () => {
+  return await cemeteryRepository.findAllActive();
+};
+
 /**
  * Crée un nouveau cimetière avec ses coordonnées GPS
  * Tente un géocodage automatique — si l'API échoue, le cimetière
@@ -52,4 +61,4 @@ const createCemetery = async (data) => {
   }
 };
 
-module.exports = { createCemetery };
+module.exports = { createCemetery, getAllCemeteries };
