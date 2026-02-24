@@ -1,112 +1,125 @@
+// frontend/src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
 // Pages publiques
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Home               from './pages/Home';
+import Login              from './pages/Login';
+import Register           from './pages/Register';
 
 // Dashboards
-import DashboardClient from './pages/dashboards/DashboardClient';
+import DashboardClient    from './pages/dashboards/DashboardClient';
 import DashboardPrestataire from './pages/dashboards/DashboardPrestataire';
-import DashboardAdmin from './pages/dashboards/DashboardAdmin';
+import DashboardAdmin     from './pages/dashboards/DashboardAdmin';
 
-// Order
-import NewOrder from './pages/orders/NewOrder';
-import OrderDetails from './pages/orders/OrderDetails';
-import Checkout from './pages/orders/Checkout';
-import MesMissions from './pages/MesMissions';
-import CompleteMission from './pages/CompleteMission';
+// Commandes
+import NewOrder           from './pages/orders/NewOrder';
+import Checkout           from './pages/orders/Checkout';
+import OrderDetails       from './pages/orders/OrderDetails';
 
+// Prestataire
+import MesMissions     from './pages/orders/MesMissions';
+import CompleteMission from './pages/orders/CompleteMission';
 
+/**
+ * Routeur principal de l'application Mémoria.
+ * AuthProvider est géré dans main.jsx — ne pas le redéclarer ici.
+ *
+ * ⚠️ ORDRE CRITIQUE des routes :
+ * Les routes statiques (/orders/new, /orders/checkout) doivent être
+ * déclarées AVANT les routes dynamiques (/orders/:id)
+ */
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Routes publiques */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+    <Router>
+      <Routes>
 
-          {/* Routes protégées - Client */}
-          <Route 
-            path="/dashboard/client" 
-            element={
-              <ProtectedRoute allowedRoles={['client']}>
-                <DashboardClient />
-              </ProtectedRoute>
-            } 
-          />
+        {/* ── Routes publiques ───────────────────────────────────────── */}
+        <Route path="/"         element={<Home />} />
+        <Route path="/login"    element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-          <Route path="/missions/:id/complete" element={<ProtectedRoute><CompleteMission /></ProtectedRoute>} />
-          
-          {/* Route protégée - Nouvelle commande - Client */}
-          <Route 
-            path="/orders/new" 
-            element={
-              <ProtectedRoute allowedRoles={['client']}>
-                <NewOrder />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Route protégée - Détails commande - Client */}
-          <Route 
-            path="/orders/:id" 
-            element={
-              <ProtectedRoute allowedRoles={['client']}>
-                <OrderDetails />
-              </ProtectedRoute>
-            } 
-          />
+        {/* ── Routes client ──────────────────────────────────────────── */}
+        <Route
+          path="/dashboard/client"
+          element={
+            <ProtectedRoute allowedRoles={['client']}>
+              <DashboardClient />
+            </ProtectedRoute>
+          }
+        />
 
-          {/* Route protégée - Checkout paiement - Client */}
-            <Route 
-              path="/orders/checkout" 
-              element={
-                <ProtectedRoute allowedRoles={['client']}>
-                  <Checkout />
-                </ProtectedRoute>
-              } 
-          />
+        {/* ⚠️ Statiques avant dynamiques — /new et /checkout avant /:id */}
+        <Route
+          path="/orders/new"
+          element={
+            <ProtectedRoute allowedRoles={['client']}>
+              <NewOrder />
+            </ProtectedRoute>
+          }
+        />
 
-          {/* Routes protégées - Prestataire */}
-          <Route 
-            path="/dashboard/prestataire" 
-            element={
-              <ProtectedRoute allowedRoles={['prestataire']}>
-                <DashboardPrestataire />
-              </ProtectedRoute>
-            } 
-          />
+        <Route
+          path="/orders/checkout"
+          element={
+            <ProtectedRoute allowedRoles={['client']}>
+              <Checkout />
+            </ProtectedRoute>
+          }
+        />
 
-          {/* Routes protégées - Cloudinary */}
-          <Route 
-            path="/mes-missions" 
-            element={
-              <ProtectedRoute allowedRoles={['prestataire']}>
-                <MesMissions />
-              </ProtectedRoute>
-            } 
-          />
+        <Route
+          path="/orders/:id"
+          element={
+            <ProtectedRoute allowedRoles={['client']}>
+              <OrderDetails />
+            </ProtectedRoute>
+          }
+        />
 
-          {/* Routes protégées - Admin */}
-          <Route 
-            path="/dashboard/admin" 
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <DashboardAdmin />
-              </ProtectedRoute>
-            } 
-          />
+        {/* ── Routes prestataire ─────────────────────────────────────── */}
+        <Route
+          path="/dashboard/prestataire"
+          element={
+            <ProtectedRoute allowedRoles={['prestataire']}>
+              <DashboardPrestataire />
+            </ProtectedRoute>
+          }
+        />
 
-          {/* Route 404 - Redirection vers accueil */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+        <Route
+          path="/mes-missions"
+          element={
+            <ProtectedRoute allowedRoles={['prestataire']}>
+              <MesMissions />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/missions/:id/complete"
+          element={
+            <ProtectedRoute allowedRoles={['prestataire']}>
+              <CompleteMission />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ── Routes admin ───────────────────────────────────────────── */}
+        <Route
+          path="/dashboard/admin"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DashboardAdmin />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ── Fallback 404 ───────────────────────────────────────────── */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+
+      </Routes>
+    </Router>
   );
 }
 
