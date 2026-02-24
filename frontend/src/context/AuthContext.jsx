@@ -1,77 +1,82 @@
+// frontend/src/context/AuthContext.jsx
 import { createContext, useState, useEffect, useContext } from 'react';
 
-// Créer le Context
 export const AuthContext = createContext(null);
 
-// Créer le Provider
+/**
+ * Fournit le contexte d'authentification à toute l'application.
+ * Persiste la session dans localStorage et la restaure au démarrage.
+ */
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [user,    setUser]    = useState(null);
+  const [token,   setToken]   = useState(null);
+  const [loading, setLoading] = useState(true); // true le temps de lire localStorage
 
-  // Fonction login
+  /**
+   * Connecte l'utilisateur et persiste la session dans localStorage
+   */
   const login = (userData, authToken) => {
     setUser(userData);
     setToken(authToken);
-    setIsAuthenticated(true);
-
     localStorage.setItem('token', authToken);
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  // Fonction logout
+  /**
+   * Déconnecte l'utilisateur et vide la session
+   */
   const logout = () => {
     setUser(null);
     setToken(null);
-    setIsAuthenticated(false);
-
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
 
-  // Vérifier auth
-  const checkAuth = () => {
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-      setIsAuthenticated(true);
-    }
-
-    setLoading(false);
-  };
-
+  /**
+   * Restaure la session depuis localStorage au démarrage de l'app.
+   * Le try/catch protège contre un JSON corrompu en localStorage
+   * qui ferait crasher toute l'application.
+   */
   useEffect(() => {
-    checkAuth();
+    try {
+      const savedToken = localStorage.getItem('token');
+      const savedUser  = localStorage.getItem('user');
+
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      }
+    } catch {
+      // Session corrompue — on repart proprement
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const value = {
-    user,
-    token,
-    isAuthenticated,
-    loading,
-    login,
-    logout,
-    checkAuth
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{
+      user,
+      token,
+      loading,
+      isAuthenticated: user !== null, // Déduit de user, pas d'état séparé
+      login,
+      logout
+    }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Hook personnalisé
+/**
+ * Hook d'accès au contexte d'authentification.
+ * Doit être utilisé dans un composant enfant de AuthProvider.
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
-
   if (!context) {
-    throw new Error("useAuth doit être utilisé dans AuthProvider");
+    throw new Error('useAuth doit être utilisé dans un AuthProvider');
   }
-
   return context;
 };
