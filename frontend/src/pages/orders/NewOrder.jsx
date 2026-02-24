@@ -1,178 +1,138 @@
 // frontend/src/pages/orders/NewOrder.jsx
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import axios from 'axios';
-import API_URL from '../../config/api';
+import { useNavigate }         from 'react-router-dom';
+import { useAuth }             from '../../hooks/useAuth';
+import axios                   from 'axios';
 
 function NewOrder() {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
   const { token } = useAuth();
 
-  // États du formulaire
-  const [cemeteries, setCemeteries] = useState([]);
+  const [cemeteries,        setCemeteries]        = useState([]);
   const [serviceCategories, setServiceCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading,           setLoading]           = useState(true);
+  const [error,             setError]             = useState(null);
+  const [errors,            setErrors]            = useState({});
+  const [selectedPrice,     setSelectedPrice]     = useState(0);
 
-  // Données du formulaire
   const [formData, setFormData] = useState({
-    cemetery_id: '',
+    cemetery_id:         '',
     service_category_id: '',
-    cemetery_location: '',
-    price: 0
+    cemetery_location:   '',
   });
 
-  // Prix sélectionné
-  const [selectedPrice, setSelectedPrice] = useState(0);
-
-  // Validation
-  const [errors, setErrors] = useState({});
-
-  // ============ CHARGEMENT DES DONNÉES ============
-
+  // ─── Chargement initial ────────────────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
-        
-        const [cemeteriesRes, servicesRes] = await Promise.all([
-          axios.get(`${API_URL}/api/cemeteries`),
-          axios.get(`${API_URL}/api/service-categories`)
+        const [cemRes, svcRes] = await Promise.all([
+          axios.get('/api/cemeteries'),
+          axios.get('/api/service-categories'),
         ]);
-
-        setCemeteries(cemeteriesRes.data.data);
-        setServiceCategories(servicesRes.data.data);
-        setError(null);
-
-      } catch (err) {
-        console.error('Erreur chargement données:', err);
+        setCemeteries(cemRes.data.data        || []);
+        setServiceCategories(svcRes.data.data || []);
+      } catch {
         setError('Impossible de charger les données. Veuillez réessayer.');
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  // ============ GESTION DES CHANGEMENTS ============
+  // ─── Handlers ─────────────────────────────────────────────────────────────
 
-  const handleCemeteryChange = (e) => {
-    setFormData({ ...formData, cemetery_id: e.target.value });
-    setErrors({ ...errors, cemetery_id: '' });
+  // Handler générique — efface l'erreur du champ modifié
+  const handleField = (field) => (e) => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    setErrors(prev  => ({ ...prev, [field]: '' }));
   };
 
+  // Handler service — met aussi à jour selectedPrice
   const handleServiceChange = (e) => {
-    const serviceId = e.target.value;
-    const service = serviceCategories.find(s => s.id === parseInt(serviceId));
-    const price = service ? parseFloat(service.base_price) : 0;
-
-    setFormData({ 
-      ...formData, 
-      service_category_id: serviceId,
-      price: price
-    });
-    setSelectedPrice(price);
-    setErrors({ ...errors, service_category_id: '' });
+    const id      = e.target.value;
+    const service = serviceCategories.find(s => s.id === parseInt(id));
+    setFormData(prev => ({ ...prev, service_category_id: id }));
+    setSelectedPrice(service ? parseFloat(service.base_price) : 0);
+    setErrors(prev => ({ ...prev, service_category_id: '' }));
   };
 
+  // Handler location — avec limite 255 caractères
   const handleLocationChange = (e) => {
     const value = e.target.value;
-    if (value.length <= 255) {
-      setFormData({ ...formData, cemetery_location: value });
-      setErrors({ ...errors, cemetery_location: '' });
-    }
+    if (value.length > 255) return;
+    setFormData(prev => ({ ...prev, cemetery_location: value }));
+    setErrors(prev  => ({ ...prev, cemetery_location: '' }));
   };
 
-  // ============ VALIDATION ============
-
+  // ─── Validation ────────────────────────────────────────────────────────────
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.cemetery_id) {
-      newErrors.cemetery_id = 'Veuillez sélectionner un cimetière';
-    }
-
-    if (!formData.service_category_id) {
-      newErrors.service_category_id = 'Veuillez sélectionner un service';
-    }
-
-    if (!formData.cemetery_location.trim()) {
-      newErrors.cemetery_location = 'Veuillez préciser l\'emplacement de la tombe';
-    }
-
+    if (!formData.cemetery_id)              newErrors.cemetery_id         = 'Veuillez sélectionner un cimetière';
+    if (!formData.service_category_id)      newErrors.service_category_id = 'Veuillez sélectionner un service';
+    if (!formData.cemetery_location.trim()) newErrors.cemetery_location   = "Veuillez préciser l'emplacement de la tombe";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // ============ SOUMISSION ============
-
-  const handleSubmit = async (e) => {
+  // ─── Soumission ────────────────────────────────────────────────────────────
+  const handleSubmit = (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
 
-    if (!validateForm()) {
-      return;
-    }
-
-    // Redirection vers Checkout avec les données
     navigate('/orders/checkout', {
       state: {
         orderData: {
-          cemetery_id: parseInt(formData.cemetery_id),
+          cemetery_id:         parseInt(formData.cemetery_id),
           service_category_id: parseInt(formData.service_category_id),
-          cemetery_location: formData.cemetery_location.trim()
+          cemetery_location:   formData.cemetery_location.trim(),
         },
       },
     });
   };
 
-  // ============ RENDER LOADING ============
-
+  // ─── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
           <p className="mt-4 text-gray-600">Chargement des données...</p>
         </div>
       </div>
     );
   }
 
-  // ============ RENDER FORMULAIRE ============
-
+  // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-3xl mx-auto px-4">
-        
-        {/* Header */}
+
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/dashboard/client')}
-            className="text-blue-600 hover:text-blue-800 flex items-center gap-2 mb-4"
-          >
+          <button onClick={() => navigate('/dashboard/client')}
+            className="text-blue-600 hover:text-blue-800 flex items-center gap-2 mb-4">
             ← Retour au dashboard
           </button>
           <h1 className="text-3xl font-bold text-gray-900">Nouvelle commande</h1>
           <p className="text-gray-600 mt-2">Commandez un service d'entretien de sépulture</p>
         </div>
 
-        {/* Erreur globale */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-red-800 text-sm">{error}</p>
+            <button onClick={() => window.location.reload()}
+              className="mt-2 text-sm text-blue-600 hover:underline">
+              Réessayer
+            </button>
           </div>
         )}
 
-        {/* Formulaire */}
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
-          
-          {/* Section 1 : Cimetière */}
+
+          {/* ── Section 1 : Localisation ─────────────────────────────────── */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Localisation</h2>
-            
-            {/* Sélection cimetière */}
+
             <div>
               <label htmlFor="cemetery" className="block text-sm font-medium text-gray-700 mb-2">
                 Cimetière <span className="text-red-500">*</span>
@@ -180,24 +140,19 @@ function NewOrder() {
               <select
                 id="cemetery"
                 value={formData.cemetery_id}
-                onChange={handleCemeteryChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.cemetery_id ? 'border-red-500' : 'border-gray-300'
-                }`}
+                onChange={handleField('cemetery_id')}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.cemetery_id ? 'border-red-500' : 'border-gray-300'}`}
               >
                 <option value="">Sélectionnez un cimetière</option>
-                {cemeteries.map(cemetery => (
-                  <option key={cemetery.id} value={cemetery.id}>
-                    {cemetery.name} - {cemetery.city} ({cemetery.department})
+                {cemeteries.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} — {c.city} ({c.department})
                   </option>
                 ))}
               </select>
-              {errors.cemetery_id && (
-                <p className="mt-1 text-sm text-red-600">{errors.cemetery_id}</p>
-              )}
+              {errors.cemetery_id && <p className="mt-1 text-sm text-red-600">{errors.cemetery_id}</p>}
             </div>
 
-            {/* Emplacement détaillé */}
             <div className="mt-4">
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                 Emplacement de la tombe <span className="text-red-500">*</span>
@@ -208,26 +163,19 @@ function NewOrder() {
                 value={formData.cemetery_location}
                 onChange={handleLocationChange}
                 placeholder="Ex: Section A, Allée 3, Tombe Dupont"
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.cemetery_location ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.cemetery_location ? 'border-red-500' : 'border-gray-300'}`}
               />
-              <p className="mt-1 text-xs text-gray-500">
-                {formData.cemetery_location.length}/255 caractères
-              </p>
-              {errors.cemetery_location && (
-                <p className="mt-1 text-sm text-red-600">{errors.cemetery_location}</p>
-              )}
+              <p className="mt-1 text-xs text-gray-500">{formData.cemetery_location.length}/255 caractères</p>
+              {errors.cemetery_location && <p className="mt-1 text-sm text-red-600">{errors.cemetery_location}</p>}
             </div>
           </div>
 
-          {/* Séparateur */}
-          <div className="border-t border-gray-200"></div>
+          <div className="border-t border-gray-200" />
 
-          {/* Section 2 : Service */}
+          {/* ── Section 2 : Service ──────────────────────────────────────── */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Type de service</h2>
-            
+
             <div className="space-y-3">
               {serviceCategories.map(service => (
                 <label
@@ -246,30 +194,25 @@ function NewOrder() {
                     onChange={handleServiceChange}
                     className="mt-1 mr-3 text-blue-600 focus:ring-blue-500"
                   />
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-semibold text-gray-900">{service.name}</p>
-                        <p className="text-sm text-gray-600 mt-1">{service.description}</p>
-                      </div>
-                      <p className="text-lg font-bold text-blue-600 ml-4">
-                        {parseFloat(service.base_price).toFixed(2)} €
-                      </p>
+                  <div className="flex-1 flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold text-gray-900">{service.name}</p>
+                      {service.description && <p className="text-sm text-gray-600 mt-1">{service.description}</p>}
                     </div>
+                    <p className="text-lg font-bold text-blue-600 ml-4">
+                      {parseFloat(service.base_price).toFixed(2)} €
+                    </p>
                   </div>
                 </label>
               ))}
             </div>
 
-            {errors.service_category_id && (
-              <p className="mt-2 text-sm text-red-600">{errors.service_category_id}</p>
-            )}
+            {errors.service_category_id && <p className="mt-2 text-sm text-red-600">{errors.service_category_id}</p>}
           </div>
 
-          {/* Séparateur */}
-          <div className="border-t border-gray-200"></div>
+          <div className="border-t border-gray-200" />
 
-          {/* Section 3 : Récapitulatif */}
+          {/* ── Section 3 : Récapitulatif ────────────────────────────────── */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="font-semibold text-gray-900 mb-3">Récapitulatif</h3>
             <div className="space-y-2 text-sm">
@@ -277,39 +220,30 @@ function NewOrder() {
                 <span className="text-gray-600">Prix du service</span>
                 <span className="font-semibold">{selectedPrice.toFixed(2)} €</span>
               </div>
-              <div className="border-t border-gray-300 pt-2 mt-2">
-                <div className="flex justify-between text-lg">
-                  <span className="font-bold text-gray-900">Total</span>
-                  <span className="font-bold text-blue-600">{selectedPrice.toFixed(2)} €</span>
-                </div>
+              <div className="border-t border-gray-300 pt-2 mt-2 flex justify-between text-lg">
+                <span className="font-bold text-gray-900">Total</span>
+                <span className="font-bold text-blue-600">{selectedPrice.toFixed(2)} €</span>
               </div>
             </div>
           </div>
 
-          {/* Boutons */}
+          {/* ── Boutons ───────────────────────────────────────────────────── */}
           <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard/client')}
-              className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
-            >
+            <button type="button" onClick={() => navigate('/dashboard/client')}
+              className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors">
               Annuler
             </button>
-            <button
-              type="submit"
-              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
+            <button type="submit"
+              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
               Continuer vers le paiement
             </button>
           </div>
 
         </form>
 
-        {/* Info complémentaire */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            💡 <strong>Bon à savoir :</strong> Le paiement sera effectué de manière sécurisée via Stripe. 
-            Votre commande sera créée après confirmation du paiement.
+            💡 <strong>Bon à savoir :</strong> Le paiement sera effectué de manière sécurisée via Stripe. Votre commande sera créée après confirmation du paiement.
           </p>
         </div>
 
