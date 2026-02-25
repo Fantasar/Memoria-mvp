@@ -105,6 +105,15 @@ function App() {
           }
         />
 
+        <Route
+          path="/dashboard/prestataire/pending"
+          element={
+            <ProtectedRoute allowedRoles={['prestataire']}>
+              <DashboardPrestataire />
+            </ProtectedRoute>
+          }
+        />
+
         {/* ── Routes admin ───────────────────────────────────────────── */}
         <Route
           path="/dashboard/admin"
