@@ -238,15 +238,26 @@ const getAllUsers = async () => {
   try {
     const result = await pool.query(
       `SELECT
-         u.id, u.prenom, u.nom, u.email,
-         u.created_at, u.is_verified,
-         u.siret, u.zone_intervention,
-         u.rating, u.rejection_reason,
-         r.name as role
+        u.id, u.prenom, u.nom, u.email,
+        u.created_at, u.is_verified, u.is_blocked,
+        u.siret, u.zone_intervention,
+        u.rating, u.rejection_reason,
+        r.name as role,
+        COUNT(DISTINCT CASE 
+        WHEN r.name = 'client'      THEN o_client.id 
+        WHEN r.name = 'prestataire' THEN o_provider.id 
+        END) AS orders_count
        FROM users u
        INNER JOIN roles r ON u.role_id = r.id
+       LEFT JOIN orders o ON o.client_id = u.id
+       LEFT JOIN orders o_client   ON o_client.client_id      = u.id
+       LEFT JOIN orders o_provider ON o_provider.prestataire_id = u.id
        WHERE r.name != 'admin'
          AND u.deleted_at IS NULL
+       GROUP BY u.id, u.prenom, u.nom, u.email,
+                u.created_at, u.is_verified, u.is_blocked,
+                u.siret, u.zone_intervention,
+                u.rating, u.rejection_reason, r.name
        ORDER BY u.created_at DESC`
     );
     return result.rows;
@@ -291,6 +302,21 @@ const resetRejection = async (userId) => {
   }
 };
 
+const toggleBlock = async (userId, isBlocked) => {
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET is_blocked = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id, email, prenom, nom, is_blocked`,
+      [isBlocked, userId]
+    );
+    return result.rows[0];
+  } catch (error) {
+    throw new Error(`userRepository.toggleBlock : ${error.message}`);
+  }
+};
+
 module.exports = {
   findByEmail,
   findById,
@@ -304,5 +330,6 @@ module.exports = {
   rejectProvider,
   getAllUsers,
   updateZone,
-  resetRejection
+  resetRejection,
+  toggleBlock
 };

@@ -1,8 +1,8 @@
 // backend/services/orderService.js
-const orderRepository           = require('../repositories/orderRepository');
-const userRepository            = require('../repositories/userRepository');
-const paymentRepository         = require('../repositories/paymentRepository');
-const photoRepository           = require('../repositories/photoRepository');
+const orderRepository = require('../repositories/orderRepository');
+const userRepository = require('../repositories/userRepository');
+const paymentRepository = require('../repositories/paymentRepository');
+const photoRepository = require('../repositories/photoRepository');
 const serviceCategoryRepository = require('../repositories/serviceCategoryRepository');
 const notificationRepository = require('../repositories/notificationRepository');
 
@@ -96,14 +96,14 @@ const createOrder = async (clientId, orderData) => {
 
     await notificationRepository.create({
       user_id: clientId,
-      type:    'order_created',
-      title:   'Commande créée ✅',
+      type: 'order_created',
+      title: 'Commande créée ✅',
       message: `Votre commande pour le service "${service.name}" a bien été créée. Un prestataire va prendre en charge votre mission prochainement.`,
       order_id: newOrder.id
     });
 
     return newOrder;
-    
+
 
   } catch (error) {
     if (error.statusCode) throw error;
@@ -117,16 +117,21 @@ const createOrder = async (clientId, orderData) => {
  * @param {string} userRole
  * @returns {Array}
  */
-const getUserOrders = async (userId, userRole) => {
+const getUserOrders = async (userId, userRole, all = false) => {
   try {
-    if (userRole === 'client')      return await orderRepository.findByClientId(userId);
+    if (userRole === 'client') return await orderRepository.findByClientId(userId);
     if (userRole === 'prestataire') return await orderRepository.findByPrestataireId(userId);
-    if (userRole === 'admin')       return await orderRepository.findAll();
+    if (userRole === 'admin') {
+      return all
+        ? await orderRepository.findAll()
+        : await orderRepository.findByClientId(userId);
+    }
     return [];
   } catch (error) {
     throw new Error(`orderService.getUserOrders : ${error.message}`);
   }
 };
+
 
 /**
  * Récupère une commande par son ID
@@ -269,9 +274,9 @@ const acceptOrder = async (orderId, prestataireId, scheduledDate, scheduledTime)
     }
 
     // Vérifie que la mission se termine avant 19h compte tenu de sa durée
-    const durationHours  = await orderRepository.getServiceDuration(order.service_category_id);
-    const startMinutes   = hours * 60 + minutes;
-    const endHours       = Math.floor((startMinutes + durationHours * 60) / 60);
+    const durationHours = await orderRepository.getServiceDuration(order.service_category_id);
+    const startMinutes = hours * 60 + minutes;
+    const endHours = Math.floor((startMinutes + durationHours * 60) / 60);
 
     if (endHours >= 19) {
       const error = new Error(`Cette mission dure ${durationHours}h et se terminerait après 19h. Choisissez une heure plus tôt.`);
@@ -293,14 +298,14 @@ const acceptOrder = async (orderId, prestataireId, scheduledDate, scheduledTime)
 
     // Vérifie que le cimetière est bien dans la zone du prestataire
     if (user.zone_intervention) {
-      const zone              = user.zone_intervention.toLowerCase();
-      const cemeteryCity      = (order.cemetery_city       || '').toLowerCase();
-      const cemeteryDept      = (order.cemetery_department || '').toLowerCase();
-      const cemeteryPostal    = (order.cemetery_postal_code || '');
+      const zone = user.zone_intervention.toLowerCase();
+      const cemeteryCity = (order.cemetery_city || '').toLowerCase();
+      const cemeteryDept = (order.cemetery_department || '').toLowerCase();
+      const cemeteryPostal = (order.cemetery_postal_code || '');
 
       const isInZone =
-        cemeteryCity.includes(zone)   || cemeteryDept.includes(zone) ||
-        zone.includes(cemeteryCity)   || zone.includes(cemeteryDept) ||
+        cemeteryCity.includes(zone) || cemeteryDept.includes(zone) ||
+        zone.includes(cemeteryCity) || zone.includes(cemeteryDept) ||
         cemeteryPostal.startsWith(zone);
 
       if (!isInZone) {
@@ -412,9 +417,9 @@ const completeOrder = async (orderId, prestataireId) => {
     }
 
     // Bloque la complétion si les photos avant/après ne sont pas uploadées
-    const photos       = await photoRepository.findByOrderId(orderId);
+    const photos = await photoRepository.findByOrderId(orderId);
     const hasBeforePhoto = photos.some(p => p.type === 'before');
-    const hasAfterPhoto  = photos.some(p => p.type === 'after');
+    const hasAfterPhoto = photos.some(p => p.type === 'after');
 
     if (!hasBeforePhoto || !hasAfterPhoto) {
       const error = new Error('Vous devez uploader les photos avant et après avant de terminer la mission');
@@ -514,9 +519,9 @@ const validateOrder = async (orderId, adminId) => {
     }
 
     // Vérifie une dernière fois la présence des photos avant validation
-    const photos         = await photoRepository.findByOrderId(orderId);
+    const photos = await photoRepository.findByOrderId(orderId);
     const hasBeforePhoto = photos.some(p => p.type === 'before');
-    const hasAfterPhoto  = photos.some(p => p.type === 'after');
+    const hasAfterPhoto = photos.some(p => p.type === 'after');
 
     if (!hasBeforePhoto || !hasAfterPhoto) {
       const error = new Error('Photos avant/après manquantes');
@@ -526,27 +531,27 @@ const validateOrder = async (orderId, adminId) => {
     }
 
     // Calcul de la répartition : 80% prestataire / 20% commission plateforme
-    const providerAmount     = parseFloat(order.price) * 0.80;
+    const providerAmount = parseFloat(order.price) * 0.80;
     const simulatedTransferId = `tr_simulated_${Date.now()}`;
 
     // Enregistre le transfert vers le prestataire
     await paymentRepository.create({
-      order_id:           orderId,
-      amount:             providerAmount,
+      order_id: orderId,
+      amount: providerAmount,
       stripe_transfer_id: simulatedTransferId,
-      status:             'released',
-      payment_type:       'provider_transfer',
-      recipient_id:       order.prestataire_id
+      status: 'released',
+      payment_type: 'provider_transfer',
+      recipient_id: order.prestataire_id
     });
 
     await orderRepository.updateStatus(orderId, 'completed');
     const updatedOrder = await orderRepository.findById(orderId);
 
     return {
-      order:    updatedOrder,
+      order: updatedOrder,
       transfer: {
-        amount:       providerAmount,
-        transfer_id:  simulatedTransferId,
+        amount: providerAmount,
+        transfer_id: simulatedTransferId,
         recipient_id: order.prestataire_id
       }
     };
@@ -672,21 +677,21 @@ const resolveDispute = async (orderId, adminId, action) => {
     switch (action) {
       case 'validate': {
         // Valide malgré le litige → paie le prestataire
-        const providerAmount      = parseFloat(order.price) * 0.80;
+        const providerAmount = parseFloat(order.price) * 0.80;
         const simulatedTransferId = `tr_dispute_resolved_${Date.now()}`;
 
         await paymentRepository.create({
-          order_id:           orderId,
-          amount:             providerAmount,
+          order_id: orderId,
+          amount: providerAmount,
           stripe_transfer_id: simulatedTransferId,
-          status:             'released',
-          payment_type:       'provider_transfer',
-          recipient_id:       order.prestataire_id
+          status: 'released',
+          payment_type: 'provider_transfer',
+          recipient_id: order.prestataire_id
         });
 
-        newStatus                  = 'completed';
-        additionalActions.payment  = {
-          amount:      providerAmount,
+        newStatus = 'completed';
+        additionalActions.payment = {
+          amount: providerAmount,
           transfer_id: simulatedTransferId
         };
         break;
@@ -694,8 +699,8 @@ const resolveDispute = async (orderId, adminId, action) => {
 
       case 'refund': {
         // Rembourse le client — TODO: intégrer Stripe Refund en production
-        newStatus                 = 'refunded';
-        additionalActions.refund  = { amount: order.price };
+        newStatus = 'refunded';
+        additionalActions.refund = { amount: order.price };
         break;
       }
 
@@ -748,7 +753,7 @@ const getDashboardStats = async (userId) => {
  */
 const getCompletedOrdersWithPhotos = async (userId) => {
   try {
-    const orders    = await orderRepository.findByClientId(userId);
+    const orders = await orderRepository.findByClientId(userId);
     const completed = orders.filter(o => o.status === 'completed');
 
     const withPhotos = await Promise.all(

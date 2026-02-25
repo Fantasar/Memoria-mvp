@@ -1,6 +1,6 @@
 // backend/services/authService.js
-const bcrypt    = require('bcrypt');
-const jwt       = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/userRepository');
 const roleRepository = require('../repositories/roleRepository');
 const notificationRepository = require('../repositories/notificationRepository');
@@ -73,29 +73,29 @@ const registerUser = async (userData) => {
   if (role === 'prestataire') {
     await notificationRepository.create({
       user_id: newUser.id,
-      type:    'account_pending',
-      title:   'Compte en attente de validation',
+      type: 'account_pending',
+      title: 'Compte en attente de validation',
       message: 'Votre compte prestataire a bien été créé. Un administrateur va examiner votre dossier et valider votre inscription sous 24-48h.',
     });
   }
 
   const token = generateToken({
-    id:    newUser.id,
+    id: newUser.id,
     email: newUser.email,
-    role:  roleData.name
+    role: roleData.name
   });
 
   return {
     token,
     user: {
-      id:                newUser.id,
-      email:             newUser.email,
-      prenom:            newUser.prenom,
-      nom:               newUser.nom,
-      role:              roleData.name,
+      id: newUser.id,
+      email: newUser.email,
+      prenom: newUser.prenom,
+      nom: newUser.nom,
+      role: roleData.name,
       zone_intervention: newUser.zone_intervention,
-      siret:             newUser.siret,
-      created_at:        newUser.created_at
+      siret: newUser.siret,
+      created_at: newUser.created_at
     }
   };
 };
@@ -127,21 +127,21 @@ const loginUser = async (credentials) => {
   }
 
   const token = generateToken({
-    id:    user.id,
+    id: user.id,
     email: user.email,
-    role:  user.role
+    role: user.role
   });
 
   return {
     token,
     user: {
-      id:                user.id,
-      email:             user.email,
-      prenom:            user.prenom,
-      nom:               user.nom,
-      role:              user.role,
+      id: user.id,
+      email: user.email,
+      prenom: user.prenom,
+      nom: user.nom,
+      role: user.role,
       zone_intervention: user.zone_intervention,
-      siret:             user.siret
+      siret: user.siret
     }
   };
 };
@@ -177,24 +177,24 @@ const createAdminUser = async (adminData, creatorEmail) => {
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
   const newAdmin = await userRepository.create({
     email,
-    password_hash:     hashedPassword,
-    role_id:           adminRole.id,
+    password_hash: hashedPassword,
+    role_id: adminRole.id,
     zone_intervention: null,
-    siret:             null
+    siret: null
   });
 
   // Log de sécurité — toute création d'admin doit être tracée
   console.log(`[SECURITY] Nouvel admin créé par ${creatorEmail} :`, {
-    new_admin_id:    newAdmin.id,
+    new_admin_id: newAdmin.id,
     new_admin_email: newAdmin.email,
-    created_by:      creatorEmail,
-    created_at:      new Date().toISOString()
+    created_by: creatorEmail,
+    created_at: new Date().toISOString()
   });
 
   return {
-    admin_id:   newAdmin.id,
-    email:      newAdmin.email,
-    role:       'admin',
+    admin_id: newAdmin.id,
+    email: newAdmin.email,
+    role: 'admin',
     created_at: newAdmin.created_at
   };
 };
@@ -208,9 +208,49 @@ const getAllUsers = async () => {
   return await userRepository.getAllUsers();
 };
 
+const toggleBlockUser = async (userId) => {
+  try {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      const error = new Error('Utilisateur introuvable');
+      error.code = 'USER_NOT_FOUND';
+      error.statusCode = 404;
+      throw error;
+    }
+    return await userRepository.toggleBlock(userId, !user.is_blocked);
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`adminService.toggleBlockUser : ${error.message}`);
+  }
+};
+
+const deleteUser = async (userId, adminId) => {
+  try {
+    if (userId == adminId) {
+      const error = new Error('Impossible de supprimer votre propre compte');
+      error.code = 'FORBIDDEN';
+      error.statusCode = 403;
+      throw error;
+    }
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      const error = new Error('Utilisateur introuvable');
+      error.code = 'USER_NOT_FOUND';
+      error.statusCode = 404;
+      throw error;
+    }
+    return await userRepository.deleteById(userId);
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`adminService.deleteUser : ${error.message}`);
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   createAdminUser,
-  getAllUsers
+  getAllUsers,
+  deleteUser,
+  toggleBlockUser
 };
