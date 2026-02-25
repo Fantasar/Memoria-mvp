@@ -4,6 +4,8 @@ const userRepository            = require('../repositories/userRepository');
 const paymentRepository         = require('../repositories/paymentRepository');
 const photoRepository           = require('../repositories/photoRepository');
 const serviceCategoryRepository = require('../repositories/serviceCategoryRepository');
+const notificationRepository = require('../repositories/notificationRepository');
+
 
 /**
  * Service de gestion des commandes.
@@ -83,7 +85,7 @@ const createOrder = async (clientId, orderData) => {
       throw error;
     }
 
-    return await orderRepository.create({
+    const newOrder = await orderRepository.create({
       client_id: clientId,
       cemetery_id,
       service_category_id,
@@ -91,6 +93,17 @@ const createOrder = async (clientId, orderData) => {
       status: 'pending',
       price
     });
+
+    await notificationRepository.create({
+      user_id: clientId,
+      type:    'order_created',
+      title:   'Commande créée ✅',
+      message: `Votre commande pour le service "${service.name}" a bien été créée. Un prestataire va prendre en charge votre mission prochainement.`,
+      order_id: newOrder.id
+    });
+
+    return newOrder;
+    
 
   } catch (error) {
     if (error.statusCode) throw error;
