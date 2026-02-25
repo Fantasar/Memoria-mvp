@@ -2,6 +2,7 @@
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 // Composants orders
@@ -38,6 +39,7 @@ function DashboardClient() {
   const [activeSection, setActiveSection] = useState('overview');
   const [successMessage, setSuccessMessage] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
+  const location = useLocation();
 
   const [dashboardStats, setDashboardStats] = useState({
     orders_in_progress: 0,
@@ -65,12 +67,14 @@ function DashboardClient() {
 
   // Message de succès depuis la redirection post-paiement
   useEffect(() => {
-    const state = window.history.state?.usr;
-    if (state?.message) {
-      setSuccessMessage(state.message);
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
       setTimeout(() => setSuccessMessage(''), 5000);
     }
-  }, []);
+    if (location.state?.section) {
+      setActiveSection(location.state.section);
+    }
+  }, [location.state]);
 
   // Chargement initial des stats et du badge notifications
   useEffect(() => {

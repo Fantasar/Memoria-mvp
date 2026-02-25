@@ -7,12 +7,12 @@ import { useNavigate } from 'react-router-dom';
  * Icône et couleur de fond selon le type de notification
  */
 const NOTIFICATION_STYLES = {
-  mission_accepted:    { icon: '✅', color: 'bg-green-50 border-green-200'   },
-  photos_available:    { icon: '📷', color: 'bg-blue-50 border-blue-200'     },
-  mission_completed:   { icon: '🎉', color: 'bg-purple-50 border-purple-200' },
-  dispute_resolved:    { icon: '✅', color: 'bg-green-50 border-green-200'   },
-  refund_processed:    { icon: '💸', color: 'bg-orange-50 border-orange-200' },
-  correction_requested:{ icon: '🔄', color: 'bg-yellow-50 border-yellow-200' },
+  mission_accepted: { icon: '✅', color: 'bg-green-50 border-green-200' },
+  photos_available: { icon: '📷', color: 'bg-blue-50 border-blue-200' },
+  mission_completed: { icon: '🎉', color: 'bg-purple-50 border-purple-200' },
+  dispute_resolved: { icon: '✅', color: 'bg-green-50 border-green-200' },
+  refund_processed: { icon: '💸', color: 'bg-orange-50 border-orange-200' },
+  correction_requested: { icon: '🔄', color: 'bg-yellow-50 border-yellow-200' },
 };
 
 const DEFAULT_STYLE = { icon: '🔔', color: 'bg-gray-50 border-gray-200' };
@@ -31,8 +31,8 @@ const authHeaders = () => ({
  */
 function ClientNotifications({ onNotificationRead }) {
   const [notifications, setNotifications] = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [filter,        setFilter]        = useState('all'); // 'all' | 'unread'
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all'); // 'all' | 'unread'
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -128,11 +128,10 @@ function ClientNotifications({ onNotificationRead }) {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === f
+              className={`px-4 py-2 rounded-lg font-medium transition ${filter === f
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               {f === 'all' ? `Toutes (${notifications.length})` : `Non lues (${unreadCount})`}
             </button>
@@ -158,9 +157,8 @@ function ClientNotifications({ onNotificationRead }) {
             return (
               <div
                 key={notification.id}
-                className={`border rounded-lg p-4 transition hover:shadow-md ${
-                  notification.is_read ? 'bg-white border-gray-200' : style.color
-                }`}
+                className={`border rounded-lg p-4 transition hover:shadow-md ${notification.is_read ? 'bg-white border-gray-200' : style.color
+                  }`}
               >
                 <div className="flex items-start gap-4">
                   <div className="text-3xl">{style.icon}</div>
@@ -183,7 +181,21 @@ function ClientNotifications({ onNotificationRead }) {
                         <button
                           onClick={() => {
                             markAsRead(notification.id);
-                            navigate('/dashboard/client');
+                            if (
+                              notification.type === 'mission_accepted' ||
+                              notification.type === 'correction_requested'
+                            ) {
+                              navigate('/dashboard/client', { state: { section: 'currentMission' } });
+                            } else if (
+                              notification.type === 'mission_completed' ||
+                              notification.type === 'photos_available' ||
+                              notification.type === 'dispute_resolved' ||
+                              notification.type === 'refund_processed'
+                            ) {
+                              navigate('/dashboard/client', { state: { section: 'orders' } });
+                            } else {
+                              navigate('/dashboard/client', { state: { section: 'overview' } });
+                            }
                           }}
                           className="text-sm text-blue-600 hover:underline font-medium"
                         >
