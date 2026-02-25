@@ -90,10 +90,10 @@ const create = async (userData) => {
         userData.email,
         userData.password_hash,
         userData.role_id,
-        userData.prenom        || null,
-        userData.nom           || null,
+        userData.prenom || null,
+        userData.nom || null,
         userData.zone_intervention || null,
-        userData.siret         || null
+        userData.siret || null
       ]
     );
     return result.rows[0];
@@ -117,10 +117,10 @@ const update = async (userId, userData) => {
        RETURNING id, email, prenom, nom, role_id, zone_intervention, siret, updated_at`,
       [
         userData.email,
-        userData.prenom            || null,
-        userData.nom               || null,
+        userData.prenom || null,
+        userData.nom || null,
         userData.zone_intervention || null,
-        userData.siret             || null,
+        userData.siret || null,
         userId
       ]
     );
@@ -273,6 +273,21 @@ const updateZone = async (userId, zone) => {
     return result.rows[0];
   } catch (error) {
     throw new Error(`userRepository.updateZone : ${error.message}`);
+  };
+};
+
+const resetRejection = async (userId) => {
+  try {
+    const result = await pool.query(
+      `UPDATE users
+      SET rejection_reason = NULL, rejected_at = NULL, updated_at = NOW()
+      WHERE id = $1
+      RETURNING id, email, prenom, nom, is_verified, rejected_at`,
+      [userId]
+    );
+    return result.rows[0];
+  } catch (error) {
+    throw new Error(`userRepository.resetRejection : ${error.message}`);
   }
 };
 
@@ -288,5 +303,6 @@ module.exports = {
   approveProvider,
   rejectProvider,
   getAllUsers,
-  updateZone
+  updateZone,
+  resetRejection
 };

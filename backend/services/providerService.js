@@ -223,11 +223,41 @@ const getZoneStats = async (userId) => {
   }
 };
 
+const reapply = async (userId) => {
+  try {
+    const provider = await userRepository.findById(userId);
+    if (!provider) {
+      const error = new Error('Utilisateur introuvable');
+      error.code = 'NOT_FOUND';
+      error.statusCode = 404;
+      throw error;
+    }
+    if (provider.role !== 'prestataire') {
+      const error = new Error('Accès réservé aux prestataires');
+      error.code = 'FORBIDDEN';
+      error.statusCode = 403;
+      throw error;
+    }
+    if (provider.is_verified) {
+      const error = new Error('Votre compte est déjà validé');
+      error.code = 'ALREADY_VERIFIED';
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return await userRepository.resetRejection(userId);
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`providerService.reapply : ${error.message}`);
+  }
+};
+
 module.exports = {
   getPendingProviders,
   approveProvider,
   rejectProvider,
   getProviderFinances,
   updateZone,
-  getZoneStats
+  getZoneStats,
+  reapply
 };
