@@ -130,6 +130,21 @@ const update = async (userId, userData) => {
   }
 };
 
+const updatePassword = async (userId, passwordHash) => {
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET password_hash = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id`,
+      [passwordHash, userId]
+    );
+    return result.rows[0];
+  } catch (error) {
+    throw new Error(`userRepository.updatePassword : ${error.message}`);
+  }
+};
+
 /**
  * Supprime un utilisateur par son ID
  * Note : en production, privilégier un soft delete via un champ deleted_at
@@ -266,6 +281,7 @@ module.exports = {
   emailExists,
   create,
   update,
+  updatePassword,
   deleteById,
   findPendingProviders,
   approveProvider,
