@@ -50,6 +50,9 @@ router.post('/', authenticateToken, orderController.createOrder);
 // GET   /api/orders/:id               — Détails d'une commande (tous rôles, filtré par ownership)
 router.get('/:id', authenticateToken, orderController.getOrderById);
 
+// PATCH /api/orders/:id/cancel-client — Annule une commande en attente (client)
+router.patch('/:id/cancel-client', authenticateToken, orderController.cancelOrderClient);
+
 // PATCH /api/orders/:id/accept        — Accepte une mission avec planning (prestataire)
 router.patch('/:id/accept', authenticateToken, orderController.acceptOrder);
 

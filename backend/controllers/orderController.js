@@ -567,6 +567,15 @@ const reportDispute = async (req, res) => {
   }
 };
 
+const cancelOrderClient = async (req, res) => {
+  try {
+    const order = await orderService.cancelOrderClient(req.params.id, req.user.userId);
+    return res.status(200).json({ success: true, data: order, message: 'Commande annulée' });
+  } catch (error) {
+    return handleError(error, res, "Erreur lors de l'annulation");
+  }
+};
+
 module.exports = {
   createOrder,
   getMyOrders,
@@ -585,5 +594,6 @@ module.exports = {
   getProviderHistory,
   getDashboardStats,
   getCompletedOrdersWithPhotos,
-  reportDispute
+  reportDispute,
+  cancelOrderClient
 };

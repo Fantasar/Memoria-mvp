@@ -794,6 +794,34 @@ const reportDispute = async (orderId, userId, reason) => {
   }
 };
 
+const cancelOrderClient = async (orderId, clientId) => {
+  try {
+    const order = await orderRepository.findById(orderId);
+    if (!order) {
+      const error = new Error('Commande introuvable');
+      error.code = 'ORDER_NOT_FOUND';
+      error.statusCode = 404;
+      throw error;
+    }
+    if (order.client_id !== clientId) {
+      const error = new Error('Cette commande ne vous appartient pas');
+      error.code = 'FORBIDDEN';
+      error.statusCode = 403;
+      throw error;
+    }
+    if (order.status !== 'pending') {
+      const error = new Error('Seules les commandes en attente peuvent être annulées');
+      error.code = 'INVALID_STATUS';
+      error.statusCode = 400;
+      throw error;
+    }
+    return await orderRepository.updateStatus(orderId, 'cancelled');
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`orderService.cancelOrderClient : ${error.message}`);
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
@@ -812,5 +840,6 @@ module.exports = {
   getProviderCalendarForAdmin,
   getDashboardStats,
   getCompletedOrdersWithPhotos,
-  reportDispute
+  reportDispute,
+  cancelOrderClient
 };
