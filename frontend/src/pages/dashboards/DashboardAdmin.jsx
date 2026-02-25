@@ -33,6 +33,18 @@ const STATUS_CONFIG = {
   refunded:            { label: '💸 Remboursée',   color: 'bg-indigo-100 text-indigo-800'  },
 };
 
+const STATUS_LABELS = {
+  pending:             'En attente',
+  paid:                'Payée',
+  accepted:            'Acceptée',
+  in_progress:         'En cours',
+  awaiting_validation: 'En attente validation',
+  completed:           'Terminée',
+  cancelled:           'Annulée',
+  disputed:            'Litige',
+  refunded:            'Remboursée',
+};
+
 function DashboardAdmin() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -368,7 +380,7 @@ function DashboardAdmin() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 {[
                   { label: 'Utilisateurs',       value: stats.users.total,              sub: `Clients: ${stats.users.by_role.client || 0} · Prestataires: ${stats.users.by_role.prestataire || 0}`, from: 'from-blue-500',   to: 'to-blue-600'   },
-                  { label: 'Commandes',           value: stats.orders.total,             sub: `Complétées: ${stats.orders.by_status.completed || 0} · En cours: ${stats.orders.by_status.accepted || 0}`, from: 'from-green-500',  to: 'to-green-600'  },
+                  { label: 'Commandes',           value: stats.orders.total,             sub: `Complétées: ${stats.orders.by_status.completed || 0} · En cours: ${stats.orders.by_status.accepted || 0} · Annulées: ${stats.orders.by_status.cancelled || 0}`, from: 'from-green-500',  to: 'to-green-600'  },
                   { label: 'CA Total',            value: `${stats.revenue.total.toFixed(2)}€`, sub: `${stats.revenue.paid_orders} commandes payées`, from: 'from-purple-500', to: 'to-purple-600' },
                   { label: 'Prestataires Actifs', value: stats.users.by_role.prestataire || 0, sub: '',                                                from: 'from-orange-500', to: 'to-orange-600' },
                 ].map(kpi => (
@@ -385,7 +397,7 @@ function DashboardAdmin() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {Object.entries(stats.orders.by_status).map(([status, count]) => (
                     <div key={status} className="border border-gray-200 rounded-lg p-4 text-center">
-                      <p className="text-sm text-gray-500 mb-1 capitalize">{status}</p>
+                      <p className="text-sm text-gray-500 mb-1">{STATUS_LABELS[status] || status}</p>
                       <p className="text-2xl font-bold">{count}</p>
                     </div>
                   ))}
