@@ -179,6 +179,7 @@ const findPendingProviders = async () => {
        LEFT JOIN roles r ON u.role_id = r.id
        WHERE r.name = 'prestataire'
          AND u.is_verified = false
+         AND u.rejected_at IS NULL
        ORDER BY u.created_at DESC`
     );
     return result.rows;
