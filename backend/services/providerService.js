@@ -2,6 +2,7 @@
 const userRepository     = require('../repositories/userRepository');
 const providerRepository = require('../repositories/providerRepository');
 const zoneRepository     = require('../repositories/zoneRepository');
+const notificationRepository = require('../repositories/notificationRepository');
 
 /**
  * Service de gestion des prestataires.
@@ -72,7 +73,17 @@ const approveProvider = async (providerId, adminId) => {
       throw error;
     }
 
-    return await userRepository.approveProvider(providerId);
+    const updatedProvider = await userRepository.approveProvider(providerId);
+
+    //Notification en cas de compte valider
+    await notificationRepository.create({
+      user_id: providerId,
+      type:    'account_validated',
+      title:   'Compte validé ✅',
+      message: 'Votre compte a été validé par un administrateur. Vous pouvez maintenant accepter des missions !',
+    });
+
+    return updatedProvider;
 
   } catch (error) {
     if (error.statusCode) throw error;
@@ -99,7 +110,17 @@ const rejectProvider = async (providerId, adminId, reason) => {
       throw error;
     }
 
-    return await userRepository.rejectProvider(providerId, reason);
+    const updatedProvider = await userRepository.rejectProvider(providerId, reason);
+
+    //Notification en cas de compte refuser
+    await notificationRepository.create({
+      user_id: providerId,
+      type:    'account_rejected',
+      title:   'Compte non validé ❌',
+      message: `Votre demande d'inscription a été refusée. Motif : ${reason}`,
+    });
+
+    return updatedProvider;
 
   } catch (error) {
     if (error.statusCode) throw error;

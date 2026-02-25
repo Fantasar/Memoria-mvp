@@ -3,6 +3,8 @@ const bcrypt    = require('bcrypt');
 const jwt       = require('jsonwebtoken');
 const userRepository = require('../repositories/userRepository');
 const roleRepository = require('../repositories/roleRepository');
+const notificationRepository = require('../repositories/notificationRepository');
+
 
 /**
  * Service d'authentification.
@@ -66,6 +68,16 @@ const registerUser = async (userData) => {
     zone_intervention,
     siret
   });
+
+  //Notification si prestataire
+  if (role === 'prestataire') {
+    await notificationRepository.create({
+      user_id: newUser.id,
+      type:    'account_pending',
+      title:   'Compte en attente de validation',
+      message: 'Votre compte prestataire a bien été créé. Un administrateur va examiner votre dossier et valider votre inscription sous 24-48h.',
+    });
+  }
 
   const token = generateToken({
     id:    newUser.id,
