@@ -22,6 +22,8 @@ CREATE TABLE public.users (
     rejected_at      timestamp without time zone,
     -- Soft delete
     deleted_at       timestamp without time zone,
+        -- Blocage compte
+    is_blocked       boolean DEFAULT false,
     -- Timestamps
     created_at       timestamp without time zone DEFAULT now(),
     updated_at       timestamp without time zone DEFAULT now(),
@@ -35,6 +37,8 @@ COMMENT ON COLUMN public.users.role_id IS 'FK vers roles: 1=client, 2=prestatair
 COMMENT ON COLUMN public.users.siret IS 'Numéro SIRET (14 chiffres) pour prestataires uniquement';
 COMMENT ON COLUMN public.users.rating IS 'Note moyenne du prestataire (0-5), NULL pour clients/admins';
 COMMENT ON COLUMN public.users.deleted_at IS 'NULL = compte actif, timestamp = compte supprimé (soft delete)';
+COMMENT ON COLUMN public.users.is_blocked IS 'true = compte bloqué par un admin, connexion refusée';
+
 
 -- Contraintes
 ALTER TABLE ONLY public.users
@@ -48,6 +52,7 @@ ALTER TABLE ONLY public.users
 
 -- Index
 CREATE INDEX idx_users_email    ON public.users USING btree (email);
+CREATE INDEX idx_users_blocked ON public.users USING btree (is_blocked);
 CREATE INDEX idx_users_role     ON public.users USING btree (role_id);
 CREATE INDEX idx_users_zone     ON public.users USING btree (zone_intervention);
 CREATE INDEX idx_users_deleted  ON public.users USING btree (deleted_at);
