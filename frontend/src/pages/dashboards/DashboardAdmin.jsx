@@ -3,6 +3,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import Navbar from '../../components/layout/Navbar';
+
 
 const authHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -1323,26 +1325,7 @@ function DashboardAdmin() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-
-      {/* Navbar */}
-      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-12 h-12 border-2 border-black rounded-lg flex items-center justify-center">
-                <span className="text-2xl font-serif font-bold">M</span>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-400 rounded-full" />
-              </div>
-            </div>
-            <span className="text-xl font-serif font-semibold tracking-tight">Mémoria</span>
-          </div>
-          <button onClick={() => { logout(); navigate('/'); }}
-            className="px-4 py-1 border-2 border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-50 transition">
-            Déconnexion
-          </button>
-        </div>
-      </nav>
-
+      <Navbar />
       <main className="flex-1 flex bg-purple-50 gap-6 px-6 py-8 pt-32 w-full">
 
         {/* Sidebar */}
