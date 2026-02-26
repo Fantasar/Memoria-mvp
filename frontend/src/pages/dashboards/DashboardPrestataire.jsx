@@ -74,6 +74,16 @@ function DashboardPrestataire() {
   const [selectedTime, setSelectedTime] = useState('');
   const [schedulingError, setSchedulingError] = useState('');
 
+  // Modal pour les modification de profil
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [profileData, setProfileData] = useState({ prenom: '', nom: '', email: '' });
+  const [passwordData, setPasswordData] = useState({ current: '', newPassword: '', confirm: '' });
+  const [profileSuccess, setProfileSuccess] = useState(null);
+  const [profileError, setProfileError] = useState(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(null);
+  const [passwordError, setPasswordError] = useState(null);
+
   useEffect(() => {
     fetchStats();
     fetchAvailableMissions();
@@ -1001,10 +1011,139 @@ function DashboardPrestataire() {
               <div><label className="text-sm font-medium text-gray-500">Zone d'intervention</label><p className="text-gray-900 font-medium">{user?.zone_intervention || 'Non définie'}</p></div>
             </div>
           </div>
+
           <div className="flex gap-4">
-            <button className="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">Modifier mes informations</button>
-            <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">Changer mon mot de passe</button>
+            <button
+              onClick={() => { setProfileData({ prenom: user?.prenom || '', nom: user?.nom || '', email: user?.email || '' }); setProfileError(null); setProfileSuccess(null); setShowEditProfile(true); }}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
+              Modifier mes informations
+            </button>
+            <button
+              onClick={() => { setPasswordData({ current: '', newPassword: '', confirm: '' }); setPasswordError(null); setPasswordSuccess(null); setShowChangePassword(true); }}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+              Changer mon mot de passe
+            </button>
           </div>
+
+          {/* Modal modification profil */}
+          {showEditProfile && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowEditProfile(false)}>
+              <div className="bg-white rounded-xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-6 border-b">
+                  <h3 className="text-lg font-bold">Modifier mes informations</h3>
+                  <button onClick={() => setShowEditProfile(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
+                </div>
+                <div className="p-6 space-y-4">
+                  {profileError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{profileError}</p></div>}
+                  {profileSuccess && <div className="bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm">{profileSuccess}</p></div>}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                    <input type="text" value={profileData.prenom} onChange={e => setProfileData(p => ({ ...p, prenom: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                    <input type="text" value={profileData.nom} onChange={e => setProfileData(p => ({ ...p, nom: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" value={profileData.email} onChange={e => setProfileData(p => ({ ...p, email: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                </div>
+                <div className="p-6 border-t flex gap-3">
+                  <button onClick={() => setShowEditProfile(false)}
+                    className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium">Annuler</button>
+                  <button
+                    onClick={async () => {
+                      setProfileError(null);
+                      setProfileSuccess(null);
+                      if (!profileData.prenom || !profileData.nom || !profileData.email) {
+                        setProfileError('Tous les champs sont obligatoires');
+                        return;
+                      }
+                      try {
+                        const res = await axios.put('/api/users/profile', profileData, authHeaders());
+                        login(res.data.data, localStorage.getItem('token'));
+                        setProfileSuccess('Profil mis à jour avec succès');
+                        setTimeout(() => setShowEditProfile(false), 1500);
+                      } catch (err) {
+                        setProfileError(err.response?.data?.error?.message || 'Erreur lors de la mise à jour');
+                      }
+                    }}
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium">
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal changement mot de passe */}
+          {showChangePassword && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowChangePassword(false)}>
+              <div className="bg-white rounded-xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-6 border-b">
+                  <h3 className="text-lg font-bold">Changer mon mot de passe</h3>
+                  <button onClick={() => setShowChangePassword(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
+                </div>
+                <div className="p-6 space-y-4">
+                  {passwordError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{passwordError}</p></div>}
+                  {passwordSuccess && <div className="bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm">{passwordSuccess}</p></div>}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe actuel</label>
+                    <input type="password" value={passwordData.current} onChange={e => setPasswordData(p => ({ ...p, current: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
+                    <input type="password" value={passwordData.newPassword} onChange={e => setPasswordData(p => ({ ...p, newPassword: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Confirmer le nouveau mot de passe</label>
+                    <input type="password" value={passwordData.confirm} onChange={e => setPasswordData(p => ({ ...p, confirm: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                </div>
+                <div className="p-6 border-t flex gap-3">
+                  <button onClick={() => setShowChangePassword(false)}
+                    className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium">Annuler</button>
+                  <button
+                    onClick={async () => {
+                      setPasswordError(null);
+                      setPasswordSuccess(null);
+                      if (!passwordData.current || !passwordData.newPassword || !passwordData.confirm) {
+                        setPasswordError('Tous les champs sont obligatoires');
+                        return;
+                      }
+                      if (passwordData.newPassword.length < 8) {
+                        setPasswordError('Le nouveau mot de passe doit contenir au moins 8 caractères');
+                        return;
+                      }
+                      if (passwordData.newPassword !== passwordData.confirm) {
+                        setPasswordError('Les mots de passe ne correspondent pas');
+                        return;
+                      }
+                      try {
+                        await axios.put('/api/users/password', {
+                          currentPassword: passwordData.current,
+                          newPassword: passwordData.newPassword
+                        }, authHeaders());
+                        setPasswordSuccess('Mot de passe modifié avec succès');
+                        setTimeout(() => setShowChangePassword(false), 1500);
+                      } catch (err) {
+                        setPasswordError(err.response?.data?.error?.message || 'Erreur lors du changement');
+                      }
+                    }}
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium">
+                    Confirmer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
 
