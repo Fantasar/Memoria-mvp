@@ -553,12 +553,14 @@ function DashboardPrestataire() {
                       mission.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
                         mission.status === 'awaiting_validation' ? 'bg-orange-100 text-orange-800' :
                           mission.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'
+                            mission.status === 'correction_requested' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
                       }`}>
                       {mission.status === 'accepted' && '🔄 En cours'}
                       {mission.status === 'in_progress' && '🔄 En cours'}
                       {mission.status === 'awaiting_validation' && '⏰ En validation'}
                       {mission.status === 'completed' && '✅ Terminée'}
+                      {mission.status === 'correction_requested' && '⚠️ Correction demandée'}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mb-4">
@@ -567,10 +569,12 @@ function DashboardPrestataire() {
                     <div><p className="text-sm text-gray-500">Rémunération</p><p className="font-medium text-green-600">{(parseFloat(mission.price) * 0.80).toFixed(2)}€</p></div>
                     <div><p className="text-sm text-gray-500">Acceptée le</p><p className="font-medium">{new Date(mission.accepted_at || mission.created_at).toLocaleDateString('fr-FR')}</p></div>
                   </div>
-                  {mission.status === 'accepted' && (
+                  {(mission.status === 'accepted' || mission.status === 'correction_requested') && (
                     <button onClick={(e) => { e.stopPropagation(); navigate(`/missions/${mission.id}/complete`); }}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition">
-                      📸 Terminer et uploader les photos
+                      className={`w-full ${mission.status === 'correction_requested' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'} text-white px-4 py-3 rounded-lg font-medium transition`}>
+                      {mission.status === 'correction_requested'
+                        ? '🔄 Corriger et re-uploader les photos'
+                        : '📸 Terminer et uploader les photos'}
                     </button>
                   )}
                 </div>

@@ -5,15 +5,16 @@ import axios from 'axios';
 
 // Extraits hors du composant — pas de recréation à chaque render
 const STATUS_CONFIG = {
-  pending:             { label: 'En attente',           color: 'bg-yellow-100 text-yellow-800' },
-  paid:                { label: 'Payée',                color: 'bg-blue-100 text-blue-800'     },
-  accepted:            { label: 'Acceptée',             color: 'bg-green-100 text-green-800'   },
-  in_progress:         { label: 'En cours',             color: 'bg-purple-100 text-purple-800' },
-  awaiting_validation: { label: 'En attente validation',color: 'bg-orange-100 text-orange-800' },
-  completed:           { label: 'Terminée',             color: 'bg-green-200 text-green-900'   },
-  cancelled:           { label: 'Annulée',              color: 'bg-red-100 text-red-800'       },
-  refunded:            { label: 'Remboursée',           color: 'bg-gray-100 text-gray-800'     },
-  disputed:            { label: 'Litige en cours',      color: 'bg-red-100 text-red-800'       },
+  pending:              { label: 'En attente',            color: 'bg-yellow-100 text-yellow-800' },
+  paid:                 { label: 'Payée',                 color: 'bg-blue-100 text-blue-800'     },
+  accepted:             { label: 'Acceptée',              color: 'bg-green-100 text-green-800'   },
+  in_progress:          { label: 'En cours',              color: 'bg-purple-100 text-purple-800' },
+  awaiting_validation:  { label: 'En attente validation', color: 'bg-orange-100 text-orange-800' },
+  correction_requested: { label: 'Correction demander',   color: 'bg-orange-100 text-orange-800' },
+  completed:            { label: 'Terminée',              color: 'bg-green-200 text-green-900'   },
+  cancelled:            { label: 'Annulée',               color: 'bg-red-100 text-red-800'       },
+  refunded:             { label: 'Remboursée',            color: 'bg-gray-100 text-gray-800'     },
+  disputed:             { label: 'Litige en cours',       color: 'bg-red-100 text-red-800'       },
 };
 
 const PHOTO_STATUSES = ['completed', 'awaiting_validation', 'disputed'];

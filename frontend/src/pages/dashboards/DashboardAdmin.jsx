@@ -28,6 +28,7 @@ const STATUS_CONFIG = {
   paid: { label: '💳 Payée', color: 'bg-blue-100 text-blue-800' },
   accepted: { label: '🔄 Acceptée', color: 'bg-green-100 text-green-800' },
   in_progress: { label: '🔄 En cours', color: 'bg-purple-100 text-purple-800' },
+  correction_requested: { label: 'En correcion', color: 'bg-purple-100 text-orange-800' },
   awaiting_validation: { label: '⏰ À valider', color: 'bg-orange-100 text-orange-800' },
   completed: { label: '✅ Terminée', color: 'bg-green-200 text-green-900' },
   disputed: { label: '🚨 Litige', color: 'bg-red-100 text-red-800' },
@@ -40,6 +41,7 @@ const STATUS_LABELS = {
   paid: 'Payée',
   accepted: 'Acceptée',
   in_progress: 'En cours',
+  correction_requested: 'En attente de Correction',
   awaiting_validation: 'En attente validation',
   completed: 'Terminée',
   cancelled: 'Annulée',
@@ -131,8 +133,10 @@ function DashboardAdmin() {
 
   // Commandes client
   const [selectedClientOrders, setSelectedClientOrders] = useState(null);
-  const [clientOrdersData,     setClientOrdersData]     = useState([]);
-  const [loadingClientOrders,  setLoadingClientOrders]  = useState(false);
+  const [clientOrdersData, setClientOrdersData] = useState([]);
+  const [loadingClientOrders, setLoadingClientOrders] = useState(false);
+  const [disputesTab, setDisputesTab] = useState('disputes');
+
 
   useEffect(() => {
     fetchStats();
@@ -312,6 +316,7 @@ function DashboardAdmin() {
     try {
       await axios.patch(`/api/orders/${orderId}/resolve`, { action }, authHeaders());
       fetchDisputedOrders();
+      fetchAllOrders();
     } catch (err) {
       setResolveError(prev => ({ ...prev, [orderId]: err.response?.data?.error?.message || 'Erreur' }));
     }
@@ -1128,47 +1133,142 @@ function DashboardAdmin() {
       case 'disputes': return (
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold">Litiges en cours</h2>
-            <span className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-800">{disputedOrders.length} litige{disputedOrders.length > 1 ? 's' : ''}</span>
+            <h2 className="text-2xl font-semibold">Litiges & Corrections</h2>
+            <div className="flex gap-2">
+              <span className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-800">
+                {disputedOrders.length} litige{disputedOrders.length > 1 ? 's' : ''}
+              </span>
+              <span className="px-3 py-1 rounded-full text-sm bg-orange-100 text-orange-800">
+                {allOrders.filter(o => o.status === 'in_progress').length} en correction
+              </span>
+            </div>
           </div>
-          {loadingDisputes ? <Spinner /> : disputedOrders.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg"><p className="text-gray-600">Aucun litige en cours</p></div>
-          ) : (
-            <div className="space-y-4">
-              {disputedOrders.map(order => {
-                const photos = orderPhotos[order.id] || [];
-                const beforePhoto = photos.find(p => p.type === 'before');
-                const afterPhoto = photos.find(p => p.type === 'after');
-                return (
-                  <div key={order.id} className="border-2 border-red-200 rounded-lg p-6 bg-red-50">
+
+          {/* Onglets */}
+          <div className="flex gap-2 mb-6 border-b border-gray-200">
+            {[
+              ['disputes', '🚨 Litiges', disputedOrders.length],
+              ['correction', '🔄 Missions en correction', allOrders.filter(o => o.status === 'correction_requested').length]
+            ].map(([tab, label, count]) => (
+              <button key={tab} onClick={() => setDisputesTab(tab)}
+                className={`px-6 py-3 font-medium text-sm transition border-b-2 -mb-px ${disputesTab === tab
+                  ? 'border-red-600 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}>
+                {label} ({count})
+              </button>
+            ))}
+          </div>
+
+          {/* ── Onglet Litiges ── */}
+          {disputesTab === 'disputes' && (
+            loadingDisputes ? <Spinner /> : disputedOrders.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">Aucun litige en cours</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {disputedOrders.map(order => {
+                  const photos = orderPhotos[order.id] || [];
+                  const beforePhoto = photos.find(p => p.type === 'before');
+                  const afterPhoto = photos.find(p => p.type === 'after');
+                  return (
+                    <div key={order.id} className="border-2 border-red-200 rounded-lg p-6 bg-red-50">
+                      <div className="flex items-center gap-3 mb-4">
+                        <h3 className="text-lg font-semibold">{order.cemetery_name}</h3>
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">🚨 Litige</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div><p className="text-sm text-gray-500">Client</p><p className="font-medium">{order.client_prenom} {order.client_nom}</p></div>
+                        <div><p className="text-sm text-gray-500">Prestataire</p><p className="font-medium">{order.prestataire_prenom} {order.prestataire_nom}</p></div>
+                      </div>
+                      <div className="mb-4 p-3 bg-white rounded border border-red-200">
+                        <p className="text-sm font-medium text-red-900 mb-1">Motif :</p>
+                        <p className="text-sm">{order.dispute_reason}</p>
+                      </div>
+                      {(beforePhoto || afterPhoto) && (
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          {beforePhoto && <div><p className="text-sm font-medium mb-2">📸 Avant</p><img src={beforePhoto.url} alt="Avant" className="w-full h-48 object-cover rounded-lg" /></div>}
+                          {afterPhoto && <div><p className="text-sm font-medium mb-2">✨ Après</p><img src={afterPhoto.url} alt="Après" className="w-full h-48 object-cover rounded-lg" /></div>}
+                        </div>
+                      )}
+                      {resolveError[order.id] && (
+                        <div className="mb-3 bg-red-100 border border-red-300 rounded-lg p-3">
+                          <p className="text-red-800 text-sm">{resolveError[order.id]}</p>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-3 gap-3">
+                        <button onClick={() => handleResolveDispute(order.id, 'validate')} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">✓ Valider</button>
+                        <button onClick={() => handleResolveDispute(order.id, 'request_correction')} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">🔄 Correction</button>
+                        <button onClick={() => handleResolveDispute(order.id, 'refund')} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">💸 Rembourser</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          )}
+
+          {/* ── Onglet Missions en correction ── */}
+          {disputesTab === 'correction' && (
+            allOrders.filter(o => o.status === 'correction_requested' || o.status === 'correction_submitted').length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">Aucune mission en correction</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {allOrders.filter(o => o.status === 'correction_requested' || o.status === 'correction_submitted').map(order => (
+                  <div key={order.id} className={`border-2 rounded-lg p-6 ${order.status === 'correction_submitted'
+                      ? 'border-blue-200 bg-blue-50'
+                      : 'border-orange-200 bg-orange-50'
+                    }`}>
                     <div className="flex items-center gap-3 mb-4">
                       <h3 className="text-lg font-semibold">{order.cemetery_name}</h3>
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">🚨 Litige</span>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${order.status === 'correction_submitted'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-orange-600 text-white'
+                        }`}>
+                        {order.status === 'correction_submitted' ? '📋 Correction soumise' : '⚠️ Correction demandée'}
+                      </span>
                     </div>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div><p className="text-sm text-gray-500">Client</p><p className="font-medium">{order.client_prenom} {order.client_nom}</p></div>
                       <div><p className="text-sm text-gray-500">Prestataire</p><p className="font-medium">{order.prestataire_prenom} {order.prestataire_nom}</p></div>
+                      <div><p className="text-sm text-gray-500">Service</p><p className="font-medium">{order.service_name}</p></div>
+                      <div><p className="text-sm text-gray-500">Prix</p><p className="font-bold">{parseFloat(order.price).toFixed(2)}€</p></div>
+                      <div><p className="text-sm text-gray-500">Commande créée le</p><p className="font-medium">{new Date(order.created_at).toLocaleDateString('fr-FR')}</p></div>
                     </div>
-                    <div className="mb-4 p-3 bg-white rounded border border-red-200">
-                      <p className="text-sm font-medium text-red-900 mb-1">Motif :</p>
-                      <p className="text-sm">{order.dispute_reason}</p>
-                    </div>
-                    {(beforePhoto || afterPhoto) && (
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        {beforePhoto && <div><p className="text-sm font-medium mb-2">📸 Avant</p><img src={beforePhoto.url} alt="Avant" className="w-full h-48 object-cover rounded-lg" /></div>}
-                        {afterPhoto && <div><p className="text-sm font-medium mb-2">✨ Après</p><img src={afterPhoto.url} alt="Après" className="w-full h-48 object-cover rounded-lg" /></div>}
+
+                    {order.correction_reason && (
+                      <div className="mb-4 p-3 bg-white rounded border border-orange-200">
+                        <p className="text-sm font-medium text-orange-900 mb-1">Motif de correction :</p>
+                        <p className="text-sm">{order.correction_reason}</p>
                       </div>
                     )}
-                    {resolveError[order.id] && <div className="mb-3 bg-red-100 border border-red-300 rounded-lg p-3"><p className="text-red-800 text-sm">{resolveError[order.id]}</p></div>}
-                    <div className="grid grid-cols-3 gap-3">
-                      <button onClick={() => handleResolveDispute(order.id, 'validate')} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">✓ Valider</button>
-                      <button onClick={() => handleResolveDispute(order.id, 'request_correction')} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">🔄 Correction</button>
-                      <button onClick={() => handleResolveDispute(order.id, 'refund')} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">💸 Rembourser</button>
-                    </div>
+
+                    {/* Boutons — uniquement si correction soumise */}
+                    {order.status === 'correction_submitted' && (
+                      <div className="grid grid-cols-2 gap-3 mt-4">
+                        <button onClick={() => handleResolveDispute(order.id, 'validate')}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
+                          ✓ Valider la correction
+                        </button>
+                        <button onClick={() => handleResolveDispute(order.id, 'request_correction')}
+                          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
+                          🔄 Nouvelle correction
+                        </button>
+                      </div>
+                    )}
+
+                    {resolveError[order.id] && (
+                      <div className="mt-3 bg-red-100 border border-red-300 rounded-lg p-3">
+                        <p className="text-red-800 text-sm">{resolveError[order.id]}</p>
+                      </div>
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       );

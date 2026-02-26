@@ -122,9 +122,7 @@ const getUserOrders = async (userId, userRole, all = false) => {
     if (userRole === 'client') return await orderRepository.findByClientId(userId);
     if (userRole === 'prestataire') return await orderRepository.findByPrestataireId(userId);
     if (userRole === 'admin') {
-      return all
-        ? await orderRepository.findAll()
-        : await orderRepository.findByClientId(userId);
+        return await orderRepository.findAll();
     }
     return [];
   } catch (error) {
@@ -409,7 +407,7 @@ const completeOrder = async (orderId, prestataireId) => {
       throw error;
     }
 
-    if (order.status !== 'accepted') {
+    if (order.status !== 'accepted' && order.status !== 'correction_requested') {
       const error = new Error('Cette mission n\'est pas en cours');
       error.code = 'INVALID_STATUS';
       error.statusCode = 400;
@@ -428,8 +426,10 @@ const completeOrder = async (orderId, prestataireId) => {
       throw error;
     }
 
-    const updatedOrder = await orderRepository.updateStatus(orderId, 'awaiting_validation');
-    if (!updatedOrder) {
+    const newStatus = order.status === 'correction_requested'
+      ? 'correction_submitted'
+      : 'awaiting_validation';
+    const updatedOrder = await orderRepository.updateStatus(orderId, newStatus); if (!updatedOrder) {
       const error = new Error('Erreur lors de la mise à jour du statut');
       error.code = 'UPDATE_FAILED';
       error.statusCode = 500;
@@ -664,13 +664,12 @@ const resolveDispute = async (orderId, adminId, action) => {
       throw error;
     }
 
-    if (order.status !== 'disputed') {
-      const error = new Error('Cette commande n\'est pas en litige');
+    if (order.status !== 'disputed' && order.status !== 'correction_submitted') {
+      const error = new Error('Cette commande n\'est pas en litige ou en correction soumise');
       error.code = 'NOT_DISPUTED';
       error.statusCode = 400;
       throw error;
     }
-
     let newStatus;
     let additionalActions = {};
 
@@ -706,7 +705,7 @@ const resolveDispute = async (orderId, adminId, action) => {
 
       case 'request_correction': {
         // Renvoie la commande au prestataire pour correction
-        newStatus = 'accepted';
+        newStatus = 'correction_requested';
         break;
       }
 
