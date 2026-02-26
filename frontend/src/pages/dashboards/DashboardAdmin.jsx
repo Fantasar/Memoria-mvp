@@ -131,6 +131,10 @@ function DashboardAdmin() {
   const [blockError, setBlockError] = useState({});
   const [deleteError, setDeleteError] = useState({});
 
+  // Gallerie photos
+  const [searchPhotos, setSearchPhotos] = useState('');
+
+
   // Commandes client
   const [selectedClientOrders, setSelectedClientOrders] = useState(null);
   const [clientOrdersData, setClientOrdersData] = useState([]);
@@ -498,6 +502,20 @@ function DashboardAdmin() {
             <span className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">{allPhotos.length} photos</span>
           </div>
 
+          {/* Barre de recherche */}
+          <div className="relative mb-4">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" value={searchPhotos} onChange={e => setSearchPhotos(e.target.value)}
+              placeholder="Rechercher par n° commande, client, prestataire, cimetière..."
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            {searchPhotos && (
+              <button onClick={() => setSearchPhotos('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>
+            )}
+          </div>
+
+          {/* Filtres type */}
           <div className="flex gap-3 mb-6">
             {[['all', '🖼️ Toutes'], ['before', '📸 Avant'], ['after', '✨ Après']].map(([type, label]) => (
               <button key={type} onClick={() => setPhotoFilter(type)}
@@ -507,30 +525,51 @@ function DashboardAdmin() {
             ))}
           </div>
 
-          {loadingPhotos ? <Spinner /> : filteredPhotos.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg"><p className="text-gray-600">Aucune photo disponible</p></div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredPhotos.map(photo => (
-                <div key={photo.id} onClick={() => setSelectedPhoto(photo)}
-                  className="group relative cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition">
-                  <img src={photo.url} alt={`${photo.photo_type} - ${photo.cemetery_name}`}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute top-2 left-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${(photo.photo_type || photo.type) === 'before' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'}`}>
-                      {photo.photo_type === 'before' ? '📸 Avant' : '✨ Après'}
-                    </span>
-                  </div>
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-end">
-                    <div className="p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <p className="text-sm font-semibold">{photo.cemetery_name}</p>
-                      <p className="text-xs opacity-80">{photo.cemetery_city}</p>
+          {loadingPhotos ? <Spinner /> : (() => {
+            const displayed = filteredPhotos.filter(photo => {
+              if (!searchPhotos) return true;
+              const q = searchPhotos.toLowerCase();
+              return (
+                photo.order_id?.toString().includes(q) ||
+                photo.cemetery_name?.toLowerCase().includes(q) ||
+                photo.cemetery_city?.toLowerCase().includes(q) ||
+                photo.client_prenom?.toLowerCase().includes(q) ||
+                photo.client_nom?.toLowerCase().includes(q) ||
+                photo.prestataire_prenom?.toLowerCase().includes(q) ||
+                photo.prestataire_nom?.toLowerCase().includes(q) ||
+                photo.service_name?.toLowerCase().includes(q)
+              );
+            });
+
+            return displayed.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">{searchPhotos ? 'Aucun résultat' : 'Aucune photo disponible'}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {displayed.map(photo => (
+                  <div key={photo.id} onClick={() => setSelectedPhoto(photo)}
+                    className="group relative cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition">
+                    <img src={photo.url} alt={`${photo.photo_type} - ${photo.cemetery_name}`}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="absolute top-2 left-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${(photo.photo_type || photo.type) === 'before' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'}`}>
+                        {photo.photo_type === 'before' ? '📸 Avant' : '✨ Après'}
+                      </span>
+                    </div>
+                    {/* Infos au survol */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 flex items-end">
+                      <div className="p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-full">
+                        <p className="text-sm font-semibold truncate">{photo.cemetery_name}</p>
+                        <p className="text-xs opacity-80">{photo.cemetery_city}</p>
+                        <p className="text-xs opacity-80 mt-1">#{photo.order_id?.toString().substring(0, 8)}...</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            );
+          })()}
 
           {/* Lightbox */}
           {selectedPhoto && (
@@ -545,19 +584,34 @@ function DashboardAdmin() {
                   </div>
                   <button onClick={() => setSelectedPhoto(null)} className="text-gray-500 hover:text-gray-700 text-2xl font-bold">✕</button>
                 </div>
+
                 <div className="p-4">
                   <img src={selectedPhoto.url} alt="Photo intervention" className="w-full max-h-96 object-contain rounded-lg" />
                 </div>
+
                 <div className="p-4 border-t bg-gray-50 rounded-b-xl">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    <div><p className="text-gray-500">N° commande</p><p className="font-medium font-mono text-xs">{selectedPhoto.order_id}</p></div>
                     <div><p className="text-gray-500">Cimetière</p><p className="font-medium">{selectedPhoto.cemetery_name}</p></div>
                     <div><p className="text-gray-500">Ville</p><p className="font-medium">{selectedPhoto.cemetery_city}</p></div>
                     <div><p className="text-gray-500">Service</p><p className="font-medium">{selectedPhoto.service_name}</p></div>
                     <div>
-                      <p className="text-gray-500">Statut</p>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${STATUS_CONFIG[selectedPhoto.order_status]?.color}`}>
-                        {STATUS_CONFIG[selectedPhoto.order_status]?.label}
+                      <p className="text-gray-500">Client</p>
+                      <p className="font-medium">{selectedPhoto.client_prenom} {selectedPhoto.client_nom}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Prestataire</p>
+                      <p className="font-medium">{selectedPhoto.prestataire_prenom} {selectedPhoto.prestataire_nom}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Statut commande</p>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${STATUS_LABELS[selectedPhoto.order_status] ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {STATUS_LABELS[selectedPhoto.order_status] || selectedPhoto.order_status}
                       </span>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Date upload</p>
+                      <p className="font-medium">{new Date(selectedPhoto.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     </div>
                   </div>
                 </div>
@@ -1219,14 +1273,14 @@ function DashboardAdmin() {
               <div className="space-y-4">
                 {allOrders.filter(o => o.status === 'correction_requested' || o.status === 'correction_submitted').map(order => (
                   <div key={order.id} className={`border-2 rounded-lg p-6 ${order.status === 'correction_submitted'
-                      ? 'border-blue-200 bg-blue-50'
-                      : 'border-orange-200 bg-orange-50'
+                    ? 'border-blue-200 bg-blue-50'
+                    : 'border-orange-200 bg-orange-50'
                     }`}>
                     <div className="flex items-center gap-3 mb-4">
                       <h3 className="text-lg font-semibold">{order.cemetery_name}</h3>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${order.status === 'correction_submitted'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-orange-600 text-white'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-orange-600 text-white'
                         }`}>
                         {order.status === 'correction_submitted' ? '📋 Correction soumise' : '⚠️ Correction demandée'}
                       </span>
