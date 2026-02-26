@@ -6,6 +6,9 @@ import ProtectedRoute from './components/layout/ProtectedRoute';
 import Home               from './pages/Home';
 import Login              from './pages/Login';
 import Register           from './pages/Register';
+import About              from './pages/About';
+import Contact            from './pages/Contact';
+import Services           from './pages/Services';
 
 // Dashboards
 import DashboardClient    from './pages/dashboards/DashboardClient';
@@ -38,6 +41,9 @@ function App() {
         <Route path="/"         element={<Home />} />
         <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/a-propos" element={<About />} />
+        <Route path="/contact"   element={<Contact />} />
+        <Route path="/services"  element={<Services />} />
 
         {/* ── Routes client ──────────────────────────────────────────── */}
         <Route
