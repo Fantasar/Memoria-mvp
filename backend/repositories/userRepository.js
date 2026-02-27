@@ -106,20 +106,21 @@ const create = async (userData) => {
 /**
  * Met à jour les informations d'un utilisateur
  * @param {number} userId
- * @param {Object} userData - { email, prenom, nom, zone_intervention, siret }
+ * @param {Object} userData - { email, prenom, nom, telephone, zone_intervention, siret }
  * @returns {Object} - L'utilisateur mis à jour
  */
 const update = async (userId, userData) => {
   try {
     const result = await pool.query(
       `UPDATE users
-       SET email = $1, prenom = $2, nom = $3, zone_intervention = $4, siret = $5, updated_at = NOW()
-       WHERE id = $6
-       RETURNING id, email, prenom, nom, role_id, zone_intervention, siret, updated_at`,
+       SET email = $1, prenom = $2, nom = $3, telephone = $4, zone_intervention = $5, siret = $6, updated_at = NOW()
+       WHERE id = $7
+       RETURNING id, email, prenom, nom, telephone, role_id, zone_intervention, siret, updated_at`,
       [
         userData.email,
         userData.prenom || null,
         userData.nom || null,
+        userData.telephone || null,
         userData.zone_intervention || null,
         userData.siret || null,
         userId

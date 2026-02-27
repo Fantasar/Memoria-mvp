@@ -144,7 +144,7 @@ function Register() {
             <InputField label="Nom" type="text" name="nom" value={formData.nom} onChange={handleChange} error={errors.nom} placeholder="Dupont" required />
 
             <InputField
-              label={isPrestataire ? 'Téléphone (optionnel)' : 'Téléphone'}
+              label={isPrestataire ? 'Téléphone' : 'Téléphone'}
               type="tel"
               name="telephone"
               value={formData.telephone}

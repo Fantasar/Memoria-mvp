@@ -1007,6 +1007,8 @@ function DashboardPrestataire() {
               <div><label className="text-sm font-medium text-gray-500">Prénom</label><p className="text-gray-900 font-medium">{user?.prenom || '-'}</p></div>
               <div><label className="text-sm font-medium text-gray-500">Nom</label><p className="text-gray-900 font-medium">{user?.nom || '-'}</p></div>
               <div><label className="text-sm font-medium text-gray-500">Email</label><p className="text-gray-900 font-medium">{user?.email || '-'}</p></div>
+              {/* Téléphone ajouté */}
+              <div><label className="text-sm font-medium text-gray-500">Téléphone</label><p className="text-gray-900 font-medium">{user?.telephone || '-'}</p></div>
               <div><label className="text-sm font-medium text-gray-500">SIRET</label><p className="text-gray-900 font-medium">{user?.siret || 'Non renseigné'}</p></div>
               <div><label className="text-sm font-medium text-gray-500">Zone d'intervention</label><p className="text-gray-900 font-medium">{user?.zone_intervention || 'Non définie'}</p></div>
             </div>
@@ -1014,12 +1016,18 @@ function DashboardPrestataire() {
 
           <div className="flex gap-4">
             <button
-              onClick={() => { setProfileData({ prenom: user?.prenom || '', nom: user?.nom || '', email: user?.email || '' }); setProfileError(null); setProfileSuccess(null); setShowEditProfile(true); }}
+              onClick={() => {
+                setProfileData({ prenom: user?.prenom || '', nom: user?.nom || '', email: user?.email || '', telephone: user?.telephone || '' });
+                setProfileError(null); setProfileSuccess(null); setShowEditProfile(true);
+              }}
               className="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
               Modifier mes informations
             </button>
             <button
-              onClick={() => { setPasswordData({ current: '', newPassword: '', confirm: '' }); setPasswordError(null); setPasswordSuccess(null); setShowChangePassword(true); }}
+              onClick={() => {
+                setPasswordData({ current: '', newPassword: '', confirm: '' });
+                setPasswordError(null); setPasswordSuccess(null); setShowChangePassword(true);
+              }}
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
               Changer mon mot de passe
             </button>
@@ -1051,6 +1059,11 @@ function DashboardPrestataire() {
                     <input type="email" value={profileData.email} onChange={e => setProfileData(p => ({ ...p, email: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                    <input type="tel" value={profileData.telephone} onChange={e => setProfileData(p => ({ ...p, telephone: e.target.value }))}
+                      placeholder="0612345678" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
                 </div>
                 <div className="p-6 border-t flex gap-3">
                   <button onClick={() => setShowEditProfile(false)}
@@ -1059,7 +1072,7 @@ function DashboardPrestataire() {
                     onClick={async () => {
                       setProfileError(null);
                       setProfileSuccess(null);
-                      if (!profileData.prenom || !profileData.nom || !profileData.email) {
+                      if (!profileData.prenom || !profileData.nom || !profileData.email || !profileData.telephone) {
                         setProfileError('Tous les champs sont obligatoires');
                         return;
                       }
