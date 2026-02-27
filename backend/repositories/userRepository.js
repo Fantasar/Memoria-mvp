@@ -83,15 +83,16 @@ const emailExists = async (email) => {
 const create = async (userData) => {
   try {
     const result = await pool.query(
-      `INSERT INTO users (email, password_hash, role_id, prenom, nom, zone_intervention, siret)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, email, role_id, prenom, nom, zone_intervention, siret, created_at`,
+      `INSERT INTO users (email, password_hash, role_id, prenom, nom, telephone, zone_intervention, siret)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, email, role_id, prenom, nom, telephone, zone_intervention, siret, created_at`,
       [
         userData.email,
         userData.password_hash,
         userData.role_id,
         userData.prenom || null,
         userData.nom || null,
+        userData.telephone || null,
         userData.zone_intervention || null,
         userData.siret || null
       ]

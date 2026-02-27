@@ -1,60 +1,73 @@
 // frontend/src/pages/Register.jsx
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import AuthLayout   from '../components/layout/AuthLayout';
-import InputField   from '../components/forms/InputField';
-import SelectField  from '../components/forms/SelectField';
-import Button       from '../components/forms/Button';
-import useForm      from '../hooks/useForm';
+import AuthLayout from '../components/layout/AuthLayout';
+import InputField from '../components/forms/InputField';
+import SelectField from '../components/forms/SelectField';
+import Button from '../components/forms/Button';
+import useForm from '../hooks/useForm';
 import { validateEmail, validatePassword, validatePasswordConfirmation, validateRole } from '../utils/validators';
-import authService  from '../services/authService';
+import authService from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
-import Navbar       from '../components/layout/Navbar';
+import Navbar from '../components/layout/Navbar';
 
 const ZONES = [
-  { value: 'Bordeaux',     label: 'Bordeaux et environs (30km)'    },
-  { value: 'Pau',          label: 'Pau et alentours (30km)'        },
-  { value: 'La Rochelle',  label: 'La Rochelle et environs (30km)' },
-  { value: 'Limoges',      label: 'Limoges et alentours (30km)'    },
-  { value: 'Poitiers',     label: 'Poitiers et environs (30km)'    },
+  { value: 'Bordeaux', label: 'Bordeaux et environs (30km)' },
+  { value: 'Pau', label: 'Pau et alentours (30km)' },
+  { value: 'La Rochelle', label: 'La Rochelle et environs (30km)' },
+  { value: 'Limoges', label: 'Limoges et alentours (30km)' },
+  { value: 'Poitiers', label: 'Poitiers et environs (30km)' },
 ];
 
 const ROLES = [
-  { value: 'client',      label: 'Client — Je souhaite commander un service'     },
+  { value: 'client', label: 'Client — Je souhaite commander un service' },
   { value: 'prestataire', label: 'Prestataire — Je souhaite proposer mes services' },
 ];
 
 function Register() {
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const { login } = useAuth();
   const [apiError, setApiError] = useState(null);
 
   const initialValues = {
-    email:             '',
-    password:          '',
-    confirmPassword:   '',
-    prenom:            '',
-    nom:               '',
-    role:              '',
-    siret:             '',
+    email: '',
+    telephone: '',
+    password: '',
+    confirmPassword: '',
+    prenom: '',
+    nom: '',
+    role: '',
+    siret: '',
     zone_intervention: '',
   };
 
   const validate = (data) => {
     const errors = {};
 
-    const emailErr    = validateEmail(data.email);
+    const emailErr = validateEmail(data.email);
     const passwordErr = validatePassword(data.password);
-    const confirmErr  = validatePasswordConfirmation(data.password, data.confirmPassword);
-    const roleErr     = validateRole(data.role);
+    const confirmErr = validatePasswordConfirmation(data.password, data.confirmPassword);
+    const roleErr = validateRole(data.role);
 
-    if (emailErr)    errors.email           = emailErr;
-    if (passwordErr) errors.password        = passwordErr;
-    if (confirmErr)  errors.confirmPassword = confirmErr;
-    if (roleErr)     errors.role            = roleErr;
+    if (emailErr) errors.email = emailErr;
+    if (passwordErr) errors.password = passwordErr;
+    if (confirmErr) errors.confirmPassword = confirmErr;
+    if (roleErr) errors.role = roleErr;
 
     if (!data.prenom?.trim()) errors.prenom = 'Le prénom est requis';
-    if (!data.nom?.trim())    errors.nom    = 'Le nom est requis';
+    if (!data.nom?.trim()) errors.nom = 'Le nom est requis';
+
+    if (data.role !== 'prestataire') {
+      if (!data.telephone?.trim()) {
+        errors.telephone = 'Le numéro de téléphone est obligatoire';
+      } else if (!/^(\+33|0)[1-9](\d{8})$/.test(data.telephone.replace(/\s/g, ''))) {
+        errors.telephone = 'Numéro de téléphone invalide (ex: 0612345678)';
+      }
+    } else if (data.telephone?.trim()) {
+      if (!/^(\+33|0)[1-9](\d{8})$/.test(data.telephone.replace(/\s/g, ''))) {
+        errors.telephone = 'Numéro de téléphone invalide (ex: 0612345678)';
+      }
+    }
 
     if (data.role === 'prestataire') {
       if (!data.siret?.trim()) {
@@ -74,28 +87,28 @@ function Register() {
     setApiError(null);
     try {
       const payload = {
-        email:   data.email,
+        email: data.email,
         password: data.password,
-        prenom:  data.prenom,
-        nom:     data.nom,
-        role:    data.role,
+        prenom: data.prenom,
+        nom: data.nom,
+        role: data.role,
+        telephone: data.telephone?.trim() || null,
       };
 
       if (data.role === 'prestataire') {
-        payload.siret             = data.siret;
+        payload.siret = data.siret;
         payload.zone_intervention = data.zone_intervention;
       }
 
       const response = await authService.register(payload);
       login(response.user, response.token);
 
-      // Résolution du rôle (fallback sur role_id si besoin)
-      const roleMap  = { 1: 'client', 2: 'prestataire', 3: 'admin' };
+      const roleMap = { 1: 'client', 2: 'prestataire', 3: 'admin' };
       const userRole = response.user?.role || roleMap[response.user?.role_id];
 
-      if (userRole === 'client')      navigate('/dashboard/client');
+      if (userRole === 'client') navigate('/dashboard/client');
       else if (userRole === 'prestataire') navigate('/dashboard/prestataire/pending');
-      else                            navigate('/');
+      else navigate('/');
 
     } catch (error) {
       setApiError(error.message);
@@ -126,11 +139,22 @@ function Register() {
               </div>
             )}
 
-            <InputField label="Email"   type="email"  name="email"  value={formData.email}  onChange={handleChange} error={errors.email}  placeholder="exemple@email.com" required />
-            <InputField label="Prénom"  type="text"   name="prenom" value={formData.prenom} onChange={handleChange} error={errors.prenom} placeholder="Jean"              required />
-            <InputField label="Nom"     type="text"   name="nom"    value={formData.nom}    onChange={handleChange} error={errors.nom}    placeholder="Dupont"            required />
+            <InputField label="Email" type="email" name="email" value={formData.email} onChange={handleChange} error={errors.email} placeholder="exemple@email.com" required />
+            <InputField label="Prénom" type="text" name="prenom" value={formData.prenom} onChange={handleChange} error={errors.prenom} placeholder="Jean" required />
+            <InputField label="Nom" type="text" name="nom" value={formData.nom} onChange={handleChange} error={errors.nom} placeholder="Dupont" required />
 
-            <InputField label="Mot de passe"           type="password" name="password"        value={formData.password}        onChange={handleChange} error={errors.password}        placeholder="********" required />
+            <InputField
+              label={isPrestataire ? 'Téléphone (optionnel)' : 'Téléphone'}
+              type="tel"
+              name="telephone"
+              value={formData.telephone}
+              onChange={handleChange}
+              error={errors.telephone}
+              placeholder="0612345678"
+              required={!isPrestataire}
+            />
+
+            <InputField label="Mot de passe" type="password" name="password" value={formData.password} onChange={handleChange} error={errors.password} placeholder="********" required />
             <InputField label="Confirmer le mot de passe" type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} error={errors.confirmPassword} placeholder="********" required />
 
             <SelectField
