@@ -44,11 +44,21 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    if (userResult.rows[0].is_blocked) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'ACCOUNT_BLOCKED',
+          message: 'Votre compte a été bloqué. Contactez l\'administrateur.'
+        }
+      });
+    }
+
     // Attache les infos utilisateur à la requête pour les couches suivantes
     req.user = {
       userId: userResult.rows[0].id,
-      email:  userResult.rows[0].email,
-      role:   userResult.rows[0].role
+      email: userResult.rows[0].email,
+      role: userResult.rows[0].role
     };
 
     next();

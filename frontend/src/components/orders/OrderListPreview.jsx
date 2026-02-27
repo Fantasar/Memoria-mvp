@@ -9,6 +9,7 @@ const STATUS_CONFIG = {
   accepted:            { label: 'Acceptée',             color: 'bg-green-100 text-green-800'   },
   in_progress:         { label: 'En cours',             color: 'bg-purple-100 text-purple-800' },
   awaiting_validation: { label: 'En attente validation',color: 'bg-orange-100 text-orange-800' },
+  correction_requested: { label: 'Correction demander',   color: 'bg-orange-100 text-orange-800' },
   completed:           { label: 'Terminée',             color: 'bg-green-200 text-green-900'   },
   cancelled:           { label: 'Annulée',              color: 'bg-red-100 text-red-800'       },
   disputed:            { label: 'Litige en cours',      color: 'bg-red-100 text-red-800'       },

@@ -5,15 +5,16 @@ import axios from 'axios';
 
 // Extraits hors du composant — pas de recréation à chaque render
 const STATUS_CONFIG = {
-  pending:             { label: 'En attente',           color: 'bg-yellow-100 text-yellow-800' },
-  paid:                { label: 'Payée',                color: 'bg-blue-100 text-blue-800'     },
-  accepted:            { label: 'Acceptée',             color: 'bg-green-100 text-green-800'   },
-  in_progress:         { label: 'En cours',             color: 'bg-purple-100 text-purple-800' },
-  awaiting_validation: { label: 'En attente validation',color: 'bg-orange-100 text-orange-800' },
-  completed:           { label: 'Terminée',             color: 'bg-green-200 text-green-900'   },
-  cancelled:           { label: 'Annulée',              color: 'bg-red-100 text-red-800'       },
-  refunded:            { label: 'Remboursée',           color: 'bg-gray-100 text-gray-800'     },
-  disputed:            { label: 'Litige en cours',      color: 'bg-red-100 text-red-800'       },
+  pending:              { label: 'En attente',            color: 'bg-yellow-100 text-yellow-800' },
+  paid:                 { label: 'Payée',                 color: 'bg-blue-100 text-blue-800'     },
+  accepted:             { label: 'Acceptée',              color: 'bg-green-100 text-green-800'   },
+  in_progress:          { label: 'En cours',              color: 'bg-purple-100 text-purple-800' },
+  awaiting_validation:  { label: 'En attente validation', color: 'bg-orange-100 text-orange-800' },
+  correction_requested: { label: 'Correction demander',   color: 'bg-orange-100 text-orange-800' },
+  completed:            { label: 'Terminée',              color: 'bg-green-200 text-green-900'   },
+  cancelled:            { label: 'Annulée',               color: 'bg-red-100 text-red-800'       },
+  refunded:             { label: 'Remboursée',            color: 'bg-gray-100 text-gray-800'     },
+  disputed:             { label: 'Litige en cours',       color: 'bg-red-100 text-red-800'       },
 };
 
 const PHOTO_STATUSES = ['completed', 'awaiting_validation', 'disputed'];
@@ -29,12 +30,15 @@ const authHeaders = () => ({
  * @param {Function} onReview - Callback déclenché au clic sur "Évaluer"
  */
 function OrderListFull({ onReview }) {
-  const [orders,        setOrders]        = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [error,         setError]         = useState(null);
+  const [orders,        setOrders]            = useState([]);
+  const [loading,       setLoading]           = useState(true);
+  const [error,         setError]             = useState(null);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
-  const [orderPhotos,   setOrderPhotos]   = useState({});  // Cache photos par orderId
-  const [loadingPhotos, setLoadingPhotos] = useState({});  // État de chargement par orderId
+  const [orderPhotos,   setOrderPhotos]       = useState({});
+  const [loadingPhotos, setLoadingPhotos]     = useState({});
+  const [cancelError,   setCancelError]       = useState({});
+  const [cancelSuccess, setCancelSuccess]     = useState({});
+  const [cancelling,    setCancelling]        = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -110,6 +114,24 @@ function OrderListFull({ onReview }) {
     );
   }
 
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir annuler cette commande ?')) return;
+    setCancelling(prev => ({ ...prev, [orderId]: true }));
+    setCancelError(prev => ({ ...prev, [orderId]: null }));
+    try {
+      await axios.patch(`/api/orders/${orderId}/cancel-client`, {}, authHeaders());
+      setCancelSuccess(prev => ({ ...prev, [orderId]: true }));
+      fetchOrders();
+    } catch (err) {
+      setCancelError(prev => ({
+        ...prev,
+        [orderId]: err.response?.data?.error?.message || "Erreur lors de l'annulation"
+      }));
+    } finally {
+      setCancelling(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
+
   return (
     <div className="space-y-4">
       {orders.map(order => {
@@ -150,6 +172,22 @@ function OrderListFull({ onReview }) {
                 </svg>
               </div>
             </div>
+            
+            {/* Bouton annulation — commandes en attente uniquement */}
+            {order.status === 'pending' && (
+              <div className="px-6 pb-4 border-t border-gray-200 mt-2">
+                {cancelError[order.id] && (
+                  <p className="text-red-600 text-sm mb-2">{cancelError[order.id]}</p>
+                )}
+                <button
+                  onClick={e => { e.stopPropagation(); handleCancelOrder(order.id); }}
+                  disabled={cancelling[order.id]}
+                  className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50 mt-3"
+                >
+                  {cancelling[order.id] ? '⏳ Annulation...' : '❌ Annuler la commande'}
+                </button>
+              </div>
+            )}
 
             {/* Actions photos + évaluation */}
             {PHOTO_STATUSES.includes(order.status) && (

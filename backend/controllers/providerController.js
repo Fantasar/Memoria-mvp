@@ -148,11 +148,25 @@ const getZoneStats = async (req, res, next) => {
   }
 };
 
+const reapply = async (req, res, next) => {
+  try {
+    const result = await providerService.reapply(req.user.userId);
+    return res.status(200).json({
+      success: true,
+      data:    result,
+      message: 'Demande renouvelée avec succès'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getPendingProviders,
   approveProvider,
   rejectProvider,
   getProviderFinances,
   updateZone,
-  getZoneStats
+  getZoneStats,
+  reapply
 };

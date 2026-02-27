@@ -1,5 +1,6 @@
 // backend/controllers/adminController.js
 const authService = require('../services/authService');
+const orderService = require('../services/orderService');
 
 /**
  * Contrôleur d'administration.
@@ -70,7 +71,45 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+const toggleBlockUser = async (req, res, next) => {
+  try {
+    const result = await authService.toggleBlockUser(req.params.id);
+    return res.status(200).json({
+      success: true,
+      data:    result,
+      message: result.is_blocked ? 'Compte bloqué' : 'Compte débloqué'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteUser = async (req, res, next) => {
+  try {
+    await authService.deleteUser(req.params.id, req.user.userId);
+    return res.status(200).json({
+      success: true,
+      message: 'Compte supprimé'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUserOrders = async (req, res) => {
+  try {
+    const orders = await orderService.getUserOrders(req.params.id, 'admin');
+    return res.status(200).json({ success: true, data: orders });
+  } catch (error) {
+    console.error('Erreur dans getUserOrders:', error);
+    return handleError(error, res, 'Erreur lors de la récupération des commandes');
+  }
+};
+
 module.exports = {
   createAdmin,
-  getAllUsers
+  getAllUsers,
+  toggleBlockUser,
+  deleteUser,
+  getUserOrders
 };

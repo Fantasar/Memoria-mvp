@@ -1,16 +1,21 @@
 // frontend/src/pages/Home.jsx
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import logoMemoria   from '../assets/Logos_Mémoria-remove.png';
-import elephants     from '../assets/éléphant.png';
-import avantTombe01  from '../assets/Avant-tombe01.jpg';
-import apresTombe01  from '../assets/Aprés-tombe01.jpg';
-import avantTombe02  from '../assets/Avant-tombe02.jpg';
-import apresTombe02  from '../assets/Aprés-tombe02.jpg';
-import photoSophie   from '../assets/sophie-dubois.png';
-import photoJean     from '../assets/jean-lefevre.png';
-import photoMarie    from '../assets/marie-rousseau.png';
-import photoPaul     from '../assets/paul-martin.png';
+import logoMemoria from '../assets/Logos_Mémoria-remove.png';
+import elephants from '../assets/éléphant.png';
+import avantTombe01 from '../assets/Avant-tombe01.jpg';
+import apresTombe01 from '../assets/Aprés-tombe01.jpg';
+import avantTombe02 from '../assets/Avant-tombe02.jpg';
+import apresTombe02 from '../assets/Aprés-tombe02.jpg';
+import photoPhilippe from '../assets/Philippe.png';
+import iconcommande from '../assets/commande.png';
+import iconcamion from '../assets/camion.png';
+import iconconfiance from '../assets/inspection.png';
+import iconnettoyage from '../assets/nettoyage.png';
+import iconinspection from '../assets/inspection.png';
+import iconvisite from '../assets/visite.png';
+import Navbar from '../components/layout/Navbar';
+
 
 // ─── Étoiles décoratives fixées à la génération ───────────────────────────────
 // useMemo/useRef pour éviter les positions différentes à chaque re-render
@@ -18,9 +23,9 @@ function Stars({ colors, count, style = {} }) {
   const stars = useRef(
     Array.from({ length: count }, (_, i) => ({
       id: i,
-      left:  Math.random() * 200,
-      top:   Math.random() * 350,
-      size:  Math.random() * 24 + 12,
+      left: Math.random() * 200,
+      top: Math.random() * 350,
+      size: Math.random() * 24 + 12,
       angle: Math.random() * 360,
     }))
   ).current;
@@ -32,9 +37,9 @@ function Stars({ colors, count, style = {} }) {
           key={s.id}
           className={`absolute ${colors}`}
           style={{
-            left:      `${s.left}px`,
-            top:       `${s.top}px`,
-            fontSize:  `${s.size}px`,
+            left: `${s.left}px`,
+            top: `${s.top}px`,
+            fontSize: `${s.size}px`,
             transform: `rotate(${s.angle}deg)`,
             ...style,
           }}
@@ -50,10 +55,10 @@ function Stars({ colors, count, style = {} }) {
 function HeroStarsLeft() {
   return (
     <div className="absolute left-20 top-1/3 opacity-40 pointer-events-none">
-      <Stars colors="text-amber-200"   count={14} />
-      <Stars colors="text-purple-300"  count={8}  />
-      <Stars colors="text-sky-200"     count={10} />
-      <Stars colors="text-white/70"    count={8}  />
+      <Stars colors="text-amber-200" count={14} />
+      <Stars colors="text-purple-300" count={8} />
+      <Stars colors="text-sky-200" count={10} />
+      <Stars colors="text-white/70" count={8} />
     </div>
   );
 }
@@ -62,10 +67,10 @@ function HeroStarsLeft() {
 function HowItWorksStarsRight() {
   return (
     <div className="absolute right-20 top-0 bottom-0 w-48 opacity-40 pointer-events-none">
-      <Stars colors="text-amber-200"  count={10} style={{ right: undefined }} />
-      <Stars colors="text-sky-200"    count={8}  style={{ right: undefined }} />
-      <Stars colors="text-purple-300" count={6}  style={{ right: undefined }} />
-      <Stars colors="text-white/70"   count={6}  style={{ right: undefined }} />
+      <Stars colors="text-amber-200" count={10} style={{ right: undefined }} />
+      <Stars colors="text-sky-200" count={8} style={{ right: undefined }} />
+      <Stars colors="text-purple-300" count={6} style={{ right: undefined }} />
+      <Stars colors="text-white/70" count={6} style={{ right: undefined }} />
     </div>
   );
 }
@@ -74,9 +79,9 @@ function HowItWorksStarsRight() {
 function TeamStars() {
   const stars = useRef(
     Array.from({ length: 30 }, (_, i) => ({
-      id:   i,
+      id: i,
       left: Math.random() * 100,
-      top:  Math.random() * 100,
+      top: Math.random() * 100,
       size: Math.random() * 3 + 1,
     }))
   ).current;
@@ -98,17 +103,17 @@ function TeamStars() {
 
 // ─── Carte avis ───────────────────────────────────────────────────────────────
 const REVIEWS = [
-  { initials: 'MC', color: 'bg-blue-100 text-blue-600',   name: 'Marie Chevalier', city: 'Bordeaux', text: 'Service impeccable. Le prestataire a été très respectueux et professionnel. Les photos avant/après sont parfaites. Je recommande vivement.' },
-  { initials: 'PD', color: 'bg-green-100 text-green-600', name: 'Pierre Dubois',    city: 'Paris',    text: 'Habitant loin du cimetière familial, ce service est une vraie solution. Transparence totale et qualité irréprochable. Merci Mémoria !' },
-  { initials: 'AL', color: 'bg-purple-100 text-purple-600', name: 'Anne Laurent',   city: 'Limoges',  text: 'Excellent rapport qualité-prix. Le prestataire a même ajouté de jolies fleurs de saison. Un vrai soulagement pour moi.' },
-  { initials: 'JM', color: 'bg-orange-100 text-orange-600', name: 'Jacques Martin', city: 'Pau',      text: 'Interface simple et claire. Paiement sécurisé. Le travail effectué correspond exactement à mes attentes. Parfait.' },
+  { initials: 'MC', color: 'bg-blue-100 text-blue-600', name: 'Marie Chevalier', city: 'Bordeaux', text: 'Service impeccable. Le prestataire a été très respectueux et professionnel. Les photos avant/après sont parfaites. Je recommande vivement.' },
+  { initials: 'PD', color: 'bg-green-100 text-green-600', name: 'Pierre Dubois', city: 'Paris', text: 'Habitant loin du cimetière familial, ce service est une vraie solution. Transparence totale et qualité irréprochable. Merci Mémoria !' },
+  { initials: 'AL', color: 'bg-purple-100 text-purple-600', name: 'Anne Laurent', city: 'Limoges', text: 'Excellent rapport qualité-prix. Le prestataire a même ajouté de jolies fleurs de saison. Un vrai soulagement pour moi.' },
+  { initials: 'JM', color: 'bg-orange-100 text-orange-600', name: 'Jacques Martin', city: 'Pau', text: 'Interface simple et claire. Paiement sécurisé. Le travail effectué correspond exactement à mes attentes. Parfait.' },
 ];
 
 function ReviewCard({ initials, color, name, city, text }) {
   return (
     <div className="flex-shrink-0 w-96 bg-gray-50 rounded-xl p-6 shadow-md">
       <div className="flex items-center gap-1 mb-4">
-        {[...Array(5)].map((_, i) => (
+        {[...Array(4)].map((_, i) => (
           <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
           </svg>
@@ -130,10 +135,7 @@ function ReviewCard({ initials, color, name, city, text }) {
 
 // ─── Membre équipe ────────────────────────────────────────────────────────────
 const TEAM = [
-  { photo: photoPaul,   name: 'Paul Martin',   role: 'Fondateur & Développeur',   from: 'from-blue-400',   to: 'to-blue-600'   },
-  { photo: photoSophie, name: 'Sophie Dubois',  role: 'Responsable Qualité',        from: 'from-green-400',  to: 'to-green-600'  },
-  { photo: photoJean,   name: 'Jean Lefevre',   role: 'Coordinateur Prestataires',  from: 'from-purple-400', to: 'to-purple-600' },
-  { photo: photoMarie,  name: 'Marie Rousseau', role: 'Support Client',             from: 'from-orange-400', to: 'to-orange-600' },
+  { photo: photoPhilippe, name: 'Philippe Lapique', role: 'Fondateur & Développeur', from: 'from-blue-400', to: 'to-blue-600' },
 ];
 
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
@@ -152,7 +154,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Les photos sont-elles garanties ?',
-    a: 'Absolument ! Des photos avant et après sont systématiquement prises par le prestataire. Vous les recevez dans votre espace personnel et devez valider le travail avant que le paiement ne soit libéré.',
+    a: 'Absolument ! Des photos avant et après sont systématiquement prises par le prestataire. Vous les recevez dans votre espace personnel et vous pouvais laisser un avis sur l\'intervention.',
   },
   {
     q: 'Dans quelles zones intervenez-vous ?',
@@ -162,17 +164,17 @@ const FAQ_ITEMS = [
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 const Home = () => {
-  const [ballPosition,   setBallPosition]   = useState({ top: 150, left: 210 });
-  const [sliderPos1,     setSliderPos1]     = useState(50);
-  const [sliderPos2,     setSliderPos2]     = useState(70);
+  const [ballPosition, setBallPosition] = useState({ top: 150, left: 210 });
+  const [sliderPos1, setSliderPos1] = useState(50);
+  const [sliderPos2, setSliderPos2] = useState(70);
 
   useEffect(() => {
     // Animation des compteurs
     const counters = document.querySelectorAll('.counter');
     counters.forEach(counter => {
-      const target    = parseInt(counter.getAttribute('data-target'), 10);
+      const target = parseInt(counter.getAttribute('data-target'), 10);
       const increment = target / (2000 / 16);
-      let current     = 0;
+      let current = 0;
 
       const tick = () => {
         current += increment;
@@ -198,30 +200,30 @@ const Home = () => {
       const section = document.querySelector('#comment-ca-marche-section');
       if (!section) return;
 
-      const rect          = section.getBoundingClientRect();
-      const mouseY        = e.clientY - rect.top;
-      const mouseX        = e.clientX - rect.left;
+      const rect = section.getBoundingClientRect();
+      const mouseY = e.clientY - rect.top;
+      const mouseX = e.clientX - rect.left;
       const sectionHeight = rect.height;
 
       if (mouseY < 0 || mouseY > sectionHeight || mouseX < 0 || mouseX > rect.width) return;
 
-      const startY           = 150;
-      const verticalLineH    = sectionHeight - 92;
-      const horizontalLineY  = sectionHeight - 92;
+      const startY = 150;
+      const verticalLineH = sectionHeight - 92;
+      const horizontalLineY = sectionHeight - 92;
 
       let newTop, newLeft;
 
       if (mouseY < startY) {
-        newTop  = startY;
+        newTop = startY;
         newLeft = 210;
       } else if (mouseY < verticalLineH) {
-        newTop  = Math.max(startY, Math.min(mouseY, verticalLineH));
+        newTop = Math.max(startY, Math.min(mouseY, verticalLineH));
         newLeft = 210;
       } else if (mouseX < 210) {
-        newTop  = verticalLineH;
+        newTop = verticalLineH;
         newLeft = 210;
       } else {
-        newTop  = horizontalLineY;
+        newTop = horizontalLineY;
         newLeft = Math.max(210, Math.min(mouseX, 550));
         if (mouseY > horizontalLineY + 50) {
           newTop = horizontalLineY + Math.min(mouseY - horizontalLineY, 200);
@@ -238,40 +240,14 @@ const Home = () => {
   const scrollToContent = () => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
 
   const handleSlider = (setter) => (e) => {
-    const rect       = e.currentTarget.getBoundingClientRect();
+    const rect = e.currentTarget.getBoundingClientRect();
     const percentage = ((e.clientX - rect.left) / rect.width) * 100;
     setter(Math.min(Math.max(percentage, 0), 100));
   };
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-
-      {/* ── Navbar ──────────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-12 h-12 border-2 border-black rounded-lg flex items-center justify-center">
-                <span className="text-2xl font-serif font-bold">M</span>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-400 rounded-full" />
-              </div>
-            </div>
-            <span className="text-xl font-serif font-semibold tracking-tight">Mémoria</span>
-          </div>
-
-          <div className="hidden md:flex items-center gap-8">
-            <Link to="/" className="text-gray-900 hover:text-blue-600 font-medium transition">Accueil</Link>
-            <Link to="/" onClick={() => document.getElementById('comment-ca-marche-section')?.scrollIntoView({ behavior: 'smooth' })} className="text-gray-700 hover:text-blue-600 transition">Services</Link>
-            <Link to="/" onClick={() => document.getElementById('faq-section')?.scrollIntoView({ behavior: 'smooth' })} className="text-gray-700 hover:text-blue-600 transition">À propos</Link>
-            <Link to="/" onClick={() => document.getElementById('team-section')?.scrollIntoView({ behavior: 'smooth' })} className="text-gray-700 hover:text-blue-600 transition">Contact</Link>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link to="/login" className="text-gray-700 hover:text-blue-600 font-medium transition">Connexion</Link>
-            <Link to="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">S'inscrire</Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 pb-40">
@@ -339,23 +315,23 @@ const Home = () => {
               {
                 num: '1', from: 'from-blue-500', to: 'to-blue-600', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', checkColor: 'text-blue-600',
                 title: 'Choisissez un service',
-                desc:  'Sélectionnez le type d\'entretien adapté aux besoins de la sépulture : nettoyage, fleurissement ou rénovation.',
+                desc: 'Sélectionnez le type d\'entretien adapté aux besoins de la sépulture : nettoyage, fleurissement ou rénovation.',
                 items: ['Tarifs transparents affichés à l\'avance', 'Paiement sécurisé par Stripe'],
-                icon: <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />,
+                icon: <img src={iconcommande} alt="Respect" className="w-10 h-10 object-contain" />,
               },
               {
                 num: '2', from: 'from-green-500', to: 'to-green-600', iconBg: 'bg-green-100', iconColor: 'text-green-600', checkColor: 'text-green-600',
                 title: 'Un prestataire intervient',
-                desc:  'Un professionnel certifié se charge de l\'entretien avec soin et respect, dans votre zone d\'intervention.',
+                desc: 'Un professionnel certifié se charge de l\'entretien avec soin et respect, dans votre zone d\'intervention.',
                 items: ['Prestataires vérifiés et certifiés', 'Intervention rapide dans votre région'],
-                icon: <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />,
+                icon: <img src={iconcamion} alt="Respect" className="w-10 h-10 object-contain" />,
               },
               {
                 num: '3', from: 'from-blue-500', to: 'to-blue-600', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', checkColor: 'text-blue-600',
                 title: 'Validez le résultat',
-                desc:  'Recevez des photos avant/après et validez la prestation réalisée. Votre satisfaction est garantie.',
+                desc: 'Recevez des photos avant/après et validez la prestation réalisée. Votre satisfaction est garantie.',
                 items: ['Photos avant/après systématiques', 'Paiement libéré uniquement après validation'],
-                icon: <><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z" /><path fillRule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd" /></>,
+                icon: <img src={iconconfiance} alt="Respect" className="w-10 h-10 object-contain" />,
               },
             ].map(step => (
               <div key={step.num} className="group relative overflow-hidden rounded-r-2xl shadow-lg hover:shadow-2xl transition-all duration-500">
@@ -365,7 +341,9 @@ const Home = () => {
                 <div className="ml-20 bg-white p-8 group-hover:ml-24 transition-all duration-500">
                   <div className="flex items-start gap-6">
                     <div className={`flex-shrink-0 w-16 h-16 ${step.iconBg} rounded-xl flex items-center justify-center`}>
-                      <svg className={`w-8 h-8 ${step.iconColor}`} fill="currentColor" viewBox="0 0 20 20">{step.icon}</svg>
+                      <div className="w-8 h-8">
+                        {step.icon}
+                      </div>
                     </div>
                     <div className="flex-1">
                       <h3 className="text-2xl font-bold text-gray-900 mb-3">{step.title}</h3>
@@ -396,15 +374,15 @@ const Home = () => {
           <div
             className="absolute pointer-events-none z-30 transition-all duration-100"
             style={{
-              top:          `${ballPosition.top}px`,
-              left:         `${ballPosition.left}px`,
-              width:        '40px',
-              height:       '40px',
+              top: `${ballPosition.top}px`,
+              left: `${ballPosition.left}px`,
+              width: '40px',
+              height: '40px',
               borderRadius: '50%',
-              background:   'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
-              boxShadow:    '0 4px 12px rgba(251, 146, 60, 0.4), inset -2px -2px 8px rgba(0,0,0,0.2)',
-              transform:    `rotate(${ballPosition.top * 2 + ballPosition.left}deg)`,
-              opacity:       ballPosition.top > 1010 ? Math.max(0, 1 - (ballPosition.top - 1010) / 100) : 1,
+              background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
+              boxShadow: '0 4px 12px rgba(251, 146, 60, 0.4), inset -2px -2px 8px rgba(0,0,0,0.2)',
+              transform: `rotate(${ballPosition.top * 2 + ballPosition.left}deg)`,
+              opacity: ballPosition.top > 1010 ? Math.max(0, 1 - (ballPosition.top - 1010) / 100) : 1,
             }}
           />
 
@@ -427,13 +405,26 @@ const Home = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { target: 247,  label: 'Interventions réalisées', icon: <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /> },
-              { target: 42,   label: 'Prestataires partenaires', icon: <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" /> },
-              { target: 1854, label: 'Visites sur le site',     icon: <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /> },
+              {
+                target: 55,
+                label: 'Interventions réalisées',
+                icon: <img src={iconnettoyage} alt="Nettoyage" className="w-10 h-10 object-contain mx-auto" />,
+              },
+              {
+                target: 15,
+                label: 'Prestataires partenaires',
+                icon: <img src={iconinspection} alt="Inspection" className="w-10 h-10 object-contain mx-auto" />,
+              },
+              {
+                target: 227,
+                label: 'Visites sur le site',
+                icon: <img src={iconvisite} alt="Visite" className="w-10 h-10 object-contain mx-auto" />,
+              },
             ].map(stat => (
               <div key={stat.label} className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 text-center hover:scale-105 transition">
-                <div className="mb-4">
-                  <svg className="w-16 h-16 mx-auto text-white" fill="currentColor" viewBox="0 0 20 20">{stat.icon}</svg>
+                {/* Conteneur pour l'icône */}
+                <div className="w-full flex justify-center mb-4">
+                  {stat.icon}
                 </div>
                 <div className="text-5xl font-bold text-white mb-2 counter" data-target={stat.target}>0</div>
                 <div className="text-white font-medium">{stat.label}</div>
@@ -443,12 +434,13 @@ const Home = () => {
         </div>
       </section>
 
+
+
       {/* ── Avis clients ────────────────────────────────────────────────────── */}
       <section className="bg-white py-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-gray-900 mb-4">Ils nous font confiance</h2>
-            <p className="text-gray-600 text-lg">Des centaines de familles satisfaites</p>
           </div>
 
           {/* Défilement infini — CSS défini dans index.css ou tailwind.config */}
@@ -491,7 +483,7 @@ const Home = () => {
               </h2>
               <div className="space-y-8">
                 {[
-                  { before: avantTombe01, after: apresTombe01, label: 'Nettoyage complet — Cimetière de Bordeaux',  pos: sliderPos1, setPos: setSliderPos1 },
+                  { before: avantTombe01, after: apresTombe01, label: 'Nettoyage complet — Cimetière de Bordeaux', pos: sliderPos1, setPos: setSliderPos1 },
                   { before: avantTombe02, after: apresTombe02, label: 'Nettoyage complet — Cimetière de Mérignac', pos: sliderPos2, setPos: setSliderPos2 },
                 ].map(slider => (
                   <div key={slider.label} className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -531,7 +523,9 @@ const Home = () => {
 
       {/* ── Équipe ──────────────────────────────────────────────────────────── */}
       <section id="team-section" className="bg-black text-white py-20 relative overflow-hidden">
-        <TeamStars />
+        <div className="absolute inset-0 pointer-events-none">
+          <Stars colors="text-white/40" count={40} />
+        </div>
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center mb-20">
             <div className="flex items-center justify-center gap-3 mb-6">
@@ -540,21 +534,27 @@ const Home = () => {
               </div>
               <span className="text-sm font-semibold tracking-wider uppercase text-gray-400">Mémoria</span>
             </div>
-            <h2 className="text-5xl md:text-6xl font-bold mb-4" style={{ letterSpacing: '-0.02em' }}>Notre équipe</h2>
+            <h2 className="text-5xl md:text-6xl font-bold mb-4" style={{ letterSpacing: '-0.02em' }}>Nos équipe</h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">Des professionnels passionnés au service de votre sérénité</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            {TEAM.map(member => (
-              <div key={member.name} className="group">
-                <div className="relative mb-4 overflow-hidden" style={{ width: '240px', height: '320px' }}>
-                  <div className={`absolute -inset-2 bg-gradient-to-br ${member.from} ${member.to} rounded-lg transform group-hover:scale-105 transition-transform`} />
-                  <img src={member.photo} alt={member.name} className="relative w-full h-full object-cover rounded-lg" />
-                </div>
-                <h3 className="font-bold text-xl mb-1">{member.name}</h3>
-                <p className="text-gray-400 text-sm">{member.role}</p>
-              </div>
-            ))}
+          {/* Contenu principal : une image à gauche, texte à droite */}
+          <div className="flex flex-col lg:flex-row items-center gap-12 max-w-6xl mx-auto">
+            <div className="relative w-full lg:w-1/2 h-[400px] overflow-hidden rounded-lg flex items-center justify-center">
+              <img
+                src={photoPhilippe}
+                alt="Philippe Lapique, Fondateur & Développeur"
+                className="relative max-w-full max-h-full object-contain"
+              />
+            </div>
+            <div className="w-full lg:w-1/2 space-y-6">
+              <h3 className="text-3xl font-bold">Philippe Lapique</h3>
+              <p className="text-gray-300 text-lg">Fondateur & Développeur</p>
+              <p className="text-gray-400 leading-relaxed">
+                Philippe a fondé Mémoria avec la conviction que la technologie peut servir à préserver la mémoire et le respect des défunts.
+                Passionné par l’innovation et le service aux familles, il veille à ce que chaque fonctionnalité de la plateforme réponde à un besoin humain et pratique.
+              </p>
+            </div>
           </div>
         </div>
       </section>

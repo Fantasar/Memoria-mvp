@@ -90,10 +90,10 @@ const create = async (userData) => {
         userData.email,
         userData.password_hash,
         userData.role_id,
-        userData.prenom        || null,
-        userData.nom           || null,
+        userData.prenom || null,
+        userData.nom || null,
         userData.zone_intervention || null,
-        userData.siret         || null
+        userData.siret || null
       ]
     );
     return result.rows[0];
@@ -117,16 +117,31 @@ const update = async (userId, userData) => {
        RETURNING id, email, prenom, nom, role_id, zone_intervention, siret, updated_at`,
       [
         userData.email,
-        userData.prenom            || null,
-        userData.nom               || null,
+        userData.prenom || null,
+        userData.nom || null,
         userData.zone_intervention || null,
-        userData.siret             || null,
+        userData.siret || null,
         userId
       ]
     );
     return result.rows[0];
   } catch (error) {
     throw new Error(`userRepository.update : ${error.message}`);
+  }
+};
+
+const updatePassword = async (userId, passwordHash) => {
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET password_hash = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id`,
+      [passwordHash, userId]
+    );
+    return result.rows[0];
+  } catch (error) {
+    throw new Error(`userRepository.updatePassword : ${error.message}`);
   }
 };
 
@@ -164,6 +179,7 @@ const findPendingProviders = async () => {
        LEFT JOIN roles r ON u.role_id = r.id
        WHERE r.name = 'prestataire'
          AND u.is_verified = false
+         AND u.rejected_at IS NULL
        ORDER BY u.created_at DESC`
     );
     return result.rows;
@@ -222,15 +238,26 @@ const getAllUsers = async () => {
   try {
     const result = await pool.query(
       `SELECT
-         u.id, u.prenom, u.nom, u.email,
-         u.created_at, u.is_verified,
-         u.siret, u.zone_intervention,
-         u.rating, u.rejection_reason,
-         r.name as role
+        u.id, u.prenom, u.nom, u.email,
+        u.created_at, u.is_verified, u.is_blocked,
+        u.siret, u.zone_intervention,
+        u.rating, u.rejection_reason,
+        r.name as role,
+        COUNT(DISTINCT CASE 
+        WHEN r.name = 'client'      THEN o_client.id 
+        WHEN r.name = 'prestataire' THEN o_provider.id 
+        END) AS orders_count
        FROM users u
        INNER JOIN roles r ON u.role_id = r.id
+       LEFT JOIN orders o ON o.client_id = u.id
+       LEFT JOIN orders o_client   ON o_client.client_id      = u.id
+       LEFT JOIN orders o_provider ON o_provider.prestataire_id = u.id
        WHERE r.name != 'admin'
          AND u.deleted_at IS NULL
+       GROUP BY u.id, u.prenom, u.nom, u.email,
+                u.created_at, u.is_verified, u.is_blocked,
+                u.siret, u.zone_intervention,
+                u.rating, u.rejection_reason, r.name
        ORDER BY u.created_at DESC`
     );
     return result.rows;
@@ -257,6 +284,36 @@ const updateZone = async (userId, zone) => {
     return result.rows[0];
   } catch (error) {
     throw new Error(`userRepository.updateZone : ${error.message}`);
+  };
+};
+
+const resetRejection = async (userId) => {
+  try {
+    const result = await pool.query(
+      `UPDATE users
+      SET rejection_reason = NULL, rejected_at = NULL, updated_at = NOW()
+      WHERE id = $1
+      RETURNING id, email, prenom, nom, is_verified, rejected_at`,
+      [userId]
+    );
+    return result.rows[0];
+  } catch (error) {
+    throw new Error(`userRepository.resetRejection : ${error.message}`);
+  }
+};
+
+const toggleBlock = async (userId, isBlocked) => {
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET is_blocked = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id, email, prenom, nom, is_blocked`,
+      [isBlocked, userId]
+    );
+    return result.rows[0];
+  } catch (error) {
+    throw new Error(`userRepository.toggleBlock : ${error.message}`);
   }
 };
 
@@ -266,10 +323,13 @@ module.exports = {
   emailExists,
   create,
   update,
+  updatePassword,
   deleteById,
   findPendingProviders,
   approveProvider,
   rejectProvider,
   getAllUsers,
-  updateZone
+  updateZone,
+  resetRejection,
+  toggleBlock
 };

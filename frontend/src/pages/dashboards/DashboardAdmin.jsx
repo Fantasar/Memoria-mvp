@@ -3,34 +3,50 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import Navbar from '../../components/layout/Navbar';
+
 
 const authHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 });
 
 const NAV_SECTIONS = [
-  { key: 'overview',       label: 'Aperçu'           },
-  { key: 'disputes',       label: 'Litiges'          },
-  { key: 'interventions',  label: 'Interventions'    },
-  { key: 'providers',      label: 'Prestataires'     },
-  { key: 'users',          label: 'Utilisateurs'     },
-  { key: 'gallery',        label: 'Galerie photos'   },
-  { key: 'finances',       label: 'Finances'         },
-  { key: 'cemeteries',     label: 'Cimetières'       },
-  { key: 'services',       label: 'Services'         },
-  { key: 'history',        label: 'Historique'       },
+  { key: 'overview', label: 'Aperçu' },
+  { key: 'disputes', label: 'Litiges' },
+  { key: 'interventions', label: 'Interventions' },
+  { key: 'providers', label: 'Prestataires' },
+  { key: 'users', label: 'Utilisateurs' },
+  { key: 'gallery', label: 'Galerie photos' },
+  { key: 'finances', label: 'Finances' },
+  { key: 'cemeteries', label: 'Cimetières' },
+  { key: 'services', label: 'Services' },
+  { key: 'history', label: 'Historique' },
 ];
 
 const STATUS_CONFIG = {
-  pending:             { label: '⏳ En attente',  color: 'bg-yellow-100 text-yellow-800'  },
-  paid:                { label: '💳 Payée',        color: 'bg-blue-100 text-blue-800'      },
-  accepted:            { label: '🔄 Acceptée',     color: 'bg-green-100 text-green-800'    },
-  in_progress:         { label: '🔄 En cours',     color: 'bg-purple-100 text-purple-800'  },
-  awaiting_validation: { label: '⏰ À valider',    color: 'bg-orange-100 text-orange-800'  },
-  completed:           { label: '✅ Terminée',     color: 'bg-green-200 text-green-900'    },
-  disputed:            { label: '🚨 Litige',       color: 'bg-red-100 text-red-800'        },
-  cancelled:           { label: '❌ Annulée',      color: 'bg-gray-100 text-gray-800'      },
-  refunded:            { label: '💸 Remboursée',   color: 'bg-indigo-100 text-indigo-800'  },
+  pending: { label: '⏳ En attente', color: 'bg-yellow-100 text-yellow-800' },
+  paid: { label: '💳 Payée', color: 'bg-blue-100 text-blue-800' },
+  accepted: { label: '🔄 Acceptée', color: 'bg-green-100 text-green-800' },
+  in_progress: { label: '🔄 En cours', color: 'bg-purple-100 text-purple-800' },
+  correction_requested: { label: 'En correcion', color: 'bg-purple-100 text-orange-800' },
+  awaiting_validation: { label: '⏰ À valider', color: 'bg-orange-100 text-orange-800' },
+  completed: { label: '✅ Terminée', color: 'bg-green-200 text-green-900' },
+  disputed: { label: '🚨 Litige', color: 'bg-red-100 text-red-800' },
+  cancelled: { label: '❌ Annulée', color: 'bg-gray-100 text-gray-800' },
+  refunded: { label: '💸 Remboursée', color: 'bg-indigo-100 text-indigo-800' },
+};
+
+const STATUS_LABELS = {
+  pending: 'En attente',
+  paid: 'Payée',
+  accepted: 'Acceptée',
+  in_progress: 'En cours',
+  correction_requested: 'En attente de Correction',
+  awaiting_validation: 'En attente validation',
+  completed: 'Terminée',
+  cancelled: 'Annulée',
+  disputed: 'Litige',
+  refunded: 'Remboursée',
 };
 
 function DashboardAdmin() {
@@ -39,76 +55,92 @@ function DashboardAdmin() {
   const [activeSection, setActiveSection] = useState('overview');
 
   // Données
-  const [stats,            setStats]            = useState(null);
+  const [stats, setStats] = useState(null);
   const [pendingProviders, setPendingProviders] = useState([]);
-  const [pendingOrders,    setPendingOrders]    = useState([]);
-  const [disputedOrders,   setDisputedOrders]   = useState([]);
-  const [orderPhotos,      setOrderPhotos]      = useState({});
-  const [allOrders,        setAllOrders]        = useState([]);
-  const [clients,          setClients]          = useState([]);
-  const [providers,        setProviders]        = useState([]);
-  const [finances,         setFinances]         = useState(null);
-  const [cemeteries,       setCemeteries]       = useState([]);
-  const [services,         setServices]         = useState([]);
-  const [allPhotos,        setAllPhotos]        = useState([]);
+  const [pendingOrders, setPendingOrders] = useState([]);
+  const [disputedOrders, setDisputedOrders] = useState([]);
+  const [orderPhotos, setOrderPhotos] = useState({});
+  const [allOrders, setAllOrders] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [providers, setProviders] = useState([]);
+  const [finances, setFinances] = useState(null);
+  const [cemeteries, setCemeteries] = useState([]);
+  const [services, setServices] = useState([]);
+  const [allPhotos, setAllPhotos] = useState([]);
 
   // Loadings
-  const [loadingStats,      setLoadingStats]      = useState(true);
-  const [loadingProviders,  setLoadingProviders]  = useState(true);
-  const [loadingOrders,     setLoadingOrders]     = useState(true);
-  const [loadingDisputes,   setLoadingDisputes]   = useState(true);
-  const [loadingAllOrders,  setLoadingAllOrders]  = useState(true);
-  const [loadingUsers,      setLoadingUsers]      = useState(true);
-  const [loadingFinances,   setLoadingFinances]   = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingProviders, setLoadingProviders] = useState(true);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingDisputes, setLoadingDisputes] = useState(true);
+  const [loadingAllOrders, setLoadingAllOrders] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingFinances, setLoadingFinances] = useState(true);
   const [loadingCemeteries, setLoadingCemeteries] = useState(true);
-  const [loadingServices,   setLoadingServices]   = useState(true);
-  const [loadingPhotos,     setLoadingPhotos]     = useState(true);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [loadingPhotos, setLoadingPhotos] = useState(true);
 
   // UI states
-  const [historyFilter,   setHistoryFilter]   = useState('all');
-  const [photoFilter,     setPhotoFilter]     = useState('all');
-  const [usersTab,        setUsersTab]        = useState('clients');
-  const [searchUsers,     setSearchUsers]     = useState('');
+  const [historyFilter, setHistoryFilter] = useState('all');
+  const [photoFilter, setPhotoFilter] = useState('all');
+  const [usersTab, setUsersTab] = useState('clients');
+  const [searchUsers, setSearchUsers] = useState('');
   const [searchCemeteries, setSearchCemeteries] = useState('');
-  const [selectedOrder,   setSelectedOrder]   = useState(null);
-  const [selectedUser,    setSelectedUser]    = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [selectedCemetery, setSelectedCemetery] = useState(null);
-  const [selectedPhoto,   setSelectedPhoto]   = useState(null);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
 
   // Modals prestataires
   const [showRejectModal, setShowRejectModal] = useState(null);
-  const [rejectReason,    setRejectReason]    = useState('');
-  const [rejectError,     setRejectError]     = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectError, setRejectError] = useState(null);
 
   // Modals litiges
   const [showDisputeModal, setShowDisputeModal] = useState(null);
-  const [disputeReason,    setDisputeReason]    = useState('');
-  const [disputeError,     setDisputeError]     = useState(null);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeError, setDisputeError] = useState(null);
 
   // Ajout cimetière
   const [showAddCemetery, setShowAddCemetery] = useState(false);
-  const [newCemetery,     setNewCemetery]     = useState({ name: '', city: '', postal_code: '', department: '', address: '' });
-  const [addingCemetery,  setAddingCemetery]  = useState(false);
-  const [cemeteryError,   setCemeteryError]   = useState(null);
+  const [newCemetery, setNewCemetery] = useState({ name: '', city: '', postal_code: '', department: '', address: '' });
+  const [addingCemetery, setAddingCemetery] = useState(false);
+  const [cemeteryError, setCemeteryError] = useState(null);
 
   // Ajout service
   const [showAddService, setShowAddService] = useState(false);
-  const [newService,     setNewService]     = useState({ name: '', description: '', base_price: '' });
-  const [addingService,  setAddingService]  = useState(false);
-  const [serviceError,   setServiceError]   = useState(null);
+  const [newService, setNewService] = useState({ name: '', description: '', base_price: '' });
+  const [addingService, setAddingService] = useState(false);
+  const [serviceError, setServiceError] = useState(null);
 
   // Validation interventions
-  const [validateError, setValidateError]  = useState({});
-  const [resolveError,  setResolveError]   = useState({});
+  const [validateError, setValidateError] = useState({});
+  const [resolveError, setResolveError] = useState({});
 
   // Approve provider
-  const [approveError, setApproveError]    = useState({});
+  const [approveError, setApproveError] = useState({});
 
   // Planning prestataire
   const [selectedProviderCalendar, setSelectedProviderCalendar] = useState(null);
-  const [selectedProviderInfo,     setSelectedProviderInfo]     = useState(null);
-  const [providerCalendarData,     setProviderCalendarData]     = useState([]);
-  const [loadingProviderCalendar,  setLoadingProviderCalendar]  = useState(false);
+  const [selectedProviderInfo, setSelectedProviderInfo] = useState(null);
+  const [providerCalendarData, setProviderCalendarData] = useState([]);
+  const [loadingProviderCalendar, setLoadingProviderCalendar] = useState(false);
+  const [selectedMission, setSelectedMission] = useState(null);
+
+  // Annuaire des utilisateurs et prestataire de la plateforme
+  const [blockError, setBlockError] = useState({});
+  const [deleteError, setDeleteError] = useState({});
+
+  // Gallerie photos
+  const [searchPhotos, setSearchPhotos] = useState('');
+
+
+  // Commandes client
+  const [selectedClientOrders, setSelectedClientOrders] = useState(null);
+  const [clientOrdersData, setClientOrdersData] = useState([]);
+  const [loadingClientOrders, setLoadingClientOrders] = useState(false);
+  const [disputesTab, setDisputesTab] = useState('disputes');
+
 
   useEffect(() => {
     fetchStats();
@@ -280,14 +312,15 @@ function DashboardAdmin() {
 
   const handleResolveDispute = async (orderId, action) => {
     const messages = {
-      validate:           'Valider malgré le litige ?',
-      refund:             'Rembourser le client ?',
+      validate: 'Valider malgré le litige ?',
+      refund: 'Rembourser le client ?',
       request_correction: 'Demander une correction ?'
     };
     if (!window.confirm(messages[action])) return;
     try {
       await axios.patch(`/api/orders/${orderId}/resolve`, { action }, authHeaders());
       fetchDisputedOrders();
+      fetchAllOrders();
     } catch (err) {
       setResolveError(prev => ({ ...prev, [orderId]: err.response?.data?.error?.message || 'Erreur' }));
     }
@@ -349,10 +382,10 @@ function DashboardAdmin() {
     </div>
   );
 
-  const filteredOrders     = historyFilter === 'all' ? allOrders : allOrders.filter(o => o.status === historyFilter);
-  const filteredPhotos     = photoFilter === 'all'   ? allPhotos : allPhotos.filter(p => (p.photo_type || p.type) === photoFilter);
-  const filteredClients    = clients.filter(c => `${c.prenom} ${c.nom} ${c.email}`.toLowerCase().includes(searchUsers.toLowerCase()));
-  const filteredProviders  = providers.filter(p => `${p.prenom} ${p.nom} ${p.email} ${p.siret || ''} ${p.zone_intervention || ''}`.toLowerCase().includes(searchUsers.toLowerCase()));
+  const filteredOrders = historyFilter === 'all' ? allOrders : allOrders.filter(o => o.status === historyFilter);
+  const filteredPhotos = photoFilter === 'all' ? allPhotos : allPhotos.filter(p => (p.photo_type || p.type) === photoFilter);
+  const filteredClients = clients.filter(c => `${c.prenom} ${c.nom} ${c.email}`.toLowerCase().includes(searchUsers.toLowerCase()));
+  const filteredProviders = providers.filter(p => `${p.prenom} ${p.nom} ${p.email} ${p.siret || ''} ${p.zone_intervention || ''}`.toLowerCase().includes(searchUsers.toLowerCase()));
   const filteredCemeteries = cemeteries.filter(c => `${c.name} ${c.city} ${c.department || ''}`.toLowerCase().includes(searchCemeteries.toLowerCase()));
 
   // ─── Rendu des sections ────────────────────────────────────────────────────
@@ -367,10 +400,10 @@ function DashboardAdmin() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 {[
-                  { label: 'Utilisateurs',       value: stats.users.total,              sub: `Clients: ${stats.users.by_role.client || 0} · Prestataires: ${stats.users.by_role.prestataire || 0}`, from: 'from-blue-500',   to: 'to-blue-600'   },
-                  { label: 'Commandes',           value: stats.orders.total,             sub: `Complétées: ${stats.orders.by_status.completed || 0} · En cours: ${stats.orders.by_status.accepted || 0}`, from: 'from-green-500',  to: 'to-green-600'  },
-                  { label: 'CA Total',            value: `${stats.revenue.total.toFixed(2)}€`, sub: `${stats.revenue.paid_orders} commandes payées`, from: 'from-purple-500', to: 'to-purple-600' },
-                  { label: 'Prestataires Actifs', value: stats.users.by_role.prestataire || 0, sub: '',                                                from: 'from-orange-500', to: 'to-orange-600' },
+                  { label: 'Utilisateurs', value: stats.users.total, sub: `Clients: ${stats.users.by_role.client || 0} · Prestataires: ${stats.users.by_role.prestataire || 0}`, from: 'from-blue-500', to: 'to-blue-600' },
+                  { label: 'Commandes', value: stats.orders.total, sub: `Complétées: ${stats.orders.by_status.completed || 0} · En cours: ${stats.orders.by_status.accepted || 0} · Annulées: ${stats.orders.by_status.cancelled || 0}`, from: 'from-green-500', to: 'to-green-600' },
+                  { label: 'CA Total', value: `${stats.revenue.total.toFixed(2)}€`, sub: `${stats.revenue.paid_orders} commandes payées`, from: 'from-purple-500', to: 'to-purple-600' },
+                  { label: 'Prestataires Actifs', value: stats.users.by_role.prestataire || 0, sub: '', from: 'from-orange-500', to: 'to-orange-600' },
                 ].map(kpi => (
                   <div key={kpi.label} className={`bg-gradient-to-br ${kpi.from} ${kpi.to} rounded-lg shadow-lg p-6 text-white`}>
                     <h3 className="text-sm font-medium opacity-90 mb-2">{kpi.label}</h3>
@@ -385,7 +418,7 @@ function DashboardAdmin() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {Object.entries(stats.orders.by_status).map(([status, count]) => (
                     <div key={status} className="border border-gray-200 rounded-lg p-4 text-center">
-                      <p className="text-sm text-gray-500 mb-1 capitalize">{status}</p>
+                      <p className="text-sm text-gray-500 mb-1">{STATUS_LABELS[status] || status}</p>
                       <p className="text-2xl font-bold">{count}</p>
                     </div>
                   ))}
@@ -426,7 +459,7 @@ function DashboardAdmin() {
           </div>
 
           <div className="flex gap-3 mb-6 flex-wrap">
-            {['all','pending','paid','accepted','awaiting_validation','completed','disputed','cancelled','refunded'].map(s => (
+            {['all', 'pending', 'paid', 'accepted', 'awaiting_validation', 'completed', 'disputed', 'cancelled', 'refunded'].map(s => (
               <button key={s} onClick={() => setHistoryFilter(s)}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition ${historyFilter === s ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                 {s === 'all' ? 'Toutes' : STATUS_CONFIG[s]?.label || s}
@@ -469,8 +502,22 @@ function DashboardAdmin() {
             <span className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">{allPhotos.length} photos</span>
           </div>
 
+          {/* Barre de recherche */}
+          <div className="relative mb-4">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" value={searchPhotos} onChange={e => setSearchPhotos(e.target.value)}
+              placeholder="Rechercher par n° commande, client, prestataire, cimetière..."
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            {searchPhotos && (
+              <button onClick={() => setSearchPhotos('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>
+            )}
+          </div>
+
+          {/* Filtres type */}
           <div className="flex gap-3 mb-6">
-            {[['all','🖼️ Toutes'],['before','📸 Avant'],['after','✨ Après']].map(([type, label]) => (
+            {[['all', '🖼️ Toutes'], ['before', '📸 Avant'], ['after', '✨ Après']].map(([type, label]) => (
               <button key={type} onClick={() => setPhotoFilter(type)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition ${photoFilter === type ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                 {label}
@@ -478,30 +525,51 @@ function DashboardAdmin() {
             ))}
           </div>
 
-          {loadingPhotos ? <Spinner /> : filteredPhotos.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg"><p className="text-gray-600">Aucune photo disponible</p></div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredPhotos.map(photo => (
-                <div key={photo.id} onClick={() => setSelectedPhoto(photo)}
-                  className="group relative cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition">
-                  <img src={photo.url} alt={`${photo.photo_type} - ${photo.cemetery_name}`}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute top-2 left-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${(photo.photo_type || photo.type) === 'before' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'}`}>
-                      {photo.photo_type === 'before' ? '📸 Avant' : '✨ Après'}
-                    </span>
-                  </div>
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-end">
-                    <div className="p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <p className="text-sm font-semibold">{photo.cemetery_name}</p>
-                      <p className="text-xs opacity-80">{photo.cemetery_city}</p>
+          {loadingPhotos ? <Spinner /> : (() => {
+            const displayed = filteredPhotos.filter(photo => {
+              if (!searchPhotos) return true;
+              const q = searchPhotos.toLowerCase();
+              return (
+                photo.order_id?.toString().includes(q) ||
+                photo.cemetery_name?.toLowerCase().includes(q) ||
+                photo.cemetery_city?.toLowerCase().includes(q) ||
+                photo.client_prenom?.toLowerCase().includes(q) ||
+                photo.client_nom?.toLowerCase().includes(q) ||
+                photo.prestataire_prenom?.toLowerCase().includes(q) ||
+                photo.prestataire_nom?.toLowerCase().includes(q) ||
+                photo.service_name?.toLowerCase().includes(q)
+              );
+            });
+
+            return displayed.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">{searchPhotos ? 'Aucun résultat' : 'Aucune photo disponible'}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {displayed.map(photo => (
+                  <div key={photo.id} onClick={() => setSelectedPhoto(photo)}
+                    className="group relative cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition">
+                    <img src={photo.url} alt={`${photo.photo_type} - ${photo.cemetery_name}`}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="absolute top-2 left-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${(photo.photo_type || photo.type) === 'before' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'}`}>
+                        {photo.photo_type === 'before' ? '📸 Avant' : '✨ Après'}
+                      </span>
+                    </div>
+                    {/* Infos au survol */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 flex items-end">
+                      <div className="p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-full">
+                        <p className="text-sm font-semibold truncate">{photo.cemetery_name}</p>
+                        <p className="text-xs opacity-80">{photo.cemetery_city}</p>
+                        <p className="text-xs opacity-80 mt-1">#{photo.order_id?.toString().substring(0, 8)}...</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            );
+          })()}
 
           {/* Lightbox */}
           {selectedPhoto && (
@@ -516,19 +584,34 @@ function DashboardAdmin() {
                   </div>
                   <button onClick={() => setSelectedPhoto(null)} className="text-gray-500 hover:text-gray-700 text-2xl font-bold">✕</button>
                 </div>
+
                 <div className="p-4">
                   <img src={selectedPhoto.url} alt="Photo intervention" className="w-full max-h-96 object-contain rounded-lg" />
                 </div>
+
                 <div className="p-4 border-t bg-gray-50 rounded-b-xl">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    <div><p className="text-gray-500">N° commande</p><p className="font-medium font-mono text-xs">{selectedPhoto.order_id}</p></div>
                     <div><p className="text-gray-500">Cimetière</p><p className="font-medium">{selectedPhoto.cemetery_name}</p></div>
                     <div><p className="text-gray-500">Ville</p><p className="font-medium">{selectedPhoto.cemetery_city}</p></div>
                     <div><p className="text-gray-500">Service</p><p className="font-medium">{selectedPhoto.service_name}</p></div>
                     <div>
-                      <p className="text-gray-500">Statut</p>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${STATUS_CONFIG[selectedPhoto.order_status]?.color}`}>
-                        {STATUS_CONFIG[selectedPhoto.order_status]?.label}
+                      <p className="text-gray-500">Client</p>
+                      <p className="font-medium">{selectedPhoto.client_prenom} {selectedPhoto.client_nom}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Prestataire</p>
+                      <p className="font-medium">{selectedPhoto.prestataire_prenom} {selectedPhoto.prestataire_nom}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Statut commande</p>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${STATUS_LABELS[selectedPhoto.order_status] ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {STATUS_LABELS[selectedPhoto.order_status] || selectedPhoto.order_status}
                       </span>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Date upload</p>
+                      <p className="font-medium">{new Date(selectedPhoto.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     </div>
                   </div>
                 </div>
@@ -545,9 +628,9 @@ function DashboardAdmin() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {[
-                  { label: '💰 CA Total plateforme',       value: `${finances.revenue.total.toFixed(2)}€`,            sub: `${finances.revenue.paid_orders} commandes payées`, from: 'from-green-500',  to: 'to-green-600'  },
-                  { label: '🏦 Commission Mémoria (20%)', value: `${(finances.revenue.total * 0.20).toFixed(2)}€`,    sub: 'Revenus de la plateforme',                          from: 'from-purple-500', to: 'to-purple-600' },
-                  { label: '👷 Reversé prestataires (80%)', value: `${(finances.revenue.total * 0.80).toFixed(2)}€`, sub: 'Total reversé',                                     from: 'from-blue-500',   to: 'to-blue-600'   },
+                  { label: '💰 CA Total plateforme', value: `${finances.revenue.total.toFixed(2)}€`, sub: `${finances.revenue.paid_orders} commandes payées`, from: 'from-green-500', to: 'to-green-600' },
+                  { label: '🏦 Commission Mémoria (20%)', value: `${(finances.revenue.total * 0.20).toFixed(2)}€`, sub: 'Revenus de la plateforme', from: 'from-purple-500', to: 'to-purple-600' },
+                  { label: '👷 Reversé prestataires (80%)', value: `${(finances.revenue.total * 0.80).toFixed(2)}€`, sub: 'Total reversé', from: 'from-blue-500', to: 'to-blue-600' },
                 ].map(kpi => (
                   <div key={kpi.label} className={`bg-gradient-to-br ${kpi.from} ${kpi.to} rounded-lg p-6 text-white shadow-lg`}>
                     <h3 className="text-sm font-medium opacity-90 mb-2">{kpi.label}</h3>
@@ -561,12 +644,12 @@ function DashboardAdmin() {
                 <h3 className="text-lg font-semibold mb-4">Répartition financière par statut</h3>
                 <div className="space-y-3">
                   {[
-                    { label: '✅ Commandes terminées',    status: 'completed', color: 'bg-green-500'  },
-                    { label: '💳 Commandes payées',       status: 'paid',      color: 'bg-blue-500'   },
-                    { label: '💸 Commandes remboursées',  status: 'refunded',  color: 'bg-red-500'    },
-                    { label: '🚨 Commandes en litige',    status: 'disputed',  color: 'bg-orange-500' },
+                    { label: '✅ Commandes terminées', status: 'completed', color: 'bg-green-500' },
+                    { label: '💳 Commandes payées', status: 'paid', color: 'bg-blue-500' },
+                    { label: '💸 Commandes remboursées', status: 'refunded', color: 'bg-red-500' },
+                    { label: '🚨 Commandes en litige', status: 'disputed', color: 'bg-orange-500' },
                   ].map(item => {
-                    const count      = finances.orders.by_status[item.status] || 0;
+                    const count = finances.orders.by_status[item.status] || 0;
                     const percentage = Math.round((count / (finances.orders.total || 1)) * 100);
                     return (
                       <div key={item.status}>
@@ -664,10 +747,10 @@ function DashboardAdmin() {
                 </div>
                 <div className="p-6 space-y-2 text-sm">
                   {[
-                    ['Ville',        selectedCemetery.city],
-                    ['Code postal',  selectedCemetery.postal_code || 'Non renseigné'],
-                    ['Département',  selectedCemetery.department  || 'Non renseigné'],
-                    ['Adresse',      selectedCemetery.address     || 'Non renseignée'],
+                    ['Ville', selectedCemetery.city],
+                    ['Code postal', selectedCemetery.postal_code || 'Non renseigné'],
+                    ['Département', selectedCemetery.department || 'Non renseigné'],
+                    ['Adresse', selectedCemetery.address || 'Non renseignée'],
                   ].map(([label, value]) => (
                     <div key={label} className="flex justify-between">
                       <span className="text-gray-500">{label}</span>
@@ -695,31 +778,31 @@ function DashboardAdmin() {
                   {cemeteryError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{cemeteryError}</p></div>}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nom <span className="text-red-500">*</span></label>
-                    <input type="text" value={newCemetery.name} onChange={e => setNewCemetery({...newCemetery, name: e.target.value})}
+                    <input type="text" value={newCemetery.name} onChange={e => setNewCemetery({ ...newCemetery, name: e.target.value })}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                       placeholder="Cimetière de..." required />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Ville <span className="text-red-500">*</span></label>
-                      <input type="text" value={newCemetery.city} onChange={e => setNewCemetery({...newCemetery, city: e.target.value})}
+                      <input type="text" value={newCemetery.city} onChange={e => setNewCemetery({ ...newCemetery, city: e.target.value })}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500" required />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Code postal <span className="text-red-500">*</span></label>
-                      <input type="text" value={newCemetery.postal_code} onChange={e => setNewCemetery({...newCemetery, postal_code: e.target.value})}
+                      <input type="text" value={newCemetery.postal_code} onChange={e => setNewCemetery({ ...newCemetery, postal_code: e.target.value })}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                         pattern="[0-9]{5}" required />
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Département</label>
-                    <input type="text" value={newCemetery.department} onChange={e => setNewCemetery({...newCemetery, department: e.target.value})}
+                    <input type="text" value={newCemetery.department} onChange={e => setNewCemetery({ ...newCemetery, department: e.target.value })}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Gironde" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Adresse complète (optionnel)</label>
-                    <input type="text" value={newCemetery.address} onChange={e => setNewCemetery({...newCemetery, address: e.target.value})}
+                    <input type="text" value={newCemetery.address} onChange={e => setNewCemetery({ ...newCemetery, address: e.target.value })}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500" />
                   </div>
                   <div className="flex gap-3 pt-4 border-t">
@@ -768,9 +851,9 @@ function DashboardAdmin() {
                   </div>
                   <div className="grid grid-cols-3 gap-3 text-sm border-t border-gray-100 pt-4">
                     {[
-                      { label: 'Prix client',     value: service.base_price ? `${parseFloat(service.base_price).toFixed(2)}€` : '-',                          bg: 'bg-green-50',  text: 'text-green-600'  },
-                      { label: 'Commission 20%',  value: service.base_price ? `${(parseFloat(service.base_price) * 0.20).toFixed(2)}€` : '-',                  bg: 'bg-purple-50', text: 'text-purple-600' },
-                      { label: 'Prestataire 80%', value: service.base_price ? `${(parseFloat(service.base_price) * 0.80).toFixed(2)}€` : '-',                  bg: 'bg-blue-50',   text: 'text-blue-600'   },
+                      { label: 'Prix client', value: service.base_price ? `${parseFloat(service.base_price).toFixed(2)}€` : '-', bg: 'bg-green-50', text: 'text-green-600' },
+                      { label: 'Commission 20%', value: service.base_price ? `${(parseFloat(service.base_price) * 0.20).toFixed(2)}€` : '-', bg: 'bg-purple-50', text: 'text-purple-600' },
+                      { label: 'Prestataire 80%', value: service.base_price ? `${(parseFloat(service.base_price) * 0.80).toFixed(2)}€` : '-', bg: 'bg-blue-50', text: 'text-blue-600' },
                     ].map(col => (
                       <div key={col.label} className={`text-center p-2 ${col.bg} rounded-lg`}>
                         <p className="text-gray-500 text-xs mb-1">{col.label}</p>
@@ -795,20 +878,20 @@ function DashboardAdmin() {
                   {serviceError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{serviceError}</p></div>}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nom du service <span className="text-red-500">*</span></label>
-                    <input type="text" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})}
+                    <input type="text" value={newService.name} onChange={e => setNewService({ ...newService, name: e.target.value })}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                       placeholder="Ex: Nettoyage de tombe..." required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})}
+                    <textarea value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500" rows="3" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Prix de base <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <input type="number" step="0.01" min="0.01" value={newService.base_price}
-                        onChange={e => setNewService({...newService, base_price: e.target.value})}
+                        onChange={e => setNewService({ ...newService, base_price: e.target.value })}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-purple-500"
                         placeholder="45.00" required />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
@@ -833,7 +916,9 @@ function DashboardAdmin() {
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold">Utilisateurs</h2>
-            <span className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">{clients.length + providers.length} utilisateurs</span>
+            <span className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
+              {clients.length + providers.length} utilisateurs
+            </span>
           </div>
 
           <div className="relative mb-6">
@@ -843,11 +928,13 @@ function DashboardAdmin() {
             <input type="text" value={searchUsers} onChange={e => setSearchUsers(e.target.value)}
               placeholder="Rechercher par nom, email, SIRET, zone..."
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-            {searchUsers && <button onClick={() => setSearchUsers('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>}
+            {searchUsers && (
+              <button onClick={() => setSearchUsers('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>
+            )}
           </div>
 
           <div className="flex gap-2 mb-6 border-b border-gray-200">
-            {[['clients','👥 Clients', filteredClients.length], ['providers','🔧 Prestataires', filteredProviders.length]].map(([tab, label, count]) => (
+            {[['clients', '👥 Clients', filteredClients.length], ['providers', '🔧 Prestataires', filteredProviders.length]].map(([tab, label, count]) => (
               <button key={tab} onClick={() => setUsersTab(tab)}
                 className={`px-6 py-3 font-medium text-sm transition border-b-2 -mb-px ${usersTab === tab ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                 {label} ({count})
@@ -857,9 +944,12 @@ function DashboardAdmin() {
 
           {loadingUsers ? <Spinner /> : (
             <>
+              {/* ── Onglet Clients ── */}
               {usersTab === 'clients' && (
                 filteredClients.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-50 rounded-lg"><p className="text-gray-600">{searchUsers ? 'Aucun résultat' : 'Aucun client inscrit'}</p></div>
+                  <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <p className="text-gray-600">{searchUsers ? 'Aucun résultat' : 'Aucun client inscrit'}</p>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     {filteredClients.map(client => (
@@ -880,9 +970,10 @@ function DashboardAdmin() {
                               <p className="text-gray-500">Inscrit le</p>
                               <p className="font-medium">{new Date(client.created_at).toLocaleDateString('fr-FR')}</p>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${client.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                              {client.is_verified ? '✅ Vérifié' : '⏳ Non vérifié'}
-                            </span>
+                            <div className="text-right">
+                              <p className="text-gray-500">Commandes</p>
+                              <p className="font-medium">{client.orders_count || 0}</p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -891,13 +982,17 @@ function DashboardAdmin() {
                 )
               )}
 
+              {/* ── Onglet Prestataires ── */}
               {usersTab === 'providers' && (
                 filteredProviders.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-50 rounded-lg"><p className="text-gray-600">Aucun prestataire inscrit</p></div>
+                  <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <p className="text-gray-600">Aucun prestataire inscrit</p>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     {filteredProviders.map(provider => (
-                      <div key={provider.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                      <div key={provider.id} onClick={() => setSelectedUser(provider)}
+                        className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-purple-300 transition cursor-pointer">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-lg">
@@ -914,12 +1009,6 @@ function DashboardAdmin() {
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${provider.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                               {provider.is_verified ? '✅ Vérifié' : '⏳ En attente'}
                             </span>
-                            {provider.is_verified && (
-                              <button onClick={(e) => { e.stopPropagation(); setSelectedProviderCalendar(provider.id); setSelectedProviderInfo(provider); fetchProviderCalendar(provider.id); }}
-                                className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition">
-                                📅 Planning
-                              </button>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -928,10 +1017,13 @@ function DashboardAdmin() {
                 )
               )}
 
-              {/* Modal fiche utilisateur */}
+              {/* ── Modal fiche utilisateur/prestataire ── */}
               {selectedUser && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedUser(null)}>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                  onClick={() => setSelectedUser(null)}>
                   <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+
+                    {/* En-tête */}
                     <div className="flex items-center justify-between p-6 border-b">
                       <div className="flex items-center gap-4">
                         <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl ${selectedUser.role === 'client' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
@@ -946,23 +1038,143 @@ function DashboardAdmin() {
                       </div>
                       <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
                     </div>
-                    <div className="p-6 space-y-4 text-sm">
+
+                    {/* Informations */}
+                    <div className="p-6 space-y-3 text-sm">
                       <div className="flex justify-between"><span className="text-gray-500">Email</span><span className="font-medium">{selectedUser.email}</span></div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Statut</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedUser.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                          {selectedUser.is_verified ? '✅ Vérifié' : '⏳ Non vérifié'}
-                        </span>
+                        <span className="text-gray-500">Inscrit le</span>
+                        <span className="font-medium">{new Date(selectedUser.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Commandes</span>
+                        <span className="font-medium">{selectedUser.orders_count || 0}</span>
+                      </div>
+
+                      {selectedUser.role === 'client' && selectedUser.orders_count > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Historique</span>
+                          <button
+                            onClick={async () => {
+                              setLoadingClientOrders(true);
+                              try {
+                                const res = await axios.get('/api/admin/users/' + selectedUser.id + '/orders', authHeaders());
+                                setClientOrdersData(res.data.data || []);
+                                setSelectedClientOrders(selectedUser);
+                              } catch { setClientOrdersData([]); }
+                              finally { setLoadingClientOrders(false); }
+                            }}
+                            className="text-purple-600 hover:underline text-sm font-medium">
+                            {loadingClientOrders ? 'Chargement...' : 'Voir les commandes →'}
+                          </button>
+                        </div>
+                      )}
+
                       {selectedUser.role === 'prestataire' && (
                         <>
                           <div className="flex justify-between"><span className="text-gray-500">SIRET</span><span className="font-medium">{selectedUser.siret || '-'}</span></div>
                           <div className="flex justify-between"><span className="text-gray-500">Zone</span><span className="font-medium">{selectedUser.zone_intervention || '-'}</span></div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Statut</span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedUser.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                              {selectedUser.is_verified ? '✅ Vérifié' : '⏳ En attente'}
+                            </span>
+                          </div>
+                          {selectedUser.rating && (
+                            <div className="flex justify-between"><span className="text-gray-500">Note moyenne</span><span className="font-medium">⭐ {parseFloat(selectedUser.rating).toFixed(1)}/5</span></div>
+                          )}
+                          {selectedUser.is_verified && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Planning</span>
+                              <button
+                                onClick={() => { setSelectedUser(null); setSelectedProviderCalendar(selectedUser.id); setSelectedProviderInfo(selectedUser); fetchProviderCalendar(selectedUser.id); }}
+                                className="text-purple-600 hover:underline text-sm font-medium">
+                                Voir le planning →
+                              </button>
+                            </div>
+                          )}
                         </>
+                      )}
+
+                      {/* Erreurs */}
+                      {blockError[selectedUser.id] && <p className="text-red-600 text-sm">{blockError[selectedUser.id]}</p>}
+                      {deleteError[selectedUser.id] && <p className="text-red-600 text-sm">{deleteError[selectedUser.id]}</p>}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="p-6 border-t bg-gray-50 rounded-b-xl flex gap-3">
+                      <button
+                        onClick={async () => {
+                          try {
+                            await axios.patch(`/api/admin/users/${selectedUser.id}/toggle-block`, {}, authHeaders());
+                            setSelectedUser(null);
+                            fetchAllUsers();
+                          } catch (err) {
+                            setBlockError(prev => ({ ...prev, [selectedUser.id]: err.response?.data?.error?.message || 'Erreur' }));
+                          }
+                        }}
+                        className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition">
+                        {selectedUser.is_blocked ? '🔓 Débloquer' : '🔒 Bloquer'}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm(`Supprimer définitivement le compte de ${selectedUser.prenom} ${selectedUser.nom} ?`)) return;
+                          try {
+                            await axios.delete(`/api/admin/users/${selectedUser.id}`, authHeaders());
+                            setSelectedUser(null);
+                            fetchAllUsers();
+                          } catch (err) {
+                            setDeleteError(prev => ({ ...prev, [selectedUser.id]: err.response?.data?.error?.message || 'Erreur' }));
+                          }
+                        }}
+                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition">
+                        🗑️ Supprimer
+                      </button>
+                      <button onClick={() => setSelectedUser(null)}
+                        className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition">
+                        Fermer
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* Modal commandes client */}
+              {selectedClientOrders && (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-60 p-4"
+                  onClick={() => setSelectedClientOrders(null)}>
+                  <div className="bg-white rounded-xl max-w-2xl w-full max-h-screen overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
+                      <h3 className="text-lg font-bold">Commandes de {selectedClientOrders.prenom} {selectedClientOrders.nom}</h3>
+                      <button onClick={() => setSelectedClientOrders(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
+                    </div>
+                    <div className="p-6">
+                      {clientOrdersData.length === 0 ? (
+                        <p className="text-center text-gray-500 py-8">Aucune commande</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {clientOrdersData.map(order => (
+                            <div key={order.id} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-medium">{order.service_name}</span>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800`}>
+                                  {STATUS_LABELS[order.status] || order.status}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600">📍 {order.cemetery_name}</p>
+                              <p className="text-sm text-gray-600">📅 {new Date(order.created_at).toLocaleDateString('fr-FR')}</p>
+                              <p className="text-sm font-bold text-purple-600 mt-1">{parseFloat(order.price).toFixed(2)}€</p>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
                     <div className="p-6 border-t bg-gray-50 rounded-b-xl">
-                      <button onClick={() => setSelectedUser(null)} className="w-full px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">Fermer</button>
+                      <button onClick={() => setSelectedClientOrders(null)}
+                        className="w-full px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">
+                        Fermer
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -975,47 +1187,142 @@ function DashboardAdmin() {
       case 'disputes': return (
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold">Litiges en cours</h2>
-            <span className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-800">{disputedOrders.length} litige{disputedOrders.length > 1 ? 's' : ''}</span>
+            <h2 className="text-2xl font-semibold">Litiges & Corrections</h2>
+            <div className="flex gap-2">
+              <span className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-800">
+                {disputedOrders.length} litige{disputedOrders.length > 1 ? 's' : ''}
+              </span>
+              <span className="px-3 py-1 rounded-full text-sm bg-orange-100 text-orange-800">
+                {allOrders.filter(o => o.status === 'in_progress').length} en correction
+              </span>
+            </div>
           </div>
-          {loadingDisputes ? <Spinner /> : disputedOrders.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg"><p className="text-gray-600">Aucun litige en cours</p></div>
-          ) : (
-            <div className="space-y-4">
-              {disputedOrders.map(order => {
-                const photos      = orderPhotos[order.id] || [];
-                const beforePhoto = photos.find(p => p.type === 'before');
-                const afterPhoto  = photos.find(p => p.type === 'after');
-                return (
-                  <div key={order.id} className="border-2 border-red-200 rounded-lg p-6 bg-red-50">
+
+          {/* Onglets */}
+          <div className="flex gap-2 mb-6 border-b border-gray-200">
+            {[
+              ['disputes', '🚨 Litiges', disputedOrders.length],
+              ['correction', '🔄 Missions en correction', allOrders.filter(o => o.status === 'correction_requested').length]
+            ].map(([tab, label, count]) => (
+              <button key={tab} onClick={() => setDisputesTab(tab)}
+                className={`px-6 py-3 font-medium text-sm transition border-b-2 -mb-px ${disputesTab === tab
+                  ? 'border-red-600 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}>
+                {label} ({count})
+              </button>
+            ))}
+          </div>
+
+          {/* ── Onglet Litiges ── */}
+          {disputesTab === 'disputes' && (
+            loadingDisputes ? <Spinner /> : disputedOrders.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">Aucun litige en cours</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {disputedOrders.map(order => {
+                  const photos = orderPhotos[order.id] || [];
+                  const beforePhoto = photos.find(p => p.type === 'before');
+                  const afterPhoto = photos.find(p => p.type === 'after');
+                  return (
+                    <div key={order.id} className="border-2 border-red-200 rounded-lg p-6 bg-red-50">
+                      <div className="flex items-center gap-3 mb-4">
+                        <h3 className="text-lg font-semibold">{order.cemetery_name}</h3>
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">🚨 Litige</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div><p className="text-sm text-gray-500">Client</p><p className="font-medium">{order.client_prenom} {order.client_nom}</p></div>
+                        <div><p className="text-sm text-gray-500">Prestataire</p><p className="font-medium">{order.prestataire_prenom} {order.prestataire_nom}</p></div>
+                      </div>
+                      <div className="mb-4 p-3 bg-white rounded border border-red-200">
+                        <p className="text-sm font-medium text-red-900 mb-1">Motif :</p>
+                        <p className="text-sm">{order.dispute_reason}</p>
+                      </div>
+                      {(beforePhoto || afterPhoto) && (
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          {beforePhoto && <div><p className="text-sm font-medium mb-2">📸 Avant</p><img src={beforePhoto.url} alt="Avant" className="w-full h-48 object-cover rounded-lg" /></div>}
+                          {afterPhoto && <div><p className="text-sm font-medium mb-2">✨ Après</p><img src={afterPhoto.url} alt="Après" className="w-full h-48 object-cover rounded-lg" /></div>}
+                        </div>
+                      )}
+                      {resolveError[order.id] && (
+                        <div className="mb-3 bg-red-100 border border-red-300 rounded-lg p-3">
+                          <p className="text-red-800 text-sm">{resolveError[order.id]}</p>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-3 gap-3">
+                        <button onClick={() => handleResolveDispute(order.id, 'validate')} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">✓ Valider</button>
+                        <button onClick={() => handleResolveDispute(order.id, 'request_correction')} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">🔄 Correction</button>
+                        <button onClick={() => handleResolveDispute(order.id, 'refund')} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">💸 Rembourser</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          )}
+
+          {/* ── Onglet Missions en correction ── */}
+          {disputesTab === 'correction' && (
+            allOrders.filter(o => o.status === 'correction_requested' || o.status === 'correction_submitted').length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">Aucune mission en correction</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {allOrders.filter(o => o.status === 'correction_requested' || o.status === 'correction_submitted').map(order => (
+                  <div key={order.id} className={`border-2 rounded-lg p-6 ${order.status === 'correction_submitted'
+                    ? 'border-blue-200 bg-blue-50'
+                    : 'border-orange-200 bg-orange-50'
+                    }`}>
                     <div className="flex items-center gap-3 mb-4">
                       <h3 className="text-lg font-semibold">{order.cemetery_name}</h3>
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">🚨 Litige</span>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${order.status === 'correction_submitted'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-orange-600 text-white'
+                        }`}>
+                        {order.status === 'correction_submitted' ? '📋 Correction soumise' : '⚠️ Correction demandée'}
+                      </span>
                     </div>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div><p className="text-sm text-gray-500">Client</p><p className="font-medium">{order.client_prenom} {order.client_nom}</p></div>
                       <div><p className="text-sm text-gray-500">Prestataire</p><p className="font-medium">{order.prestataire_prenom} {order.prestataire_nom}</p></div>
+                      <div><p className="text-sm text-gray-500">Service</p><p className="font-medium">{order.service_name}</p></div>
+                      <div><p className="text-sm text-gray-500">Prix</p><p className="font-bold">{parseFloat(order.price).toFixed(2)}€</p></div>
+                      <div><p className="text-sm text-gray-500">Commande créée le</p><p className="font-medium">{new Date(order.created_at).toLocaleDateString('fr-FR')}</p></div>
                     </div>
-                    <div className="mb-4 p-3 bg-white rounded border border-red-200">
-                      <p className="text-sm font-medium text-red-900 mb-1">Motif :</p>
-                      <p className="text-sm">{order.dispute_reason}</p>
-                    </div>
-                    {(beforePhoto || afterPhoto) && (
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        {beforePhoto && <div><p className="text-sm font-medium mb-2">📸 Avant</p><img src={beforePhoto.url} alt="Avant" className="w-full h-48 object-cover rounded-lg" /></div>}
-                        {afterPhoto  && <div><p className="text-sm font-medium mb-2">✨ Après</p><img src={afterPhoto.url}  alt="Après" className="w-full h-48 object-cover rounded-lg" /></div>}
+
+                    {order.correction_reason && (
+                      <div className="mb-4 p-3 bg-white rounded border border-orange-200">
+                        <p className="text-sm font-medium text-orange-900 mb-1">Motif de correction :</p>
+                        <p className="text-sm">{order.correction_reason}</p>
                       </div>
                     )}
-                    {resolveError[order.id] && <div className="mb-3 bg-red-100 border border-red-300 rounded-lg p-3"><p className="text-red-800 text-sm">{resolveError[order.id]}</p></div>}
-                    <div className="grid grid-cols-3 gap-3">
-                      <button onClick={() => handleResolveDispute(order.id, 'validate')} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">✓ Valider</button>
-                      <button onClick={() => handleResolveDispute(order.id, 'request_correction')} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">🔄 Correction</button>
-                      <button onClick={() => handleResolveDispute(order.id, 'refund')} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">💸 Rembourser</button>
-                    </div>
+
+                    {/* Boutons — uniquement si correction soumise */}
+                    {order.status === 'correction_submitted' && (
+                      <div className="grid grid-cols-2 gap-3 mt-4">
+                        <button onClick={() => handleResolveDispute(order.id, 'validate')}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
+                          ✓ Valider la correction
+                        </button>
+                        <button onClick={() => handleResolveDispute(order.id, 'request_correction')}
+                          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
+                          🔄 Nouvelle correction
+                        </button>
+                      </div>
+                    )}
+
+                    {resolveError[order.id] && (
+                      <div className="mt-3 bg-red-100 border border-red-300 rounded-lg p-3">
+                        <p className="text-red-800 text-sm">{resolveError[order.id]}</p>
+                      </div>
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       );
@@ -1031,9 +1338,9 @@ function DashboardAdmin() {
           ) : (
             <div className="space-y-4">
               {pendingOrders.map(order => {
-                const photos      = orderPhotos[order.id] || [];
+                const photos = orderPhotos[order.id] || [];
                 const beforePhoto = photos.find(p => p.type === 'before');
-                const afterPhoto  = photos.find(p => p.type === 'after');
+                const afterPhoto = photos.find(p => p.type === 'after');
                 return (
                   <div key={order.id} className="border border-gray-200 rounded-lg p-6 bg-white">
                     <div className="flex items-center gap-3 mb-4">
@@ -1172,26 +1479,7 @@ function DashboardAdmin() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-
-      {/* Navbar */}
-      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-12 h-12 border-2 border-black rounded-lg flex items-center justify-center">
-                <span className="text-2xl font-serif font-bold">M</span>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-400 rounded-full" />
-              </div>
-            </div>
-            <span className="text-xl font-serif font-semibold tracking-tight">Mémoria</span>
-          </div>
-          <button onClick={() => { logout(); navigate('/'); }}
-            className="px-4 py-1 border-2 border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-50 transition">
-            Déconnexion
-          </button>
-        </div>
-      </nav>
-
+      <Navbar />
       <main className="flex-1 flex bg-purple-50 gap-6 px-6 py-8 pt-32 w-full">
 
         {/* Sidebar */}
@@ -1202,15 +1490,15 @@ function DashboardAdmin() {
               className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === key ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
               <div className="flex items-center justify-between">
                 <span>
-                  {key === 'disputes'      ? `${label} (${disputedOrders.length})`        :
-                   key === 'interventions' ? `${label} (${pendingOrders.length})`          :
-                   key === 'providers'     ? `${label} (${pendingProviders.length})`       :
-                   key === 'users'         ? `${label} (${clients.length + providers.length})` :
-                   key === 'gallery'       ? `${label} (${allPhotos.length})`              :
-                   key === 'cemeteries'    ? `${label} (${cemeteries.length})`             :
-                   key === 'services'      ? `${label} (${services.length})`               :
-                   key === 'history'       ? `${label} (${allOrders.length})`              :
-                   label}
+                  {key === 'disputes' ? `${label} (${disputedOrders.length})` :
+                    key === 'interventions' ? `${label} (${pendingOrders.length})` :
+                      key === 'providers' ? `${label} (${pendingProviders.length})` :
+                        key === 'users' ? `${label} (${clients.length + providers.length})` :
+                          key === 'gallery' ? `${label} (${allPhotos.length})` :
+                            key === 'cemeteries' ? `${label} (${cemeteries.length})` :
+                              key === 'services' ? `${label} (${services.length})` :
+                                key === 'history' ? `${label} (${allOrders.length})` :
+                                  label}
                 </span>
                 {key === 'disputes' && disputedOrders.length > 0 && (
                   <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">{disputedOrders.length}</span>
@@ -1271,12 +1559,14 @@ function DashboardAdmin() {
                       <div className="space-y-3">
                         {[...missions].sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time)).map(mission => {
                           const startTime = mission.scheduled_time.substring(0, 5);
-                          const duration  = parseFloat(mission.duration_hours) || 2;
-                          const [h, m]    = mission.scheduled_time.split(':').map(Number);
-                          const endMin    = h * 60 + m + duration * 60;
-                          const endTime   = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+                          const duration = parseFloat(mission.duration_hours) || 2;
+                          const [h, m] = mission.scheduled_time.split(':').map(Number);
+                          const endMin = h * 60 + m + duration * 60;
+                          const endTime = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
                           return (
-                            <div key={mission.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
+                            <div key={mission.id}
+                              onClick={() => setSelectedMission(mission)}
+                              className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-purple-50 hover:border hover:border-purple-200 transition">
                               <div className="text-center min-w-[80px]">
                                 <p className="text-lg font-bold text-purple-600">{startTime}</p>
                                 <p className="text-xs text-gray-500">↓ {duration}h</p>
@@ -1300,6 +1590,41 @@ function DashboardAdmin() {
                 </div>
               )}
             </div>
+
+            {/* Modal détail mission */}
+            {selectedMission && (
+              <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-60 p-4"
+                onClick={() => setSelectedMission(null)}>
+                <div className="bg-white rounded-xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between p-6 border-b">
+                    <h3 className="text-lg font-bold">Détail de la mission</h3>
+                    <button onClick={() => setSelectedMission(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
+                  </div>
+                  <div className="p-6 space-y-3 text-sm">
+                    <div className="flex justify-between"><span className="text-gray-500">Service</span><span className="font-medium">{selectedMission.service_name}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Cimetière</span><span className="font-medium">{selectedMission.cemetery_name}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Ville</span><span className="font-medium">{selectedMission.cemetery_city}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Client</span><span className="font-medium">{selectedMission.client_prenom} {selectedMission.client_nom}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-medium">{new Date(selectedMission.scheduled_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Heure</span><span className="font-medium">{selectedMission.scheduled_time?.substring(0, 5)}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Durée</span><span className="font-medium">{selectedMission.duration_hours}h</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Prix</span><span className="font-bold text-purple-600">{parseFloat(selectedMission.price).toFixed(2)}€</span></div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Statut</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_LABELS[selectedMission.status] ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {STATUS_LABELS[selectedMission.status] || selectedMission.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-6 border-t bg-gray-50 rounded-b-xl">
+                    <button onClick={() => setSelectedMission(null)}
+                      className="w-full px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">
+                      Fermer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="p-6 border-t bg-gray-50 rounded-b-xl">
               <button onClick={closeProviderCalendar}

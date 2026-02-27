@@ -1,9 +1,11 @@
 // backend/services/orderService.js
-const orderRepository           = require('../repositories/orderRepository');
-const userRepository            = require('../repositories/userRepository');
-const paymentRepository         = require('../repositories/paymentRepository');
-const photoRepository           = require('../repositories/photoRepository');
+const orderRepository = require('../repositories/orderRepository');
+const userRepository = require('../repositories/userRepository');
+const paymentRepository = require('../repositories/paymentRepository');
+const photoRepository = require('../repositories/photoRepository');
 const serviceCategoryRepository = require('../repositories/serviceCategoryRepository');
+const notificationRepository = require('../repositories/notificationRepository');
+
 
 /**
  * Service de gestion des commandes.
@@ -83,7 +85,7 @@ const createOrder = async (clientId, orderData) => {
       throw error;
     }
 
-    return await orderRepository.create({
+    const newOrder = await orderRepository.create({
       client_id: clientId,
       cemetery_id,
       service_category_id,
@@ -91,6 +93,17 @@ const createOrder = async (clientId, orderData) => {
       status: 'pending',
       price
     });
+
+    await notificationRepository.create({
+      user_id: clientId,
+      type: 'order_created',
+      title: 'Commande créée ✅',
+      message: `Votre commande pour le service "${service.name}" a bien été créée. Un prestataire va prendre en charge votre mission prochainement.`,
+      order_id: newOrder.id
+    });
+
+    return newOrder;
+
 
   } catch (error) {
     if (error.statusCode) throw error;
@@ -104,16 +117,19 @@ const createOrder = async (clientId, orderData) => {
  * @param {string} userRole
  * @returns {Array}
  */
-const getUserOrders = async (userId, userRole) => {
+const getUserOrders = async (userId, userRole, all = false) => {
   try {
-    if (userRole === 'client')      return await orderRepository.findByClientId(userId);
+    if (userRole === 'client') return await orderRepository.findByClientId(userId);
     if (userRole === 'prestataire') return await orderRepository.findByPrestataireId(userId);
-    if (userRole === 'admin')       return await orderRepository.findAll();
+    if (userRole === 'admin') {
+        return await orderRepository.findAll();
+    }
     return [];
   } catch (error) {
     throw new Error(`orderService.getUserOrders : ${error.message}`);
   }
 };
+
 
 /**
  * Récupère une commande par son ID
@@ -256,9 +272,9 @@ const acceptOrder = async (orderId, prestataireId, scheduledDate, scheduledTime)
     }
 
     // Vérifie que la mission se termine avant 19h compte tenu de sa durée
-    const durationHours  = await orderRepository.getServiceDuration(order.service_category_id);
-    const startMinutes   = hours * 60 + minutes;
-    const endHours       = Math.floor((startMinutes + durationHours * 60) / 60);
+    const durationHours = await orderRepository.getServiceDuration(order.service_category_id);
+    const startMinutes = hours * 60 + minutes;
+    const endHours = Math.floor((startMinutes + durationHours * 60) / 60);
 
     if (endHours >= 19) {
       const error = new Error(`Cette mission dure ${durationHours}h et se terminerait après 19h. Choisissez une heure plus tôt.`);
@@ -280,14 +296,14 @@ const acceptOrder = async (orderId, prestataireId, scheduledDate, scheduledTime)
 
     // Vérifie que le cimetière est bien dans la zone du prestataire
     if (user.zone_intervention) {
-      const zone              = user.zone_intervention.toLowerCase();
-      const cemeteryCity      = (order.cemetery_city       || '').toLowerCase();
-      const cemeteryDept      = (order.cemetery_department || '').toLowerCase();
-      const cemeteryPostal    = (order.cemetery_postal_code || '');
+      const zone = user.zone_intervention.toLowerCase();
+      const cemeteryCity = (order.cemetery_city || '').toLowerCase();
+      const cemeteryDept = (order.cemetery_department || '').toLowerCase();
+      const cemeteryPostal = (order.cemetery_postal_code || '');
 
       const isInZone =
-        cemeteryCity.includes(zone)   || cemeteryDept.includes(zone) ||
-        zone.includes(cemeteryCity)   || zone.includes(cemeteryDept) ||
+        cemeteryCity.includes(zone) || cemeteryDept.includes(zone) ||
+        zone.includes(cemeteryCity) || zone.includes(cemeteryDept) ||
         cemeteryPostal.startsWith(zone);
 
       if (!isInZone) {
@@ -391,7 +407,7 @@ const completeOrder = async (orderId, prestataireId) => {
       throw error;
     }
 
-    if (order.status !== 'accepted') {
+    if (order.status !== 'accepted' && order.status !== 'correction_requested') {
       const error = new Error('Cette mission n\'est pas en cours');
       error.code = 'INVALID_STATUS';
       error.statusCode = 400;
@@ -399,9 +415,9 @@ const completeOrder = async (orderId, prestataireId) => {
     }
 
     // Bloque la complétion si les photos avant/après ne sont pas uploadées
-    const photos       = await photoRepository.findByOrderId(orderId);
+    const photos = await photoRepository.findByOrderId(orderId);
     const hasBeforePhoto = photos.some(p => p.type === 'before');
-    const hasAfterPhoto  = photos.some(p => p.type === 'after');
+    const hasAfterPhoto = photos.some(p => p.type === 'after');
 
     if (!hasBeforePhoto || !hasAfterPhoto) {
       const error = new Error('Vous devez uploader les photos avant et après avant de terminer la mission');
@@ -410,8 +426,10 @@ const completeOrder = async (orderId, prestataireId) => {
       throw error;
     }
 
-    const updatedOrder = await orderRepository.updateStatus(orderId, 'awaiting_validation');
-    if (!updatedOrder) {
+    const newStatus = order.status === 'correction_requested'
+      ? 'correction_submitted'
+      : 'awaiting_validation';
+    const updatedOrder = await orderRepository.updateStatus(orderId, newStatus); if (!updatedOrder) {
       const error = new Error('Erreur lors de la mise à jour du statut');
       error.code = 'UPDATE_FAILED';
       error.statusCode = 500;
@@ -501,9 +519,9 @@ const validateOrder = async (orderId, adminId) => {
     }
 
     // Vérifie une dernière fois la présence des photos avant validation
-    const photos         = await photoRepository.findByOrderId(orderId);
+    const photos = await photoRepository.findByOrderId(orderId);
     const hasBeforePhoto = photos.some(p => p.type === 'before');
-    const hasAfterPhoto  = photos.some(p => p.type === 'after');
+    const hasAfterPhoto = photos.some(p => p.type === 'after');
 
     if (!hasBeforePhoto || !hasAfterPhoto) {
       const error = new Error('Photos avant/après manquantes');
@@ -513,27 +531,27 @@ const validateOrder = async (orderId, adminId) => {
     }
 
     // Calcul de la répartition : 80% prestataire / 20% commission plateforme
-    const providerAmount     = parseFloat(order.price) * 0.80;
+    const providerAmount = parseFloat(order.price) * 0.80;
     const simulatedTransferId = `tr_simulated_${Date.now()}`;
 
     // Enregistre le transfert vers le prestataire
     await paymentRepository.create({
-      order_id:           orderId,
-      amount:             providerAmount,
+      order_id: orderId,
+      amount: providerAmount,
       stripe_transfer_id: simulatedTransferId,
-      status:             'released',
-      payment_type:       'provider_transfer',
-      recipient_id:       order.prestataire_id
+      status: 'released',
+      payment_type: 'provider_transfer',
+      recipient_id: order.prestataire_id
     });
 
     await orderRepository.updateStatus(orderId, 'completed');
     const updatedOrder = await orderRepository.findById(orderId);
 
     return {
-      order:    updatedOrder,
+      order: updatedOrder,
       transfer: {
-        amount:       providerAmount,
-        transfer_id:  simulatedTransferId,
+        amount: providerAmount,
+        transfer_id: simulatedTransferId,
         recipient_id: order.prestataire_id
       }
     };
@@ -646,34 +664,33 @@ const resolveDispute = async (orderId, adminId, action) => {
       throw error;
     }
 
-    if (order.status !== 'disputed') {
-      const error = new Error('Cette commande n\'est pas en litige');
+    if (order.status !== 'disputed' && order.status !== 'correction_submitted') {
+      const error = new Error('Cette commande n\'est pas en litige ou en correction soumise');
       error.code = 'NOT_DISPUTED';
       error.statusCode = 400;
       throw error;
     }
-
     let newStatus;
     let additionalActions = {};
 
     switch (action) {
       case 'validate': {
         // Valide malgré le litige → paie le prestataire
-        const providerAmount      = parseFloat(order.price) * 0.80;
+        const providerAmount = parseFloat(order.price) * 0.80;
         const simulatedTransferId = `tr_dispute_resolved_${Date.now()}`;
 
         await paymentRepository.create({
-          order_id:           orderId,
-          amount:             providerAmount,
+          order_id: orderId,
+          amount: providerAmount,
           stripe_transfer_id: simulatedTransferId,
-          status:             'released',
-          payment_type:       'provider_transfer',
-          recipient_id:       order.prestataire_id
+          status: 'released',
+          payment_type: 'provider_transfer',
+          recipient_id: order.prestataire_id
         });
 
-        newStatus                  = 'completed';
-        additionalActions.payment  = {
-          amount:      providerAmount,
+        newStatus = 'completed';
+        additionalActions.payment = {
+          amount: providerAmount,
           transfer_id: simulatedTransferId
         };
         break;
@@ -681,14 +698,14 @@ const resolveDispute = async (orderId, adminId, action) => {
 
       case 'refund': {
         // Rembourse le client — TODO: intégrer Stripe Refund en production
-        newStatus                 = 'refunded';
-        additionalActions.refund  = { amount: order.price };
+        newStatus = 'refunded';
+        additionalActions.refund = { amount: order.price };
         break;
       }
 
       case 'request_correction': {
         // Renvoie la commande au prestataire pour correction
-        newStatus = 'accepted';
+        newStatus = 'correction_requested';
         break;
       }
 
@@ -735,7 +752,7 @@ const getDashboardStats = async (userId) => {
  */
 const getCompletedOrdersWithPhotos = async (userId) => {
   try {
-    const orders    = await orderRepository.findByClientId(userId);
+    const orders = await orderRepository.findByClientId(userId);
     const completed = orders.filter(o => o.status === 'completed');
 
     const withPhotos = await Promise.all(
@@ -794,6 +811,34 @@ const reportDispute = async (orderId, userId, reason) => {
   }
 };
 
+const cancelOrderClient = async (orderId, clientId) => {
+  try {
+    const order = await orderRepository.findById(orderId);
+    if (!order) {
+      const error = new Error('Commande introuvable');
+      error.code = 'ORDER_NOT_FOUND';
+      error.statusCode = 404;
+      throw error;
+    }
+    if (order.client_id !== clientId) {
+      const error = new Error('Cette commande ne vous appartient pas');
+      error.code = 'FORBIDDEN';
+      error.statusCode = 403;
+      throw error;
+    }
+    if (order.status !== 'pending') {
+      const error = new Error('Seules les commandes en attente peuvent être annulées');
+      error.code = 'INVALID_STATUS';
+      error.statusCode = 400;
+      throw error;
+    }
+    return await orderRepository.updateStatus(orderId, 'cancelled');
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new Error(`orderService.cancelOrderClient : ${error.message}`);
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
@@ -812,5 +857,6 @@ module.exports = {
   getProviderCalendarForAdmin,
   getDashboardStats,
   getCompletedOrdersWithPhotos,
-  reportDispute
+  reportDispute,
+  cancelOrderClient
 };

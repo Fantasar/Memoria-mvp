@@ -37,6 +37,8 @@ const providerRoutes        = require('./routes/providerRoutes');
 const statsRoutes           = require('./routes/statsRoutes');
 const notificationRoutes    = require('./routes/notificationRoutes');
 const reviewRoutes          = require('./routes/reviewRoutes');
+const usersRoutes           = require('./routes/users');
+
 
 app.use('/api/auth',               authRoutes);
 app.use('/api/admin',              adminRoutes);
@@ -49,6 +51,8 @@ app.use('/api/providers',          providerRoutes);
 app.use('/api/stats',              statsRoutes);
 app.use('/api/notifications',      notificationRoutes);
 app.use('/api/reviews',            reviewRoutes);
+app.use('/api/users',              usersRoutes);
+
 
 // ============================================
 // ROUTES UTILITAIRES
@@ -70,6 +74,7 @@ app.get("/", (req, res) => {
       { path: "/api/reviews",            description: "Avis et notations" },
       { path: "/api/notifications",      description: "Notifications utilisateur" },
       { path: "/api/stats",              description: "Statistiques" },
+      { path: "/api/users", description: "Gestion du profil utilisateur" },
     ]
   });
 });

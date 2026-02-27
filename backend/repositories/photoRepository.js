@@ -80,24 +80,26 @@ const getAllPhotos = async () => {
   try {
     const result = await pool.query(
       `SELECT
-         p.id, p.order_id, p.type, p.url,
-         p.cloudinary_public_id, p.uploaded_at,
-         o.status          AS order_status,
-         o.price,
-         c.name            AS cemetery_name,
-         c.city            AS cemetery_city,
-         sc.name           AS service_name,
-         uc.email          AS client_email,
-         up.email          AS prestataire_email,
-         up.prenom         AS prestataire_prenom,
-         up.nom            AS prestataire_nom
-       FROM photos p
-       LEFT JOIN orders o              ON p.order_id            = o.id
-       LEFT JOIN cemeteries c          ON o.cemetery_id         = c.id
-       LEFT JOIN service_categories sc ON o.service_category_id = sc.id
-       LEFT JOIN users uc              ON o.client_id           = uc.id
-       LEFT JOIN users up              ON o.prestataire_id      = up.id
-       ORDER BY p.uploaded_at DESC`
+     p.id, p.order_id, p.type AS photo_type, p.url,
+     p.cloudinary_public_id, p.uploaded_at AS created_at,
+     o.status          AS order_status,
+     o.price,
+     c.name            AS cemetery_name,
+     c.city            AS cemetery_city,
+     sc.name           AS service_name,
+     uc.prenom         AS client_prenom,
+     uc.nom            AS client_nom,
+     uc.email          AS client_email,
+     up.prenom         AS prestataire_prenom,
+     up.nom            AS prestataire_nom,
+     up.email          AS prestataire_email
+   FROM photos p
+   LEFT JOIN orders o              ON p.order_id            = o.id
+   LEFT JOIN cemeteries c          ON o.cemetery_id         = c.id
+   LEFT JOIN service_categories sc ON o.service_category_id = sc.id
+   LEFT JOIN users uc              ON o.client_id           = uc.id
+   LEFT JOIN users up              ON o.prestataire_id      = up.id
+   ORDER BY p.uploaded_at DESC`
     );
     return result.rows;
   } catch (error) {

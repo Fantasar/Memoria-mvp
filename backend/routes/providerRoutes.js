@@ -35,4 +35,7 @@ router.patch('/:id/approve', authenticateToken, authenticateAdmin, providerContr
 // PATCH /api/providers/:id/reject   — Rejette un prestataire avec motif (admin)
 router.patch('/:id/reject', authenticateToken, authenticateAdmin, providerController.rejectProvider);
 
+// PATCH /api/providers/reapply — Renouvelle une demande d'inscription rejetée
+router.patch('/reapply', authenticateToken, providerController.reapply);
+
 module.exports = router;

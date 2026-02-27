@@ -7,68 +7,82 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoMemoria from '../../assets/Logos_Mémoria-remove.png';
 import ZoneMap from '../../components/maps/ZoneMap';
+import Navbar from '../../components/layout/Navbar';
+
 
 const authHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 });
 
 const NAV_TABS = [
-  { key: 'overview',     label: 'Aperçu'                },
-  { key: 'available',    label: 'Missions disponibles'  },
-  { key: 'missions',     label: 'Mes missions'          },
-  { key: 'calendar',     label: 'Calendrier'            },
-  { key: 'finances',     label: 'Finances'              },
-  { key: 'alerts',       label: 'Alertes'               },
-  { key: 'zone',         label: "Zone d'intervention"   },
-  { key: 'evaluations',  label: 'Évaluations'           },
-  { key: 'history',      label: 'Historique'            },
-  { key: 'profile',      label: 'Profil'                },
+  { key: 'overview', label: 'Aperçu' },
+  { key: 'available', label: 'Missions disponibles' },
+  { key: 'missions', label: 'Mes missions' },
+  { key: 'calendar', label: 'Calendrier' },
+  { key: 'finances', label: 'Finances' },
+  { key: 'alerts', label: 'Alertes' },
+  { key: 'zone', label: "Zone d'intervention" },
+  { key: 'evaluations', label: 'Évaluations' },
+  { key: 'history', label: 'Historique' },
+  { key: 'profile', label: 'Profil' },
 ];
 
 function DashboardPrestataire() {
-  const { user, logout } = useAuth();
+  const { user, logout, token, login } = useAuth();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('overview');
 
   // Données
   const [availableMissions, setAvailableMissions] = useState([]);
-  const [myMissions,        setMyMissions]        = useState([]);
-  const [calendar,          setCalendar]          = useState([]);
-  const [history,           setHistory]           = useState([]);
-  const [finances,          setFinances]          = useState(null);
-  const [notifications,     setNotifications]     = useState([]);
-  const [zoneStats,         setZoneStats]         = useState(null);
-  const [reviews,           setReviews]           = useState([]);
-  const [stats,             setStats]             = useState(null);
+  const [myMissions, setMyMissions] = useState([]);
+  const [calendar, setCalendar] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [finances, setFinances] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [zoneStats, setZoneStats] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [reapplySuccess, setReapplySuccess] = useState(null);
+  const [reapplyError, setReapplyError] = useState(null);
 
   // Loadings
-  const [loadingStats,         setLoadingStats]         = useState(true);
-  const [loadingAvailable,     setLoadingAvailable]     = useState(true);
-  const [loadingMissions,      setLoadingMissions]      = useState(true);
-  const [loadingCalendar,      setLoadingCalendar]      = useState(true);
-  const [loadingHistory,       setLoadingHistory]       = useState(true);
-  const [loadingFinances,      setLoadingFinances]      = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingAvailable, setLoadingAvailable] = useState(true);
+  const [loadingMissions, setLoadingMissions] = useState(true);
+  const [loadingCalendar, setLoadingCalendar] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [loadingFinances, setLoadingFinances] = useState(true);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
-  const [loadingZoneStats,     setLoadingZoneStats]     = useState(true);
-  const [loadingReviews,       setLoadingReviews]       = useState(true);
+  const [loadingZoneStats, setLoadingZoneStats] = useState(true);
+  const [loadingReviews, setLoadingReviews] = useState(true);
 
   // UI states
-  const [unreadCount,          setUnreadCount]          = useState(0);
-  const [historyFilter,        setHistoryFilter]        = useState('all');
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [historyFilter, setHistoryFilter] = useState('all');
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState(null);
-  const [reviewFilter,         setReviewFilter]         = useState('all');
-  const [reviewsStats,         setReviewsStats]         = useState({ average_rating: 0, total_reviews: 0 });
-  const [newZone,              setNewZone]              = useState('');
-  const [updatingZone,         setUpdatingZone]         = useState(false);
-  const [zoneError,            setZoneError]            = useState(null);
-  const [zoneSuccess,          setZoneSuccess]          = useState(false);
+  const [reviewFilter, setReviewFilter] = useState('all');
+  const [reviewsStats, setReviewsStats] = useState({ average_rating: 0, total_reviews: 0 });
+  const [newZone, setNewZone] = useState('');
+  const [updatingZone, setUpdatingZone] = useState(false);
+  const [zoneError, setZoneError] = useState(null);
+  const [zoneSuccess, setZoneSuccess] = useState(false);
 
   // Modal planification
   const [missionToSchedule, setMissionToSchedule] = useState(null);
-  const [selectedDate,       setSelectedDate]      = useState('');
-  const [selectedTime,       setSelectedTime]      = useState('');
-  const [schedulingError,    setSchedulingError]   = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [schedulingError, setSchedulingError] = useState('');
+
+  // Modal pour les modification de profil
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [profileData, setProfileData] = useState({ prenom: '', nom: '', email: '' });
+  const [passwordData, setPasswordData] = useState({ current: '', newPassword: '', confirm: '' });
+  const [profileSuccess, setProfileSuccess] = useState(null);
+  const [profileError, setProfileError] = useState(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(null);
+  const [passwordError, setPasswordError] = useState(null);
 
   useEffect(() => {
     fetchStats();
@@ -152,7 +166,7 @@ function DashboardPrestataire() {
       setReviews(res.data.data.reviews || []);
       setReviewsStats({
         average_rating: res.data.data.average_rating || 0,
-        total_reviews:  res.data.data.total_reviews  || 0
+        total_reviews: res.data.data.total_reviews || 0
       });
     } catch { /* silencieux */ } finally { setLoadingReviews(false); }
   };
@@ -264,10 +278,10 @@ function DashboardPrestataire() {
 
   const exportFinancesPDF = async () => {
     if (!finances) return;
-    const doc       = new jsPDF();
+    const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const mainColor = [124, 58, 237];
-    const today     = new Date().toLocaleDateString('fr-FR');
+    const today = new Date().toLocaleDateString('fr-FR');
     const formatDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR') : 'Non renseignée';
 
     const logoBase64 = await loadImageAsBase64(logoMemoria);
@@ -294,10 +308,10 @@ function DashboardPrestataire() {
       startY: y,
       head: [['Indicateur', 'Valeur']],
       body: [
-        ['Total perçu',           `${finances.total_earned.toFixed(2)} €`],
-        ['Missions complétées',    finances.missions_completed],
+        ['Total perçu', `${finances.total_earned.toFixed(2)} €`],
+        ['Missions complétées', finances.missions_completed],
         ['En attente validation', `${finances.pending_validation.toFixed(2)} €`],
-        ['Moyenne par mission',   `${finances.average_per_mission.toFixed(2)} €`],
+        ['Moyenne par mission', `${finances.average_per_mission.toFixed(2)} €`],
       ],
       theme: 'grid',
       styles: { fontSize: 10, cellPadding: 4 },
@@ -366,10 +380,10 @@ function DashboardPrestataire() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 {[
-                  { label: 'Total gagné',          value: `${stats.revenue.total_earned.toFixed(2)}€`, sub: `${stats.revenue.paid_missions} paiements reçus`, from: 'from-green-500', to: 'to-green-600' },
-                  { label: 'Missions complétées',  value: stats.missions.by_status.completed || 0,      sub: `Taux: ${stats.missions.completion_rate}%`,        from: 'from-blue-500',   to: 'to-blue-600'   },
-                  { label: 'En cours',             value: stats.missions.by_status.accepted || 0,       sub: 'À terminer',                                      from: 'from-orange-500', to: 'to-orange-600' },
-                  { label: 'Total missions',       value: stats.missions.total,                          sub: 'Depuis le début',                                  from: 'from-purple-500', to: 'to-purple-600' },
+                  { label: 'Total gagné', value: `${stats.revenue.total_earned.toFixed(2)}€`, sub: `${stats.revenue.paid_missions} paiements reçus`, from: 'from-green-500', to: 'to-green-600' },
+                  { label: 'Missions complétées', value: stats.missions.by_status.completed || 0, sub: `Taux: ${stats.missions.completion_rate}%`, from: 'from-blue-500', to: 'to-blue-600' },
+                  { label: 'En cours', value: stats.missions.by_status.accepted || 0, sub: 'À terminer', from: 'from-orange-500', to: 'to-orange-600' },
+                  { label: 'Total missions', value: stats.missions.total, sub: 'Depuis le début', from: 'from-purple-500', to: 'to-purple-600' },
                 ].map(kpi => (
                   <div key={kpi.label} className={`bg-gradient-to-br ${kpi.from} ${kpi.to} rounded-lg shadow-lg p-6 text-white`}>
                     <h3 className="text-sm font-medium opacity-90 mb-2">{kpi.label}</h3>
@@ -409,14 +423,13 @@ function DashboardPrestataire() {
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-bold text-gray-900">{mission.price}€</p>
-                          <span className={`text-xs px-2 py-1 rounded ${
-                            mission.status === 'completed'           ? 'bg-green-100 text-green-800' :
-                            mission.status === 'accepted'            ? 'bg-yellow-100 text-yellow-800' :
-                            mission.status === 'awaiting_validation' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {mission.status === 'completed'           && '✅ Terminée'}
-                            {mission.status === 'accepted'            && '🔄 En cours'}
+                          <span className={`text-xs px-2 py-1 rounded ${mission.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            mission.status === 'accepted' ? 'bg-yellow-100 text-yellow-800' :
+                              mission.status === 'awaiting_validation' ? 'bg-blue-100 text-blue-800' :
+                                'bg-gray-100 text-gray-800'
+                            }`}>
+                            {mission.status === 'completed' && '✅ Terminée'}
+                            {mission.status === 'accepted' && '🔄 En cours'}
                             {mission.status === 'awaiting_validation' && '⏰ En validation'}
                           </span>
                         </div>
@@ -469,10 +482,10 @@ function DashboardPrestataire() {
                   <div className="space-y-3">
                     {[...missions].sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time)).map(mission => {
                       const startTime = mission.scheduled_time.substring(0, 5);
-                      const duration  = parseFloat(mission.duration_hours) || 2;
-                      const [h, m]    = mission.scheduled_time.split(':').map(Number);
-                      const endMin    = h * 60 + m + duration * 60;
-                      const endTime   = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+                      const duration = parseFloat(mission.duration_hours) || 2;
+                      const [h, m] = mission.scheduled_time.split(':').map(Number);
+                      const endMin = h * 60 + m + duration * 60;
+                      const endTime = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
                       return (
                         <div key={mission.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
                           <div className="text-center min-w-[80px]">
@@ -546,17 +559,18 @@ function DashboardPrestataire() {
                   className="border border-gray-200 rounded-lg p-6 bg-white hover:shadow-md transition cursor-pointer">
                   <div className="flex items-center gap-3 mb-4">
                     <h3 className="text-lg font-semibold">{mission.cemetery_name}</h3>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      mission.status === 'accepted'            ? 'bg-yellow-100 text-yellow-800' :
-                      mission.status === 'in_progress'         ? 'bg-blue-100 text-blue-800'    :
-                      mission.status === 'awaiting_validation' ? 'bg-orange-100 text-orange-800':
-                      mission.status === 'completed'           ? 'bg-green-100 text-green-800'  :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {mission.status === 'accepted'            && '🔄 En cours'}
-                      {mission.status === 'in_progress'         && '🔄 En cours'}
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${mission.status === 'accepted' ? 'bg-yellow-100 text-yellow-800' :
+                      mission.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                        mission.status === 'awaiting_validation' ? 'bg-orange-100 text-orange-800' :
+                          mission.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            mission.status === 'correction_requested' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                      }`}>
+                      {mission.status === 'accepted' && '🔄 En cours'}
+                      {mission.status === 'in_progress' && '🔄 En cours'}
                       {mission.status === 'awaiting_validation' && '⏰ En validation'}
-                      {mission.status === 'completed'           && '✅ Terminée'}
+                      {mission.status === 'completed' && '✅ Terminée'}
+                      {mission.status === 'correction_requested' && '⚠️ Correction demandée'}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mb-4">
@@ -565,10 +579,12 @@ function DashboardPrestataire() {
                     <div><p className="text-sm text-gray-500">Rémunération</p><p className="font-medium text-green-600">{(parseFloat(mission.price) * 0.80).toFixed(2)}€</p></div>
                     <div><p className="text-sm text-gray-500">Acceptée le</p><p className="font-medium">{new Date(mission.accepted_at || mission.created_at).toLocaleDateString('fr-FR')}</p></div>
                   </div>
-                  {mission.status === 'accepted' && (
+                  {(mission.status === 'accepted' || mission.status === 'correction_requested') && (
                     <button onClick={(e) => { e.stopPropagation(); navigate(`/missions/${mission.id}/complete`); }}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition">
-                      📸 Terminer et uploader les photos
+                      className={`w-full ${mission.status === 'correction_requested' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'} text-white px-4 py-3 rounded-lg font-medium transition`}>
+                      {mission.status === 'correction_requested'
+                        ? '🔄 Corriger et re-uploader les photos'
+                        : '📸 Terminer et uploader les photos'}
                     </button>
                   )}
                 </div>
@@ -589,12 +605,11 @@ function DashboardPrestataire() {
           <div className="flex gap-3 mb-6">
             {['all', 'completed', 'refunded'].map(f => (
               <button key={f} onClick={() => setHistoryFilter(f)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                  historyFilter === f ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}>
-                {f === 'all'       && `Toutes (${history.length})`}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition ${historyFilter === f ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}>
+                {f === 'all' && `Toutes (${history.length})`}
                 {f === 'completed' && `✅ Validées (${history.filter(h => h.status === 'completed').length})`}
-                {f === 'refunded'  && `💸 Remboursées (${history.filter(h => h.status === 'refunded').length})`}
+                {f === 'refunded' && `💸 Remboursées (${history.filter(h => h.status === 'refunded').length})`}
               </button>
             ))}
           </div>
@@ -692,10 +707,10 @@ function DashboardPrestataire() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 {[
-                  { label: '💰 Total perçu',    value: `${finances.total_earned.toFixed(2)}€`,         sub: `${finances.missions_completed} missions`,  from: 'from-green-500',  to: 'to-green-600'  },
-                  { label: '⏳ En attente',      value: `${finances.pending_validation.toFixed(2)}€`,   sub: 'Validation admin',                          from: 'from-orange-500', to: 'to-orange-600' },
-                  { label: '📊 Moyenne',         value: `${finances.average_per_mission.toFixed(2)}€`,  sub: 'Par mission',                               from: 'from-blue-500',   to: 'to-blue-600'   },
-                  { label: '✅ Complétées',      value: finances.missions_completed,                    sub: 'Missions validées',                         from: 'from-purple-500', to: 'to-purple-600' },
+                  { label: '💰 Total perçu', value: `${finances.total_earned.toFixed(2)}€`, sub: `${finances.missions_completed} missions`, from: 'from-green-500', to: 'to-green-600' },
+                  { label: '⏳ En attente', value: `${finances.pending_validation.toFixed(2)}€`, sub: 'Validation admin', from: 'from-orange-500', to: 'to-orange-600' },
+                  { label: '📊 Moyenne', value: `${finances.average_per_mission.toFixed(2)}€`, sub: 'Par mission', from: 'from-blue-500', to: 'to-blue-600' },
+                  { label: '✅ Complétées', value: finances.missions_completed, sub: 'Missions validées', from: 'from-purple-500', to: 'to-purple-600' },
                 ].map(kpi => (
                   <div key={kpi.label} className={`bg-gradient-to-br ${kpi.from} ${kpi.to} rounded-lg p-6 text-white shadow-lg`}>
                     <p className="text-sm opacity-90 mb-2">{kpi.label}</p>
@@ -769,11 +784,14 @@ function DashboardPrestataire() {
             <div className="space-y-3">
               {notifications.map(notif => {
                 const TYPE_CONFIG = {
-                  mission_validated: { icon: '✅', color: 'bg-green-100 border-green-300'   },
-                  new_mission:       { icon: '🆕', color: 'bg-blue-100 border-blue-300'     },
-                  dispute:           { icon: '🚨', color: 'bg-red-100 border-red-300'       },
-                  reminder:          { icon: '📅', color: 'bg-yellow-100 border-yellow-300' },
-                  schedule_needed:   { icon: '⏰', color: 'bg-orange-100 border-orange-300' },
+                  mission_validated: { icon: '✅', color: 'bg-green-100 border-green-300' },
+                  new_mission: { icon: '🆕', color: 'bg-blue-100 border-blue-300' },
+                  dispute: { icon: '🚨', color: 'bg-red-100 border-red-300' },
+                  reminder: { icon: '📅', color: 'bg-yellow-100 border-yellow-300' },
+                  schedule_needed: { icon: '⏰', color: 'bg-orange-100 border-orange-300' },
+                  account_pending: { icon: '⏳', color: 'bg-yellow-100 border-yellow-300' },
+                  account_validated: { icon: '✅', color: 'bg-green-100 border-green-300' },
+                  account_rejected: { icon: '❌', color: 'bg-red-100 border-red-300' },
                 };
                 const cfg = TYPE_CONFIG[notif.type] ?? { icon: '🔔', color: 'bg-gray-100 border-gray-300' };
                 return (
@@ -785,6 +803,34 @@ function DashboardPrestataire() {
                           <h3 className={`font-semibold text-gray-900 mb-1 ${!notif.is_read && 'font-bold'}`}>{notif.title}</h3>
                           <p className="text-sm text-gray-700 mb-2">{notif.message}</p>
                           <p className="text-xs text-gray-500">{new Date(notif.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                          {/* Bouton refaire une demande — rejet uniquement */}
+                          {notif.type === 'account_rejected' && (
+                            <div className="mt-3">
+                              {reapplySuccess && (
+                                <p className="text-green-700 text-sm mb-2">{reapplySuccess}</p>
+                              )}
+                              {reapplyError && (
+                                <p className="text-red-700 text-sm mb-2">{reapplyError}</p>
+                              )}
+                              {!reapplySuccess && (
+                                <button
+                                  onClick={async () => {
+                                    setReapplyError(null);
+                                    try {
+                                      await axios.patch('/api/providers/reapply', {}, authHeaders());
+                                      setReapplySuccess('Demande renvoyée. Un administrateur va l\'examiner sous 24-48h.');
+                                      handleMarkAsRead(notif.id);
+                                    } catch (err) {
+                                      setReapplyError(err.response?.data?.error?.message || 'Erreur lors de la demande');
+                                    }
+                                  }}
+                                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
+                                >
+                                  🔄 Refaire une demande
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 ml-4">
@@ -837,9 +883,9 @@ function DashboardPrestataire() {
                 <h3 className="text-lg font-semibold mb-4">📊 Votre zone couvre</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    { label: 'Cimetières disponibles',    value: zoneStats.cemetery_count,           from: 'from-green-500',  to: 'to-green-600'  },
-                    { label: 'Missions potentielles (30j)', value: zoneStats.potential_missions,      from: 'from-blue-500',   to: 'to-blue-600'   },
-                    { label: 'Villes principales',         value: zoneStats.main_cities.length,      from: 'from-purple-500', to: 'to-purple-600' },
+                    { label: 'Cimetières disponibles', value: zoneStats.cemetery_count, from: 'from-green-500', to: 'to-green-600' },
+                    { label: 'Missions potentielles (30j)', value: zoneStats.potential_missions, from: 'from-blue-500', to: 'to-blue-600' },
+                    { label: 'Villes principales', value: zoneStats.main_cities.length, from: 'from-purple-500', to: 'to-purple-600' },
                   ].map(kpi => (
                     <div key={kpi.label} className={`bg-gradient-to-br ${kpi.from} ${kpi.to} rounded-lg p-4 text-white`}>
                       <p className="text-sm opacity-90 mb-1">{kpi.label}</p>
@@ -875,7 +921,7 @@ function DashboardPrestataire() {
                     <p className="text-5xl font-bold">{reviewsStats.average_rating.toFixed(1)}</p>
                     <div>
                       <div className="flex">
-                        {[1,2,3,4,5].map(s => <span key={s}>{s <= Math.round(reviewsStats.average_rating) ? '⭐' : '☆'}</span>)}
+                        {[1, 2, 3, 4, 5].map(s => <span key={s}>{s <= Math.round(reviewsStats.average_rating) ? '⭐' : '☆'}</span>)}
                       </div>
                       <p className="text-sm opacity-90 mt-1">{reviewsStats.total_reviews} avis</p>
                     </div>
@@ -884,9 +930,9 @@ function DashboardPrestataire() {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <p className="text-sm font-medium text-gray-700 mb-4">Répartition des notes</p>
                   <div className="space-y-2">
-                    {[5,4,3,2,1].map(r => {
+                    {[5, 4, 3, 2, 1].map(r => {
                       const count = reviews.filter(rev => rev.rating === r).length;
-                      const pct   = reviewsStats.total_reviews > 0 ? (count / reviewsStats.total_reviews) * 100 : 0;
+                      const pct = reviewsStats.total_reviews > 0 ? (count / reviewsStats.total_reviews) * 100 : 0;
                       return (
                         <div key={r} className="flex items-center gap-3">
                           <span className="text-sm w-8">{r}⭐</span>
@@ -913,7 +959,7 @@ function DashboardPrestataire() {
                       className={`px-4 py-2 rounded-lg font-medium transition ${reviewFilter === 'all' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                       Tous ({reviewsStats.total_reviews})
                     </button>
-                    {[5,4,3,2,1].map(r => {
+                    {[5, 4, 3, 2, 1].map(r => {
                       const count = reviews.filter(rev => rev.rating === r).length;
                       if (!count) return null;
                       return (
@@ -931,7 +977,7 @@ function DashboardPrestataire() {
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-medium">{review.client_prenom} {review.client_nom?.charAt(0)}.</p>
-                              <div className="flex">{[1,2,3,4,5].map(s => <span key={s}>{s <= review.rating ? '⭐' : '☆'}</span>)}</div>
+                              <div className="flex">{[1, 2, 3, 4, 5].map(s => <span key={s}>{s <= review.rating ? '⭐' : '☆'}</span>)}</div>
                             </div>
                             <p className="text-sm text-gray-600">{review.service_name} — {review.cemetery_name}</p>
                           </div>
@@ -965,10 +1011,139 @@ function DashboardPrestataire() {
               <div><label className="text-sm font-medium text-gray-500">Zone d'intervention</label><p className="text-gray-900 font-medium">{user?.zone_intervention || 'Non définie'}</p></div>
             </div>
           </div>
+
           <div className="flex gap-4">
-            <button className="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">Modifier mes informations</button>
-            <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">Changer mon mot de passe</button>
+            <button
+              onClick={() => { setProfileData({ prenom: user?.prenom || '', nom: user?.nom || '', email: user?.email || '' }); setProfileError(null); setProfileSuccess(null); setShowEditProfile(true); }}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
+              Modifier mes informations
+            </button>
+            <button
+              onClick={() => { setPasswordData({ current: '', newPassword: '', confirm: '' }); setPasswordError(null); setPasswordSuccess(null); setShowChangePassword(true); }}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+              Changer mon mot de passe
+            </button>
           </div>
+
+          {/* Modal modification profil */}
+          {showEditProfile && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowEditProfile(false)}>
+              <div className="bg-white rounded-xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-6 border-b">
+                  <h3 className="text-lg font-bold">Modifier mes informations</h3>
+                  <button onClick={() => setShowEditProfile(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
+                </div>
+                <div className="p-6 space-y-4">
+                  {profileError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{profileError}</p></div>}
+                  {profileSuccess && <div className="bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm">{profileSuccess}</p></div>}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                    <input type="text" value={profileData.prenom} onChange={e => setProfileData(p => ({ ...p, prenom: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                    <input type="text" value={profileData.nom} onChange={e => setProfileData(p => ({ ...p, nom: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" value={profileData.email} onChange={e => setProfileData(p => ({ ...p, email: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                </div>
+                <div className="p-6 border-t flex gap-3">
+                  <button onClick={() => setShowEditProfile(false)}
+                    className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium">Annuler</button>
+                  <button
+                    onClick={async () => {
+                      setProfileError(null);
+                      setProfileSuccess(null);
+                      if (!profileData.prenom || !profileData.nom || !profileData.email) {
+                        setProfileError('Tous les champs sont obligatoires');
+                        return;
+                      }
+                      try {
+                        const res = await axios.put('/api/users/profile', profileData, authHeaders());
+                        login(res.data.data, localStorage.getItem('token'));
+                        setProfileSuccess('Profil mis à jour avec succès');
+                        setTimeout(() => setShowEditProfile(false), 1500);
+                      } catch (err) {
+                        setProfileError(err.response?.data?.error?.message || 'Erreur lors de la mise à jour');
+                      }
+                    }}
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium">
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal changement mot de passe */}
+          {showChangePassword && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowChangePassword(false)}>
+              <div className="bg-white rounded-xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-6 border-b">
+                  <h3 className="text-lg font-bold">Changer mon mot de passe</h3>
+                  <button onClick={() => setShowChangePassword(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
+                </div>
+                <div className="p-6 space-y-4">
+                  {passwordError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{passwordError}</p></div>}
+                  {passwordSuccess && <div className="bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm">{passwordSuccess}</p></div>}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe actuel</label>
+                    <input type="password" value={passwordData.current} onChange={e => setPasswordData(p => ({ ...p, current: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
+                    <input type="password" value={passwordData.newPassword} onChange={e => setPasswordData(p => ({ ...p, newPassword: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Confirmer le nouveau mot de passe</label>
+                    <input type="password" value={passwordData.confirm} onChange={e => setPasswordData(p => ({ ...p, confirm: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  </div>
+                </div>
+                <div className="p-6 border-t flex gap-3">
+                  <button onClick={() => setShowChangePassword(false)}
+                    className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium">Annuler</button>
+                  <button
+                    onClick={async () => {
+                      setPasswordError(null);
+                      setPasswordSuccess(null);
+                      if (!passwordData.current || !passwordData.newPassword || !passwordData.confirm) {
+                        setPasswordError('Tous les champs sont obligatoires');
+                        return;
+                      }
+                      if (passwordData.newPassword.length < 8) {
+                        setPasswordError('Le nouveau mot de passe doit contenir au moins 8 caractères');
+                        return;
+                      }
+                      if (passwordData.newPassword !== passwordData.confirm) {
+                        setPasswordError('Les mots de passe ne correspondent pas');
+                        return;
+                      }
+                      try {
+                        await axios.put('/api/users/password', {
+                          currentPassword: passwordData.current,
+                          newPassword: passwordData.newPassword
+                        }, authHeaders());
+                        setPasswordSuccess('Mot de passe modifié avec succès');
+                        setTimeout(() => setShowChangePassword(false), 1500);
+                      } catch (err) {
+                        setPasswordError(err.response?.data?.error?.message || 'Erreur lors du changement');
+                      }
+                    }}
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium">
+                    Confirmer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
 
@@ -980,26 +1155,7 @@ function DashboardPrestataire() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-
-      {/* Navbar */}
-      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-12 h-12 border-2 border-black rounded-lg flex items-center justify-center">
-                <span className="text-2xl font-serif font-bold">M</span>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-400 rounded-full" />
-              </div>
-            </div>
-            <span className="text-xl font-serif font-semibold tracking-tight">Mémoria</span>
-          </div>
-          <button onClick={() => { logout(); navigate('/'); }}
-            className="px-4 py-1 border-2 border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-50 transition">
-            Déconnexion
-          </button>
-        </div>
-      </nav>
-
+      <Navbar />
       <main className="flex-1 flex bg-green-50 gap-6 px-6 py-8 pt-32 w-full">
 
         {/* Sidebar */}
@@ -1007,16 +1163,15 @@ function DashboardPrestataire() {
           <p className="text-gray-500 uppercase font-semibold text-sm mb-4">Sections</p>
           {NAV_TABS.map(({ key, label }) => (
             <button key={key} onClick={() => setActiveTab(key)}
-              className={`w-full text-left px-4 py-2 rounded-lg transition ${
-                activeTab === key ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'
-              }`}>
+              className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === key ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'
+                }`}>
               <div className="flex items-center justify-between">
                 <span>
-                  {key === 'available'   ? `${label} (${availableMissions.length})` :
-                   key === 'missions'    ? `${label} (${myMissions.length})` :
-                   key === 'calendar'    ? `${label} (${calendar.length})` :
-                   key === 'history'     ? `${label} (${history.length})` :
-                   label}
+                  {key === 'available' ? `${label} (${availableMissions.length})` :
+                    key === 'missions' ? `${label} (${myMissions.length})` :
+                      key === 'calendar' ? `${label} (${calendar.length})` :
+                        key === 'history' ? `${label} (${history.length})` :
+                          label}
                 </span>
                 {key === 'alerts' && unreadCount > 0 && (
                   <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">{unreadCount}</span>
