@@ -9,6 +9,8 @@ import Register           from './pages/Register';
 import About              from './pages/About';
 import Contact            from './pages/Contact';
 import Services           from './pages/Services';
+import ForgotPassword     from './pages/ForgotPassword';
+import ResetPassword      from './pages/ResetPassword';
 
 // Dashboards
 import DashboardClient    from './pages/dashboards/DashboardClient';
@@ -44,6 +46,8 @@ function App() {
         <Route path="/a-propos" element={<About />} />
         <Route path="/contact"   element={<Contact />} />
         <Route path="/services"  element={<Services />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password"  element={<ResetPassword />} />
 
         {/* ── Routes client ──────────────────────────────────────────── */}
         <Route
