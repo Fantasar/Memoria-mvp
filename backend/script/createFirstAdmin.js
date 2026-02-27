@@ -10,8 +10,6 @@ const createFirstAdmin = async () => {
     const email = 'admin@memoria.com';
     const password = 'Admin2026!Memoria';
 
-    console.log('🔍 Vérification si un admin existe déjà...');
-
     // Vérifier si un admin existe déjà
     const existingAdmin = await pool.query(
       `SELECT u.id, u.email 
@@ -21,14 +19,8 @@ const createFirstAdmin = async () => {
     );
 
     if (existingAdmin.rows.length > 0) {
-      console.log('⚠️  Un compte admin existe déjà:');
-      console.log('   Email:', existingAdmin.rows[0].email);
-      console.log('   ID:', existingAdmin.rows[0].id);
-      console.log('\n💡 Utilisez le script resetAdminPassword.js pour réinitialiser le mot de passe.');
       process.exit(0);
     }
-
-    console.log('✅ Aucun admin trouvé. Création en cours...\n');
 
     // ============ RÉCUPÉRER LE ROLE_ID ADMIN ============
     const roleResult = await pool.query(
@@ -37,9 +29,7 @@ const createFirstAdmin = async () => {
     );
 
     if (roleResult.rows.length === 0) {
-      console.error('❌ Erreur: Rôle "admin" introuvable dans la table roles');
-      console.log('\n💡 Exécutez d\'abord:');
-      console.log('   INSERT INTO roles (name) VALUES (\'client\'), (\'prestataire\'), (\'admin\');');
+
       process.exit(1);
     }
 
