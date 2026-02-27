@@ -37,7 +37,7 @@ const generateToken = (user) => {
  * @returns {Object} - { token, user }
  */
 const registerUser = async (userData) => {
-  const { email, password, role, zone_intervention, siret, prenom, nom } = userData;
+  const { email, password, role, zone_intervention, siret, prenom, nom, telephone } = userData;
 
   // Vérifie que l'email n'est pas déjà utilisé
   const emailAlreadyExists = await userRepository.emailExists(email);
@@ -65,6 +65,7 @@ const registerUser = async (userData) => {
     role_id: roleData.id,
     prenom,
     nom,
+    telephone,
     zone_intervention,
     siret
   });
@@ -93,6 +94,7 @@ const registerUser = async (userData) => {
       prenom: newUser.prenom,
       nom: newUser.nom,
       role: roleData.name,
+      telephone: newUser.telephone,
       zone_intervention: newUser.zone_intervention,
       siret: newUser.siret,
       created_at: newUser.created_at

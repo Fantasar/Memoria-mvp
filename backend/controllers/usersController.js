@@ -1,19 +1,19 @@
 // backend/controllers/usersController.js
 const userRepository = require('../repositories/userRepository');
-const bcrypt = require('bcrypt');
+const bcrypt         = require('bcrypt');
 
 const updateProfile = async (req, res) => {
   try {
-    const { prenom, nom, email } = req.body;
+    const { prenom, nom, email, telephone } = req.body;
 
-    if (!prenom?.trim() || !nom?.trim() || !email?.trim()) {
+    if (!prenom?.trim() || !nom?.trim() || !email?.trim() || !telephone?.trim()) {
       return res.status(400).json({
         success: false,
         error: { code: 'MISSING_FIELDS', message: 'Tous les champs sont obligatoires' }
       });
     }
 
-    const updated = await userRepository.update(req.user.userId, { prenom, nom, email });
+    const updated = await userRepository.update(req.user.userId, { prenom, nom, email, telephone });
 
     // Retourne le user avec role (string) et non role_id
     return res.status(200).json({
@@ -28,7 +28,7 @@ const updateProfile = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      error: { code: 'SERVER_ERROR', message: error.message } // temporaire pour voir l'erreur réelle
+      error: { code: 'SERVER_ERROR', message: error.message }
     });
   }
 };
@@ -52,8 +52,8 @@ const updatePassword = async (req, res) => {
     }
 
     // Récupère le hash actuel
-    const user = await userRepository.findById(req.user.userId);
-    const isValid = await bcrypt.compare(currentPassword, user.password_hash);
+    const user     = await userRepository.findById(req.user.userId);
+    const isValid  = await bcrypt.compare(currentPassword, user.password_hash);
 
     if (!isValid) {
       return res.status(400).json({

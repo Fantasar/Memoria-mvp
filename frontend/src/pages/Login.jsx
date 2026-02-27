@@ -1,17 +1,17 @@
 // frontend/src/pages/Login.jsx
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import AuthLayout  from '../components/layout/AuthLayout';
-import InputField  from '../components/forms/InputField';
-import Button      from '../components/forms/Button';
-import useForm     from '../hooks/useForm';
+import AuthLayout from '../components/layout/AuthLayout';
+import InputField from '../components/forms/InputField';
+import Button from '../components/forms/Button';
+import useForm from '../hooks/useForm';
 import { validateEmail } from '../utils/validators';
 import authService from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
-import Navbar      from '../components/layout/Navbar';
+import Navbar from '../components/layout/Navbar';
 
 function Login() {
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const { login } = useAuth();
   const [apiError, setApiError] = useState(null);
 
@@ -20,7 +20,7 @@ function Login() {
   const validate = (data) => {
     const errors = {};
     const emailErr = validateEmail(data.email);
-    if (emailErr)       errors.email    = emailErr;
+    if (emailErr) errors.email = emailErr;
     if (!data.password) errors.password = 'Le mot de passe est requis';
     return errors;
   };
@@ -32,9 +32,9 @@ function Login() {
       login(result.user, result.token);
 
       switch (result.user.role) {
-        case 'client':      navigate('/dashboard/client');      break;
+        case 'client': navigate('/dashboard/client'); break;
         case 'prestataire': navigate('/dashboard/prestataire'); break;
-        case 'admin':       navigate('/dashboard/admin');       break;
+        case 'admin': navigate('/dashboard/admin'); break;
         default:
           setApiError('Rôle utilisateur non reconnu');
       }
@@ -102,10 +102,9 @@ function Login() {
                 </label>
               </div>
 
-              {/* "Mot de passe oublié" — fonctionnalité non implémentée dans le MVP */}
-              <span className="text-sm text-gray-400 cursor-default">
+              <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
                 Mot de passe oublié ?
-              </span>
+              </Link>
             </div>
 
             <Button type="submit" variant="primary" fullWidth disabled={isSubmitting}>

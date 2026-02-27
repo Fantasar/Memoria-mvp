@@ -212,22 +212,11 @@ function DashboardClient() {
                 Informations personnelles
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Prénom</label>
-                  <p className="text-gray-900 font-medium">{user?.prenom || '-'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Nom</label>
-                  <p className="text-gray-900 font-medium">{user?.nom || '-'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Email</label>
-                  <p className="text-gray-900 font-medium">{user?.email || '-'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Rôle</label>
-                  <p className="text-gray-900 font-medium capitalize">{user?.role || '-'}</p>
-                </div>
+                <div><label className="text-sm font-medium text-gray-500">Prénom</label><p className="text-gray-900 font-medium">{user?.prenom || '-'}</p></div>
+                <div><label className="text-sm font-medium text-gray-500">Nom</label><p className="text-gray-900 font-medium">{user?.nom || '-'}</p></div>
+                <div><label className="text-sm font-medium text-gray-500">Email</label><p className="text-gray-900 font-medium">{user?.email || '-'}</p></div>
+                {/* Téléphone — ajouté pour reset mot de passe et contact prestataire */}
+                <div><label className="text-sm font-medium text-gray-500">Téléphone</label><p className="text-gray-900 font-medium">{user?.telephone || '-'}</p></div>
               </div>
             </div>
 
@@ -235,18 +224,12 @@ function DashboardClient() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Statut</label>
-                  <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                    Actif
-                  </span>
+                  <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Actif</span>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Membre depuis</label>
                   <p className="text-gray-900 font-medium">
-                    {user?.created_at
-                      ? new Date(user.created_at).toLocaleDateString('fr-FR', {
-                        day: 'numeric', month: 'long', year: 'numeric'
-                      })
-                      : '-'}
+                    {user?.created_at ? new Date(user.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
                   </p>
                 </div>
               </div>
@@ -255,10 +238,8 @@ function DashboardClient() {
             <div className="mt-6 flex gap-4">
               <button
                 onClick={() => {
-                  setProfileData({ prenom: user?.prenom || '', nom: user?.nom || '', email: user?.email || '' });
-                  setProfileError(null);
-                  setProfileSuccess(null);
-                  setShowEditProfile(true);
+                  setProfileData({ prenom: user?.prenom || '', nom: user?.nom || '', email: user?.email || '', telephone: user?.telephone || '' });
+                  setProfileError(null); setProfileSuccess(null); setShowEditProfile(true);
                 }}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
                 Modifier mes informations
@@ -266,72 +247,49 @@ function DashboardClient() {
               <button
                 onClick={() => {
                   setPasswordData({ current: '', newPassword: '', confirm: '' });
-                  setPasswordError(null);
-                  setPasswordSuccess(null);
-                  setShowChangePassword(true);
+                  setPasswordError(null); setPasswordSuccess(null); setShowChangePassword(true);
                 }}
                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
                 Changer mon mot de passe
               </button>
             </div>
 
-            {/* ── Modal modifier profil ─────────────────────────────── */}
+            {/* Modal modifier profil */}
             {showEditProfile && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
                   <h3 className="text-lg font-semibold mb-4">Modifier mes informations</h3>
-
-                  {profileError && (
-                    <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3">
-                      <p className="text-red-800 text-sm">{profileError}</p>
-                    </div>
-                  )}
-                  {profileSuccess && (
-                    <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3">
-                      <p className="text-green-800 text-sm">{profileSuccess}</p>
-                    </div>
-                  )}
-
+                  {profileError && <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{profileError}</p></div>}
+                  {profileSuccess && <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm">{profileSuccess}</p></div>}
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
-                      <input
-                        type="text"
-                        value={profileData.prenom}
-                        onChange={e => setProfileData(prev => ({ ...prev, prenom: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                      />
+                      <input type="text" value={profileData.prenom} onChange={e => setProfileData(prev => ({ ...prev, prenom: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                      <input
-                        type="text"
-                        value={profileData.nom}
-                        onChange={e => setProfileData(prev => ({ ...prev, nom: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                      />
+                      <input type="text" value={profileData.nom} onChange={e => setProfileData(prev => ({ ...prev, nom: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <input
-                        type="email"
-                        value={profileData.email}
-                        onChange={e => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                      />
+                      <input type="email" value={profileData.email} onChange={e => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                      <input type="tel" value={profileData.telephone} onChange={e => setProfileData(prev => ({ ...prev, telephone: e.target.value }))}
+                        placeholder="0612345678" className="w-full border border-gray-300 rounded-lg px-3 py-2" />
                     </div>
                   </div>
-
                   <div className="flex gap-3 mt-6">
-                    <button
-                      onClick={() => setShowEditProfile(false)}
-                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">
-                      Annuler
-                    </button>
+                    <button onClick={() => setShowEditProfile(false)}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">Annuler</button>
                     <button
                       onClick={async () => {
                         setProfileError(null);
-                        if (!profileData.prenom.trim() || !profileData.nom.trim() || !profileData.email.trim()) {
+                        if (!profileData.prenom.trim() || !profileData.nom.trim() || !profileData.email.trim() || !profileData.telephone.trim()) {
                           setProfileError('Tous les champs sont obligatoires');
                           return;
                         }
@@ -346,9 +304,7 @@ function DashboardClient() {
                           setProfileError(err.response?.data?.error?.message || 'Erreur lors de la mise à jour');
                         }
                       }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-                      Enregistrer
-                    </button>
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Enregistrer</button>
                   </div>
                 </div>
               </div>
