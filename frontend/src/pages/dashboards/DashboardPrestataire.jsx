@@ -28,7 +28,7 @@ const NAV_TABS = [
 ];
 
 function DashboardPrestataire() {
-  const { user, logout } = useAuth();
+  const { user, logout, token, login } = useAuth();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('overview');

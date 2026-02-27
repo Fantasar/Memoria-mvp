@@ -1,6 +1,6 @@
 // backend/controllers/usersController.js
 const userRepository = require('../repositories/userRepository');
-const bcrypt         = require('bcrypt');
+const bcrypt = require('bcrypt');
 
 const updateProfile = async (req, res) => {
   try {
@@ -14,7 +14,6 @@ const updateProfile = async (req, res) => {
     }
 
     const updated = await userRepository.update(req.user.userId, { prenom, nom, email });
-    console.log('updated result', updated);
 
     // Retourne le user avec role (string) et non role_id
     return res.status(200).json({
@@ -29,7 +28,7 @@ const updateProfile = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      error: { code: 'SERVER_ERROR', message: 'Erreur lors de la mise à jour du profil' }
+      error: { code: 'SERVER_ERROR', message: error.message } // temporaire pour voir l'erreur réelle
     });
   }
 };
