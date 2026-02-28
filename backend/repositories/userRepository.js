@@ -319,9 +319,25 @@ const toggleBlock = async (userId, isBlocked) => {
   }
 };
 
+const findByRole = async (role) => {
+  try {
+    const result = await pool.query(
+      `SELECT u.* FROM users u
+       INNER JOIN roles r ON r.id = u.role_id
+       WHERE r.name = $1
+       LIMIT 1`,
+      [role]
+    );
+    return result.rows;
+  } catch (error) {
+    throw new Error(`userRepository.findByRole : ${error.message}`);
+  }
+};
+
 module.exports = {
   findByEmail,
   findById,
+  findByRole,
   emailExists,
   create,
   update,
