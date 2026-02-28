@@ -2,19 +2,20 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+/** Génère les headers d'authentification JWT depuis le localStorage */
 const authHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 });
 
 /**
  * Galerie des interventions terminées avec photos avant/après.
- * Permet de signaler un litige et d'évaluer le prestataire.
+ * Permet au client de consulter les résultats, signaler un litige et évaluer le prestataire.
  */
 function PhotoGallery() {
   const [orders,           setOrders]           = useState([]);
   const [loading,          setLoading]          = useState(true);
-  const [selectedPhoto,    setSelectedPhoto]    = useState(null);
-  const [selectedOrder,    setSelectedOrder]    = useState(null);
+  const [selectedPhoto,    setSelectedPhoto]    = useState(null); // Photo ouverte en plein écran
+  const [selectedOrder,    setSelectedOrder]    = useState(null); // Commande ciblée par le modal litige
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [disputeReason,    setDisputeReason]    = useState('');
   const [submitting,       setSubmitting]       = useState(false);
@@ -23,6 +24,7 @@ function PhotoGallery() {
     fetchGallery();
   }, []);
 
+  /** Récupère les commandes terminées avec leurs photos avant/après */
   const fetchGallery = async () => {
     setLoading(true);
     try {
@@ -35,17 +37,20 @@ function PhotoGallery() {
     }
   };
 
+  /** Ouvre le modal de signalement de litige pour une commande donnée */
   const openDisputeModal = (order) => {
     setSelectedOrder(order);
     setShowDisputeModal(true);
   };
 
+  /** Ferme le modal et réinitialise les états liés au litige */
   const closeDisputeModal = () => {
     setShowDisputeModal(false);
     setSelectedOrder(null);
     setDisputeReason('');
   };
 
+  /** Soumet le signalement de litige et rafraîchit la galerie */
   const handleSubmitDispute = async () => {
     if (!disputeReason.trim()) return;
 
