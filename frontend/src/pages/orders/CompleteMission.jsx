@@ -66,6 +66,8 @@ function CompleteMission() {
   const [beforePreview, setBeforePreview] = useState(null);
   const [afterPreview,  setAfterPreview]  = useState(null);
 
+  // Récupère les détails de la mission au montage du composant
+  // Redirige vers le dashboard si l'id est absent ou si la requête échoue
   useEffect(() => {
     if (!id) return;
     const fetchMission = async () => {
@@ -81,6 +83,7 @@ function CompleteMission() {
     fetchMission();
   }, [id, navigate]);
 
+  // Retourne un handler qui met à jour le fichier sélectionné et génère sa prévisualisation locale
   const handlePhotoChange = (setter, previewSetter) => (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -88,15 +91,18 @@ function CompleteMission() {
     previewSetter(URL.createObjectURL(file));
   };
 
+  // Retourne un handler qui réinitialise le fichier et sa prévisualisation
   const handleRemove = (setter, previewSetter) => () => {
     setter(null);
     previewSetter(null);
   };
 
+  // Soumet les photos avant/après puis marque la mission comme complétée
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError(null);
 
+    // Vérifie que les deux photos sont bien renseignées avant d'envoyer
     if (!beforePhoto || !afterPhoto) {
       setSubmitError('Les deux photos (avant et après) sont obligatoires');
       return;

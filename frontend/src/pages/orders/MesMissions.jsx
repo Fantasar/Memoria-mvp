@@ -21,8 +21,10 @@ const MesMissions = () => {
   const [cancelError,      setCancelError]      = useState(null);
   const [completeError,    setCompleteError]    = useState({});
 
+  // Charge les missions au montage du composant
   useEffect(() => { fetchMyMissions(); }, []);
 
+  // Récupère toutes les commandes du prestataire et les trie par statut
   const fetchMyMissions = async () => {
     setLoading(true);
     try {
@@ -35,6 +37,7 @@ const MesMissions = () => {
     }
   };
 
+  // Marque une mission comme terminée après confirmation de l'upload des photos
   const handleCompleteMission = async (orderId) => {
     if (!window.confirm(
       "Êtes-vous sûr d'avoir uploadé les photos avant ET après ? La mission sera marquée comme terminée et envoyée au client pour validation."
@@ -52,6 +55,7 @@ const MesMissions = () => {
     }
   };
 
+  // Annule une mission avec un motif obligatoire d'au moins 10 caractères
   const handleCancelMission = async (orderId) => {
     if (!cancelReason.trim() || cancelReason.length < 10) {
       setCancelError('Le motif doit contenir au moins 10 caractères');
@@ -68,6 +72,7 @@ const MesMissions = () => {
     }
   };
 
+  // Ferme la modale d'annulation et réinitialise les champs associés
   const closeModal = () => {
     setShowCancelModal(null);
     setCancelReason('');
