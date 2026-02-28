@@ -2,10 +2,20 @@
 const pool = require('../config/db');
 
 /**
- * Crée un token de réinitialisation (supprime les anciens d'abord)
+ * Repository de la table `password_reset_tokens`.
+ * Gère les tokens de réinitialisation de mot de passe envoyés par SMS.
+ * Chaque token est valable 15 minutes et ne peut être utilisé qu'une seule fois.
+ */
+
+/**
+ * Crée un nouveau token de réinitialisation pour un utilisateur
+ * Supprime les tokens précédents avant insertion pour éviter les doublons
+ * @param {string} userId - Identifiant de l'utilisateur
+ * @param {string} token  - Code à 6 chiffres généré par passwordResetService
+ * @returns {Object}      - Le token créé
  */
 const create = async (userId, token) => {
-  // Supprime les anciens tokens de cet utilisateur
+  // Supprime les anciens tokens de cet utilisateur avant d'en créer un nouveau
   await pool.query(
     'DELETE FROM password_reset_tokens WHERE user_id = $1',
     [userId]
@@ -21,7 +31,11 @@ const create = async (userId, token) => {
 };
 
 /**
- * Vérifie qu'un token est valide (non expiré, non utilisé)
+ * Vérifie qu'un token est valide pour un numéro de téléphone donné
+ * Rejette automatiquement les tokens expirés ou déjà utilisés
+ * @param {string} telephone - Numéro au format stocké en base (ex: 0612345678)
+ * @param {string} token     - Code à 6 chiffres saisi par l'utilisateur
+ * @returns {Object|undefined} - Le token si valide, undefined sinon
  */
 const verify = async (telephone, token) => {
   const result = await pool.query(
@@ -37,7 +51,9 @@ const verify = async (telephone, token) => {
 };
 
 /**
- * Marque un token comme utilisé
+ * Invalide un token après utilisation pour éviter toute réutilisation
+ * @param {number} id - Identifiant du token
+ * @returns {void}
  */
 const markAsUsed = async (id) => {
   await pool.query(

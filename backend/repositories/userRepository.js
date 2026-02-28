@@ -3,7 +3,7 @@ const pool = require('../config/db');
 
 /**
  * Repository de la table `users`.
- * Gère les trois rôles de la plateforme via la colonne role_id.
+ * Gère les trois rôles de la plateforme : client, prestataire, admin (via role_id).
  * Utilisé par authService, adminService et providerService.
  */
 
@@ -43,7 +43,7 @@ const findByEmail = async (email) => {
 
 /**
  * Récupère un utilisateur par son ID (avec son rôle)
- * @param {number} userId
+ * @param {string} userId
  * @returns {Object|undefined}
  */
 const findById = async (userId) => {
@@ -59,7 +59,47 @@ const findById = async (userId) => {
 };
 
 /**
+ * Récupère un utilisateur par son numéro de téléphone
+ * Utilisé par passwordResetService pour identifier l'utilisateur avant l'envoi du SMS
+ * @param {string} telephone - Numéro au format stocké en base (ex: 0612345678)
+ * @returns {Array}
+ */
+const findByTelephone = async (telephone) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, prenom FROM users WHERE telephone = $1',
+      [telephone]
+    );
+    return result.rows;
+  } catch (error) {
+    throw new Error(`userRepository.findByTelephone : ${error.message}`);
+  }
+};
+
+/**
+ * Récupère tous les utilisateurs d'un rôle donné
+ * Utilisé notamment pour trouver les admins destinataires des notifications de contact
+ * @param {string} role - Nom du rôle (client, prestataire, admin)
+ * @returns {Array}
+ */
+const findByRole = async (role) => {
+  try {
+    const result = await pool.query(
+      `SELECT u.* FROM users u
+       INNER JOIN roles r ON r.id = u.role_id
+       WHERE r.name = $1
+       LIMIT 1`,
+      [role]
+    );
+    return result.rows;
+  } catch (error) {
+    throw new Error(`userRepository.findByRole : ${error.message}`);
+  }
+};
+
+/**
  * Vérifie si un email est déjà utilisé
+ * Appelé lors de l'inscription pour éviter les doublons
  * @param {string} email
  * @returns {boolean}
  */
@@ -77,8 +117,8 @@ const emailExists = async (email) => {
 
 /**
  * Crée un nouvel utilisateur
- * @param {Object} userData - { email, password_hash, role_id, prenom, nom, zone_intervention, siret }
- * @returns {Object} - L'utilisateur créé
+ * @param {Object} userData - { email, password_hash, role_id, prenom, nom, telephone, zone_intervention, siret }
+ * @returns {Object}        - L'utilisateur créé
  */
 const create = async (userData) => {
   try {
@@ -104,10 +144,10 @@ const create = async (userData) => {
 };
 
 /**
- * Met à jour les informations d'un utilisateur
- * @param {number} userId
+ * Met à jour les informations de profil d'un utilisateur
+ * @param {string} userId
  * @param {Object} userData - { email, prenom, nom, telephone, zone_intervention, siret }
- * @returns {Object} - L'utilisateur mis à jour
+ * @returns {Object}        - L'utilisateur mis à jour
  */
 const update = async (userId, userData) => {
   try {
@@ -132,6 +172,13 @@ const update = async (userId, userData) => {
   }
 };
 
+/**
+ * Met à jour le mot de passe hashé d'un utilisateur
+ * Appelé par authService (changement de mot de passe) et passwordResetService (réinitialisation)
+ * @param {string} userId       - Identifiant de l'utilisateur
+ * @param {string} passwordHash - Nouveau mot de passe déjà hashé par bcrypt
+ * @returns {Object}            - { id } de l'utilisateur mis à jour
+ */
 const updatePassword = async (userId, passwordHash) => {
   try {
     const result = await pool.query(
@@ -148,9 +195,9 @@ const updatePassword = async (userId, passwordHash) => {
 };
 
 /**
- * Supprime un utilisateur par son ID
- * Note : en production, privilégier un soft delete via un champ deleted_at
- * @param {number} userId
+ * Supprime définitivement un utilisateur par son ID
+ * ⚠️ Suppression physique — en production, privilégier le soft delete via deleted_at
+ * @param {string} userId
  * @returns {Object} - { id } de l'utilisateur supprimé
  */
 const deleteById = async (userId) => {
@@ -167,6 +214,7 @@ const deleteById = async (userId) => {
 
 /**
  * Récupère tous les prestataires en attente de validation admin
+ * Exclut les prestataires déjà rejetés (rejected_at IS NULL)
  * @returns {Array}
  */
 const findPendingProviders = async () => {
@@ -191,8 +239,8 @@ const findPendingProviders = async () => {
 };
 
 /**
- * Valide un prestataire (passe is_verified à true)
- * @param {number} providerId
+ * Valide un prestataire — passe is_verified à true et enregistre la date de validation
+ * @param {string} providerId
  * @returns {Object} - Le prestataire mis à jour
  */
 const approveProvider = async (providerId) => {
@@ -211,10 +259,10 @@ const approveProvider = async (providerId) => {
 };
 
 /**
- * Rejette un prestataire avec une raison
- * @param {number} providerId
- * @param {string} reason - Motif du rejet affiché au prestataire
- * @returns {Object} - Le prestataire mis à jour
+ * Rejette un prestataire avec un motif affiché dans son dashboard
+ * @param {string} providerId
+ * @param {string} reason - Motif du rejet visible par le prestataire
+ * @returns {Object}      - Le prestataire mis à jour
  */
 const rejectProvider = async (providerId, reason) => {
   try {
@@ -232,8 +280,9 @@ const rejectProvider = async (providerId, reason) => {
 };
 
 /**
- * Récupère tous les utilisateurs sauf les admins et les comptes supprimés
- * Utilisé par le dashboard administrateur
+ * Récupère tous les utilisateurs sauf les admins et les comptes supprimés (soft delete)
+ * Inclut le nombre de commandes associées selon le rôle (client ou prestataire)
+ * Utilisé par le dashboard administrateur pour la gestion des comptes
  * @returns {Array}
  */
 const getAllUsers = async () => {
@@ -270,7 +319,7 @@ const getAllUsers = async () => {
 
 /**
  * Met à jour la zone d'intervention d'un prestataire
- * @param {number} userId
+ * @param {string} userId
  * @param {string} zone
  * @returns {Object} - L'utilisateur mis à jour
  */
@@ -289,6 +338,12 @@ const updateZone = async (userId, zone) => {
   };
 };
 
+/**
+ * Réinitialise le rejet d'un prestataire pour lui permettre de soumettre à nouveau
+ * Efface rejection_reason et rejected_at — le dossier repasse en attente de validation
+ * @param {string} userId
+ * @returns {Object} - L'utilisateur mis à jour
+ */
 const resetRejection = async (userId) => {
   try {
     const result = await pool.query(
@@ -304,6 +359,13 @@ const resetRejection = async (userId) => {
   }
 };
 
+/**
+ * Bloque ou débloque un utilisateur selon la valeur de isBlocked
+ * Un compte bloqué ne peut plus se connecter à la plateforme
+ * @param {string}  userId    - Identifiant de l'utilisateur
+ * @param {boolean} isBlocked - true pour bloquer, false pour débloquer
+ * @returns {Object}          - L'utilisateur mis à jour
+ */
 const toggleBlock = async (userId, isBlocked) => {
   try {
     const result = await pool.query(
@@ -319,42 +381,11 @@ const toggleBlock = async (userId, isBlocked) => {
   }
 };
 
-const findByRole = async (role) => {
-  try {
-    const result = await pool.query(
-      `SELECT u.* FROM users u
-       INNER JOIN roles r ON r.id = u.role_id
-       WHERE r.name = $1
-       LIMIT 1`,
-      [role]
-    );
-    return result.rows;
-  } catch (error) {
-    throw new Error(`userRepository.findByRole : ${error.message}`);
-  }
-};
-
-/**
- * Récupère un utilisateur par son numéro de téléphone
- * @param {string} telephone
- * @returns {Array}
- */
-const findByTelephone = async (telephone) => {
-  try {
-    const result = await pool.query(
-      'SELECT id, prenom FROM users WHERE telephone = $1',
-      [telephone]
-    );
-    return result.rows;
-  } catch (error) {
-    throw new Error(`userRepository.findByTelephone : ${error.message}`);
-  }
-};
-
 module.exports = {
   findByEmail,
   findById,
   findByRole,
+  findByTelephone,
   emailExists,
   create,
   update,
@@ -366,6 +397,5 @@ module.exports = {
   getAllUsers,
   updateZone,
   resetRejection,
-  toggleBlock,
-  findByTelephone
+  toggleBlock
 };

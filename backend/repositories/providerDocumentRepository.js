@@ -2,7 +2,19 @@
 const pool = require('../config/db');
 
 /**
- * Crée un document prestataire
+ * Repository de la table `provider_documents`.
+ * Gère les documents administratifs uploadés par les prestataires (RIB, KBIS, assurance, etc.).
+ * Les fichiers sont stockés sur Cloudinary — seule l'URL est persistée en base.
+ */
+
+/**
+ * Enregistre un nouveau document prestataire après upload Cloudinary
+ * @param {string} userId   - Identifiant du prestataire
+ * @param {string} type     - Type de document (rib, kbis, assurance, identite, autre)
+ * @param {string} label    - Libellé libre (obligatoire si type === 'autre', null sinon)
+ * @param {string} fileUrl  - URL Cloudinary du fichier uploadé
+ * @param {string} fileName - Nom original du fichier
+ * @returns {Object}        - Le document créé
  */
 const create = async (userId, type, label, fileUrl, fileName) => {
   const result = await pool.query(
@@ -14,7 +26,9 @@ const create = async (userId, type, label, fileUrl, fileName) => {
 };
 
 /**
- * Récupère tous les documents d'un prestataire
+ * Récupère tous les documents d'un prestataire triés du plus récent au plus ancien
+ * @param {string} userId - Identifiant du prestataire
+ * @returns {Array}
  */
 const findByUserId = async (userId) => {
   const result = await pool.query(
@@ -27,7 +41,9 @@ const findByUserId = async (userId) => {
 };
 
 /**
- * Récupère tous les documents pour l'admin (avec infos prestataire)
+ * Récupère tous les documents avec les informations du prestataire associé
+ * Utilisé par le dashboard admin pour la validation des dossiers
+ * @returns {Array}
  */
 const findAllWithProvider = async () => {
   const result = await pool.query(
@@ -40,7 +56,11 @@ const findAllWithProvider = async () => {
 };
 
 /**
- * Supprime un document
+ * Supprime un document en vérifiant que le prestataire en est le propriétaire
+ * La condition AND user_id = $2 empêche la suppression des documents d'un autre prestataire
+ * @param {number} id     - Identifiant du document
+ * @param {string} userId - Identifiant du prestataire propriétaire
+ * @returns {void}
  */
 const deleteOne = async (id, userId) => {
   await pool.query(
@@ -49,6 +69,21 @@ const deleteOne = async (id, userId) => {
   );
 };
 
+/**
+ * Supprime un document sans vérification de propriétaire
+ * Réservé à l'usage admin uniquement
+ * @param {number} id - Identifiant du document
+ * @returns {void}
+ */
+const adminDeleteOne = async (id) => {
+  await pool.query('DELETE FROM provider_documents WHERE id = $1', [id]);
+};
+
+/**
+ * Marque un document spécifique comme lu par l'admin
+ * @param {number} id - Identifiant du document
+ * @returns {void}
+ */
 const markAsRead = async (id) => {
   await pool.query(
     'UPDATE provider_documents SET is_read = TRUE WHERE id = $1',
@@ -56,23 +91,28 @@ const markAsRead = async (id) => {
   );
 };
 
+/**
+ * Marque tous les documents non lus comme lus
+ * Appelé via le bouton "Tout marquer comme lu" dans le dashboard admin
+ * @returns {void}
+ */
 const markAllAsRead = async () => {
   await pool.query(
     'UPDATE provider_documents SET is_read = TRUE WHERE is_read = FALSE'
   );
 };
 
+/**
+ * Compte le nombre de documents non lus
+ * Utilisé pour afficher le badge de compteur dans le dashboard admin
+ * @returns {number}
+ */
 const countUnread = async () => {
   const result = await pool.query(
     'SELECT COUNT(*) FROM provider_documents WHERE is_read = FALSE'
   );
   return parseInt(result.rows[0].count);
 };
-
-const adminDeleteOne = async (id) => {
-  await pool.query('DELETE FROM provider_documents WHERE id = $1', [id]);
-};
-
 
 module.exports = {
   create,
