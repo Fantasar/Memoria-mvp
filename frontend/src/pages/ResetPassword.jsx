@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import AuthLayout from '../components/layout/AuthLayout';
 import axios from 'axios';
+import Footer from '../components/layout/Footer';
+
 
 function ResetPassword() {
   const navigate = useNavigate();
@@ -125,6 +127,8 @@ function ResetPassword() {
           </div>
 
         </AuthLayout>
+        {/* Footer */}
+        <Footer />
       </div>
     </>
   );

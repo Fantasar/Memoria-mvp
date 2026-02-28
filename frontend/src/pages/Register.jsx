@@ -10,6 +10,8 @@ import { validateEmail, validatePassword, validatePasswordConfirmation, validate
 import authService from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
 import Navbar from '../components/layout/Navbar';
+import Footer from '../components/layout/Footer';
+
 
 const ZONES = [
   { value: 'Bordeaux', label: 'Bordeaux et environs (30km)' },
@@ -215,6 +217,8 @@ function Register() {
           </div>
 
         </AuthLayout>
+        {/* Footer */}
+        <Footer />
       </div>
     </>
   );
