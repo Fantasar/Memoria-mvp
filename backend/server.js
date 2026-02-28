@@ -26,22 +26,24 @@ app.use(express.json());
 // ============================================
 // ROUTES
 // ============================================
-const authRoutes            = require('./routes/auth');
-const adminRoutes           = require('./routes/admin');
-const orderRoutes           = require('./routes/orders');
-const cemeteryRoutes        = require('./routes/cemeteries');
-const serviceCategoryRoutes = require('./routes/serviceCategories');
-const paymentRoutes         = require('./routes/payments');
-const photoRoutes           = require('./routes/photoRoutes');
-const providerRoutes        = require('./routes/providerRoutes');
-const statsRoutes           = require('./routes/statsRoutes');
-const notificationRoutes    = require('./routes/notificationRoutes');
-const reviewRoutes          = require('./routes/reviewRoutes');
-const usersRoutes           = require('./routes/users');
-const passwordResetRoutes   = require('./routes/passwordReset');
-const webhookRoutes         = require('./routes/webhooks');
-const crispMessageRoutes    = require('./routes/crispMessages');
+const authRoutes             = require('./routes/auth');
+const adminRoutes            = require('./routes/admin');
+const orderRoutes            = require('./routes/orders');
+const cemeteryRoutes         = require('./routes/cemeteries');
+const serviceCategoryRoutes  = require('./routes/serviceCategories');
+const paymentRoutes          = require('./routes/payments');
+const photoRoutes            = require('./routes/photoRoutes');
+const providerRoutes         = require('./routes/providerRoutes');
+const statsRoutes            = require('./routes/statsRoutes');
+const notificationRoutes     = require('./routes/notificationRoutes');
+const reviewRoutes           = require('./routes/reviewRoutes');
+const usersRoutes            = require('./routes/users');
+const passwordResetRoutes    = require('./routes/passwordReset');
+const webhookRoutes          = require('./routes/webhooks');
+const crispMessageRoutes     = require('./routes/crispMessages');
 const providerDocumentRoutes = require('./routes/providerDocuments');
+const contactRoutes          = require('./routes/contact');
+
 
 
 app.use('/api/auth',               authRoutes);
@@ -60,9 +62,7 @@ app.use('/api/auth',               passwordResetRoutes);
 app.use('/api/webhooks',           webhookRoutes);
 app.use('/api/admin/messages',     crispMessageRoutes);
 app.use('/api/documents',          providerDocumentRoutes);
-
-
-
+app.use('/api/contact',            contactRoutes);
 
 // ============================================
 // ROUTES UTILITAIRES
