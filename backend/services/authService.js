@@ -210,6 +210,12 @@ const getAllUsers = async () => {
   return await userRepository.getAllUsers();
 };
 
+/**
+ * Bloque ou débloque un compte utilisateur selon son état actuel
+ * Inverse automatiquement is_blocked — pas besoin de préciser l'action souhaitée
+ * @param {string} userId
+ * @returns {Object} - L'utilisateur mis à jour avec le nouvel état is_blocked
+ */
 const toggleBlockUser = async (userId) => {
   try {
     const user = await userRepository.findById(userId);
@@ -226,6 +232,13 @@ const toggleBlockUser = async (userId) => {
   }
 };
 
+/**
+ * Supprime définitivement un compte utilisateur
+ * Un admin ne peut pas supprimer son propre compte (protection contre l'auto-suppression)
+ * @param {string} userId  - Identifiant de l'utilisateur à supprimer
+ * @param {string} adminId - Identifiant de l'admin qui effectue la suppression
+ * @returns {Object}       - { id } de l'utilisateur supprimé
+ */
 const deleteUser = async (userId, adminId) => {
   try {
     if (userId == adminId) {

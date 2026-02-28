@@ -812,6 +812,14 @@ const reportDispute = async (orderId, userId, reason) => {
   }
 };
 
+/**
+ * Annule une commande à la demande du client
+ * Vérifie que la commande appartient bien au client et qu'elle est encore annulable
+ * Seules les commandes au statut 'pending' peuvent être annulées — une fois acceptée par un prestataire, l'annulation n'est plus possible
+ * @param {string} orderId  - Identifiant de la commande
+ * @param {string} clientId - Identifiant du client connecté
+ * @returns {Object}        - La commande mise à jour avec le statut 'cancelled'
+ */
 const cancelOrderClient = async (orderId, clientId) => {
   try {
     const order = await orderRepository.findById(orderId);

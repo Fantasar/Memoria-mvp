@@ -223,6 +223,13 @@ const getZoneStats = async (userId) => {
   }
 };
 
+/**
+ * Permet à un prestataire rejeté de soumettre une nouvelle demande de validation
+ * Réinitialise le motif de rejet et remet le dossier en attente d'examen admin
+ * Bloqué si le compte est déjà validé ou si l'utilisateur n'est pas prestataire
+ * @param {string} userId - Identifiant du prestataire connecté
+ * @returns {Object}      - L'utilisateur mis à jour avec rejection_reason et rejected_at à null
+ */
 const reapply = async (userId) => {
   try {
     const provider = await userRepository.findById(userId);
