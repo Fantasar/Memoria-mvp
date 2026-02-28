@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import TestBanner from './components/layout/TestBanner';
+
 
 // Pages publiques
 import Home from './pages/Home';
@@ -49,6 +51,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      <TestBanner />
       <Routes>
 
         {/* ── Routes publiques ───────────────────────────────────────── */}
