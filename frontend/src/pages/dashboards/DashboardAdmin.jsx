@@ -135,6 +135,11 @@ function DashboardAdmin() {
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [loadingMessages, setLoadingMessages] = useState(false);
 
+  // Modal pour intégrer les notification de Email dans Messages
+  const [contactNotifications, setContactNotifications] = useState([]);
+  const [loadingContactNotifs, setLoadingContactNotifs] = useState(false);
+  const [unreadContactNotifs, setUnreadContactNotifs] = useState(0);
+
   // Modal pour récupèrer les documents du prestataire
   const [providerDocuments, setProviderDocuments] = useState({});
   const [loadingProviderDocs, setLoadingProviderDocs] = useState({});
@@ -148,7 +153,7 @@ function DashboardAdmin() {
 
   const NAV_SECTIONS = [
     { key: 'overview', label: 'Aperçu' },
-    { key: 'messages', label: `Messages${unreadMessages > 0 ? ` (${unreadMessages})` : ''}` },
+    { key: 'messages', label: `Messages${(unreadMessages + unreadContactNotifs) > 0 ? ` (${unreadMessages + unreadContactNotifs})` : ''}` },
     { key: 'disputes', label: 'Litiges' },
     { key: 'interventions', label: 'Interventions' },
     { key: 'providers', label: 'Prestataires' },
@@ -174,6 +179,7 @@ function DashboardAdmin() {
     fetchServices();
     fetchAllProviderDocs();
     fetchProviderDocuments();
+    fetchContactNotifications();
   }, []);
 
   useEffect(() => {
@@ -334,6 +340,21 @@ function DashboardAdmin() {
       setUnreadDocs(res.data.data?.count || 0);
     } catch {
       // Échec silencieux
+    }
+  };
+
+  const fetchContactNotifications = async () => {
+    setLoadingContactNotifs(true);
+    try {
+      const res = await axios.get('/api/notifications', authHeaders());
+      const notifs = res.data.data?.notifications || [];
+      const contactNotifs = notifs.filter(n => n.type === 'contact_message');
+      setContactNotifications(contactNotifs);
+      setUnreadContactNotifs(contactNotifs.filter(n => !n.is_read).length);
+    } catch {
+      // Échec silencieux
+    } finally {
+      setLoadingContactNotifs(false);
     }
   };
 
@@ -574,29 +595,25 @@ function DashboardAdmin() {
               </div>
             </div>
 
+            {/* ── Messages Crisp ─────────────────────────────────── */}
+            <h3 className="text-lg font-semibold mb-3 text-purple-700">💬 Messages Chat</h3>
             {loadingMessages ? (
-              <p className="text-gray-500">Chargement...</p>
+              <p className="text-gray-500 mb-6">Chargement...</p>
             ) : crispMessages.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                <p className="text-4xl mb-3">💬</p>
-                <p className="text-gray-500">Aucun message pour le moment</p>
+              <div className="bg-white border border-gray-200 rounded-lg p-6 text-center mb-6">
+                <p className="text-gray-500">Aucun message chat pour le moment</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 mb-8">
                 {crispMessages.map(msg => (
-                  <div
-                    key={msg.id}
+                  <div key={msg.id}
                     className={`bg-white border rounded-lg p-4 flex items-start justify-between gap-4 ${!msg.is_read ? 'border-purple-300 bg-purple-50' : 'border-gray-200'
                       }`}>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        {!msg.is_read && (
-                          <span className="w-2 h-2 bg-purple-600 rounded-full inline-block" />
-                        )}
+                        {!msg.is_read && <span className="w-2 h-2 bg-purple-600 rounded-full inline-block" />}
                         <p className="font-semibold text-gray-900">{msg.from_name || 'Visiteur'}</p>
-                        {msg.from_email && (
-                          <p className="text-sm text-gray-500">{msg.from_email}</p>
-                        )}
+                        {msg.from_email && <p className="text-sm text-gray-500">{msg.from_email}</p>}
                       </div>
                       <p className="text-gray-700">{msg.content}</p>
                       <p className="text-xs text-gray-400 mt-1">
@@ -621,6 +638,89 @@ function DashboardAdmin() {
                         className="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-center">
                         Répondre
                       </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── Formulaire de contact ───────────────────────── */}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-blue-700">📩 Messages formulaire contact</h3>
+              <div className="flex gap-3">
+                {contactNotifications.some(n => !n.is_read) && (
+                  <button
+                    onClick={async () => {
+                      await axios.patch('/api/notifications/read-all', {}, authHeaders());
+                      fetchContactNotifications();
+                    }}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium text-sm">
+                    ✅ Tout marquer comme lu
+                  </button>
+                )}
+                {contactNotifications.length > 0 && (
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm('Supprimer tous les messages de contact ?')) return;
+                      await Promise.all(
+                        contactNotifications.map(n =>
+                          axios.delete(`/api/notifications/${n.id}`, authHeaders())
+                        )
+                      );
+                      fetchContactNotifications();
+                    }}
+                    className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium text-sm">
+                    🗑️ Tout supprimer
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {loadingContactNotifs ? (
+              <p className="text-gray-500">Chargement...</p>
+            ) : contactNotifications.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
+                <p className="text-gray-500">Aucun message de contact pour le moment</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {contactNotifications.map(notif => (
+                  <div key={notif.id}
+                    className={`bg-white border rounded-lg p-4 flex items-start justify-between gap-4 ${!notif.is_read ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
+                      }`}>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {!notif.is_read && <span className="w-2 h-2 bg-blue-600 rounded-full inline-block" />}
+                        <p className="font-semibold text-gray-900">{notif.title}</p>
+                      </div>
+                      <p className="text-gray-700 text-sm">{notif.message}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(notif.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric', month: 'long', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {!notif.is_read && (
+                        <button
+                          onClick={async () => {
+                            await axios.patch(`/api/notifications/${notif.id}/read`, {}, authHeaders());
+                            fetchContactNotifications();
+                          }}
+                          className="text-xs px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-lg">
+                          Marquer lu
+                        </button>
+                      )}
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm('Supprimer ce message ?')) return;
+                          await axios.delete(`/api/notifications/${notif.id}`, authHeaders());
+                          fetchContactNotifications();
+                        }}
+                        className="text-xs px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg">
+                        🗑️ Supprimer
+                      </button>
                     </div>
                   </div>
                 ))}

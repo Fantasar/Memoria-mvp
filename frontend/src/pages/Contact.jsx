@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import roseImage from '../assets/rose.jpg';
+import axios from 'axios';
 
 // Composant étoiles (réutilisé)
 function Stars({ colors, count, style = {} }) {
@@ -68,10 +69,10 @@ const Contact = () => {
     }
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await axios.post('http://localhost:5500/api/contact', formData);
       setSuccess('Votre message a été envoyé avec succès ! Nous vous répondrons sous 24h.');
       setFormData({ name: '', email: '', subject: '', message: '' });
-    } catch (err) {
+    } catch {
       setError('Une erreur est survenue. Veuillez réessayer.');
     }
   };
