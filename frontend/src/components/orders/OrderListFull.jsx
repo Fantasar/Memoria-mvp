@@ -3,18 +3,24 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+//Import pour la création d'une facture en PDF
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { useAuth } from '../../hooks/useAuth';
+import logoMemoria from '../../assets/Logos-Mémoria.jpeg';
+
 // Extraits hors du composant — pas de recréation à chaque render
 const STATUS_CONFIG = {
-  pending:              { label: 'En attente',            color: 'bg-yellow-100 text-yellow-800' },
-  paid:                 { label: 'Payée',                 color: 'bg-blue-100 text-blue-800'     },
-  accepted:             { label: 'Acceptée',              color: 'bg-green-100 text-green-800'   },
-  in_progress:          { label: 'En cours',              color: 'bg-purple-100 text-purple-800' },
-  awaiting_validation:  { label: 'En attente validation', color: 'bg-orange-100 text-orange-800' },
-  correction_requested: { label: 'Correction demander',   color: 'bg-orange-100 text-orange-800' },
-  completed:            { label: 'Terminée',              color: 'bg-green-200 text-green-900'   },
-  cancelled:            { label: 'Annulée',               color: 'bg-red-100 text-red-800'       },
-  refunded:             { label: 'Remboursée',            color: 'bg-gray-100 text-gray-800'     },
-  disputed:             { label: 'Litige en cours',       color: 'bg-red-100 text-red-800'       },
+  pending: { label: 'En attente', color: 'bg-yellow-100 text-yellow-800' },
+  paid: { label: 'Payée', color: 'bg-blue-100 text-blue-800' },
+  accepted: { label: 'Acceptée', color: 'bg-green-100 text-green-800' },
+  in_progress: { label: 'En cours', color: 'bg-purple-100 text-purple-800' },
+  awaiting_validation: { label: 'En attente validation', color: 'bg-orange-100 text-orange-800' },
+  correction_requested: { label: 'Correction demander', color: 'bg-orange-100 text-orange-800' },
+  completed: { label: 'Terminée', color: 'bg-green-200 text-green-900' },
+  cancelled: { label: 'Annulée', color: 'bg-red-100 text-red-800' },
+  refunded: { label: 'Remboursée', color: 'bg-gray-100 text-gray-800' },
+  disputed: { label: 'Litige en cours', color: 'bg-red-100 text-red-800' },
 };
 
 const PHOTO_STATUSES = ['completed', 'awaiting_validation', 'disputed'];
@@ -30,15 +36,16 @@ const authHeaders = () => ({
  * @param {Function} onReview - Callback déclenché au clic sur "Évaluer"
  */
 function OrderListFull({ onReview }) {
-  const [orders,        setOrders]            = useState([]);
-  const [loading,       setLoading]           = useState(true);
-  const [error,         setError]             = useState(null);
+  const { user } = useAuth();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
-  const [orderPhotos,   setOrderPhotos]       = useState({});
-  const [loadingPhotos, setLoadingPhotos]     = useState({});
-  const [cancelError,   setCancelError]       = useState({});
-  const [cancelSuccess, setCancelSuccess]     = useState({});
-  const [cancelling,    setCancelling]        = useState({});
+  const [orderPhotos, setOrderPhotos] = useState({});
+  const [loadingPhotos, setLoadingPhotos] = useState({});
+  const [cancelError, setCancelError] = useState({});
+  const [cancelSuccess, setCancelSuccess] = useState({});
+  const [cancelling, setCancelling] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -132,14 +139,108 @@ function OrderListFull({ onReview }) {
     }
   };
 
+  const loadImageAsBase64 = (src) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = src;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = reject;
+    });
+
+  const exportFacturePDF = async (order) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const mainColor = [59, 130, 246]; // bleu client
+    const today = new Date().toLocaleDateString('fr-FR');
+    const formatDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR') : '-';
+
+    const logoBase64 = await loadImageAsBase64(logoMemoria);
+
+    // ── Bannière header ──────────────────────────────────────────
+    doc.setFillColor(...mainColor);
+    doc.rect(0, 0, pageWidth, 36, 'F');
+    doc.addImage(logoBase64, 'PNG', 15, 7, 22, 22);
+    doc.setTextColor(255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text('MÉMORIA', pageWidth / 2, 15, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text('Facture de prestation', pageWidth / 2, 25, { align: 'center' });
+
+    // ── Infos client ─────────────────────────────────────────────
+    let y = 50;
+    doc.setTextColor(0);
+    doc.setFontSize(10);
+    doc.text(`Client : ${user.prenom} ${user.nom}`, 15, y); y += 7;
+    doc.text(`Email : ${user.email}`, 15, y); y += 7;
+    doc.text(`Téléphone : ${user.telephone || 'Non renseigné'}`, 15, y); y += 7;
+    doc.text(`Date de facture : ${today}`, 15, y); y += 15;
+
+    // ── Message de remerciement ───────────────────────────────────
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(
+      'Nous vous remercions de votre confiance et de votre commande sur la plateforme Mémoria.',
+      15, y, { maxWidth: pageWidth - 30 }
+    ); y += 8;
+    doc.text(
+      'Notre équipe reste disponible pour toute question ou besoin complémentaire.',
+      15, y, { maxWidth: pageWidth - 30 }
+    ); y += 15;
+
+    // ── Tableau commande ─────────────────────────────────────────
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0);
+    autoTable(doc, {
+      startY: y,
+      head: [['Champ', 'Détail']],
+      body: [
+        ['Numéro de commande', order.id],
+        ['Date de commande', formatDate(order.created_at)],
+        ['Service', order.service_name || '-'],
+        ['Cimetière', order.cemetery_name || '-'],
+        ['Lieu', order.cemetery_city || '-'],
+        ['Statut', order.status === 'completed' ? 'Terminée' : 'Payée'],
+        ['Montant réglé', order.price ? `${order.price} €` : '-'],
+      ],
+      theme: 'grid',
+      styles: { fontSize: 10, cellPadding: 4 },
+      headStyles: { fillColor: mainColor, textColor: 255, fontStyle: 'bold' },
+      columnStyles: { 1: { fontStyle: 'bold' } }
+    });
+
+    // ── Pied de page ─────────────────────────────────────────────
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(
+        `Mémoria © ${new Date().getFullYear()} — Page ${i}/${pageCount}`,
+        pageWidth / 2, 290, { align: 'center' }
+      );
+    }
+
+    doc.save(`memoria-facture-${order.id.slice(0, 8)}.pdf`);
+  };
+
   return (
     <div className="space-y-4">
       {orders.map(order => {
-        const photos      = orderPhotos[order.id] || [];
+        const photos = orderPhotos[order.id] || [];
         const beforePhoto = photos.find(p => p.type === 'before');
-        const afterPhoto  = photos.find(p => p.type === 'after');
-        const isExpanded  = expandedOrderId === order.id;
-        const statusCfg   = STATUS_CONFIG[order.status] ?? { label: order.status, color: 'bg-gray-100 text-gray-800' };
+        const afterPhoto = photos.find(p => p.type === 'after');
+        const isExpanded = expandedOrderId === order.id;
+        const statusCfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: 'bg-gray-100 text-gray-800' };
 
         return (
           <div key={order.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
@@ -172,7 +273,7 @@ function OrderListFull({ onReview }) {
                 </svg>
               </div>
             </div>
-            
+
             {/* Bouton annulation — commandes en attente uniquement */}
             {order.status === 'pending' && (
               <div className="px-6 pb-4 border-t border-gray-200 mt-2">
@@ -214,6 +315,16 @@ function OrderListFull({ onReview }) {
                         ✅ Évalué
                       </div>
                     )
+                  )}
+                  {/* Bouton facture — commandes payées et terminées */}
+                  {['paid', 'completed'].includes(order.status) && (
+                    <div className="px-6 pb-4 border-t border-gray-200">
+                      <button
+                        onClick={e => { e.stopPropagation(); exportFacturePDF(order); }}
+                        className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center justify-center gap-2">
+                        📄 Télécharger la facture
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

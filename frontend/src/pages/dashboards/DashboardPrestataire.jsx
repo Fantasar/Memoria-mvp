@@ -25,6 +25,7 @@ const NAV_TABS = [
   { key: 'zone', label: "Zone d'intervention" },
   { key: 'evaluations', label: 'Évaluations' },
   { key: 'history', label: 'Historique' },
+  { key: 'documents', label: 'Documents' },
   { key: 'profile', label: 'Profil' },
 ];
 
@@ -85,6 +86,16 @@ function DashboardPrestataire() {
   const [passwordSuccess, setPasswordSuccess] = useState(null);
   const [passwordError, setPasswordError] = useState(null);
 
+  // Modal de composant pour exporter les documents vers l'admin
+  const [documents, setDocuments] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [docType, setDocType] = useState('rib');
+  const [docLabel, setDocLabel] = useState('');
+  const [docFile, setDocFile] = useState(null);
+  const [docError, setDocError] = useState(null);
+  const [docSuccess, setDocSuccess] = useState(null);
+
   useEffect(() => {
     fetchStats();
     fetchAvailableMissions();
@@ -94,6 +105,7 @@ function DashboardPrestataire() {
     fetchFinances();
     fetchZoneStats();
     fetchReviews();
+    fetchDocuments();
   }, []);
 
   useEffect(() => {
@@ -174,6 +186,18 @@ function DashboardPrestataire() {
         total_reviews: res.data.data.total_reviews || 0
       });
     } catch { /* silencieux */ } finally { setLoadingReviews(false); }
+  };
+
+  const fetchDocuments = async () => {
+    setLoadingDocs(true);
+    try {
+      const res = await axios.get('/api/documents/me', authHeaders());
+      setDocuments(res.data.data || []);
+    } catch {
+      // Échec silencieux
+    } finally {
+      setLoadingDocs(false);
+    }
   };
 
   // ─── Handlers notifications ────────────────────────────────────────────────
@@ -1000,6 +1024,141 @@ function DashboardPrestataire() {
               )}
             </div>
           )}
+        </div>
+      );
+
+      case 'documents': return (
+        <div>
+          <h2 className="text-2xl font-semibold mb-6">Mes documents</h2>
+
+          {/* Formulaire upload */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">Ajouter un document</h3>
+
+            {docError && <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{docError}</p></div>}
+            {docSuccess && <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm">{docSuccess}</p></div>}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type de document</label>
+                <select value={docType} onChange={e => setDocType(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                  <option value="rib">RIB</option>
+                  <option value="kbis">Kbis</option>
+                  <option value="assurance">Assurance responsabilité civile</option>
+                  <option value="identite">Pièce d'identité</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </div>
+
+              {docType === 'autre' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Précisez le type</label>
+                  <input type="text" value={docLabel} onChange={e => setDocLabel(e.target.value)}
+                    placeholder="Ex: Certificat de formation"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                </div>
+              )}
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fichier</label>
+              <input type="file" onChange={e => setDocFile(e.target.files[0])}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2" />
+              <p className="text-xs text-gray-500 mt-1">PDF, images acceptés — 10 Mo maximum</p>
+            </div>
+
+            <button
+              onClick={async () => {
+                setDocError(null);
+                setDocSuccess(null);
+                if (!docFile) { setDocError('Veuillez sélectionner un fichier'); return; }
+                if (docType === 'autre' && !docLabel.trim()) { setDocError('Veuillez préciser le type de document'); return; }
+
+                setUploadingDoc(true);
+                try {
+                  const formData = new FormData();
+                  formData.append('file', docFile);
+                  formData.append('type', docType);
+                  if (docLabel) formData.append('label', docLabel);
+
+                  await axios.post('/api/documents', formData, {
+                    headers: {
+                      Authorization: `Bearer ${localStorage.getItem('token')}`,
+                      'Content-Type': 'multipart/form-data'
+                    }
+                  });
+
+                  setDocSuccess('Document uploadé avec succès');
+                  setDocFile(null);
+                  setDocLabel('');
+                  setDocType('rib');
+                  fetchDocuments();
+                } catch (err) {
+                  setDocError(err.response?.data?.error?.message || 'Erreur lors de l\'upload');
+                } finally {
+                  setUploadingDoc(false);
+                }
+              }}
+              disabled={uploadingDoc}
+              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition disabled:opacity-50">
+              {uploadingDoc ? '⏳ Upload en cours...' : '📤 Envoyer le document'}
+            </button>
+          </div>
+
+          {/* Liste documents */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">Documents envoyés</h3>
+
+            {loadingDocs ? (
+              <p className="text-gray-500">Chargement...</p>
+            ) : documents.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-4xl mb-2">📄</p>
+                <p>Aucun document envoyé pour le moment</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {documents.map(doc => (
+                  <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">📄</span>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {doc.type === 'rib' ? 'RIB' :
+                            doc.type === 'kbis' ? 'Kbis' :
+                              doc.type === 'assurance' ? 'Assurance RC' :
+                                doc.type === 'identite' ? "Pièce d'identité" :
+                                  doc.label || 'Autre'}
+                        </p>
+                        <p className="text-sm text-gray-500">{doc.file_name}</p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(doc.uploaded_at).toLocaleDateString('fr-FR', {
+                            day: 'numeric', month: 'long', year: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                        className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium">
+                        👁️ Voir
+                      </a>
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm('Supprimer ce document ?')) return;
+                          await axios.delete(`/api/documents/${doc.id}`, authHeaders());
+                          fetchDocuments();
+                        }}
+                        className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium">
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       );
 

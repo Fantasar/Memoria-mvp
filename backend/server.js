@@ -41,6 +41,8 @@ const usersRoutes           = require('./routes/users');
 const passwordResetRoutes   = require('./routes/passwordReset');
 const webhookRoutes         = require('./routes/webhooks');
 const crispMessageRoutes    = require('./routes/crispMessages');
+const providerDocumentRoutes = require('./routes/providerDocuments');
+
 
 app.use('/api/auth',               authRoutes);
 app.use('/api/admin',              adminRoutes);
@@ -57,6 +59,8 @@ app.use('/api/users',              usersRoutes);
 app.use('/api/auth',               passwordResetRoutes);
 app.use('/api/webhooks',           webhookRoutes);
 app.use('/api/admin/messages',     crispMessageRoutes);
+app.use('/api/documents',          providerDocumentRoutes);
+
 
 
 
