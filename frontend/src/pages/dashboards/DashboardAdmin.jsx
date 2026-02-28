@@ -138,7 +138,6 @@ function DashboardAdmin() {
   const NAV_SECTIONS = [
     { key: 'overview', label: 'Aperçu' },
     { key: 'messages', label: `Messages${unreadMessages > 0 ? ` (${unreadMessages})` : ''}` },
-    { key: 'messages', label: 'Messages' },
     { key: 'disputes', label: 'Litiges' },
     { key: 'interventions', label: 'Interventions' },
     { key: 'providers', label: 'Prestataires' },
@@ -482,10 +481,33 @@ function DashboardAdmin() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold">Messages</h2>
-              <a href="https://app.crisp.chat" target="_blank" rel="noopener noreferrer"
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center gap-2">
-                💬 Ouvrir Crisp
-              </a>
+              <div className="flex gap-3">
+                {unreadMessages > 0 && (
+                  <button
+                    onClick={async () => {
+                      await axios.patch('/api/admin/messages', {}, authHeaders());
+                      fetchCrispMessages();
+                    }}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium">
+                    ✅ Tout marquer comme lu ({unreadMessages})
+                  </button>
+                )}
+                {crispMessages.length > 0 && (
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm('Supprimer tous les messages ?')) return;
+                      await axios.delete('/api/admin/messages', authHeaders());
+                      fetchCrispMessages();
+                    }}
+                    className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium">
+                    🗑️ Tout supprimer
+                  </button>
+                )}
+                <a href="https://app.crisp.chat" target="_blank" rel="noopener noreferrer"
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center gap-2">
+                  💬 Ouvrir Crisp
+                </a>
+              </div>
             </div>
 
             {loadingMessages ? (
@@ -1725,9 +1747,6 @@ function DashboardAdmin() {
           </div>
         </div>
       )}
-
-      <CrispChat user={user} />
-
     </div>
   );
 }

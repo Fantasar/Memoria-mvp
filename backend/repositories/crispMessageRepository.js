@@ -30,4 +30,24 @@ const countUnread = async () => {
   return parseInt(result.rows[0].count);
 };
 
-module.exports = { create, findAll, markAsRead, countUnread };
+const markAllAsRead = async () => {
+  await pool.query('UPDATE crisp_messages SET is_read = TRUE WHERE is_read = FALSE');
+};
+
+const deleteOne = async (id) => {
+  await pool.query('DELETE FROM crisp_messages WHERE id = $1', [id]);
+};
+
+const deleteAll = async () => {
+  await pool.query('DELETE FROM crisp_messages');
+};
+
+module.exports = {
+  create,
+  findAll,
+  markAsRead,
+  countUnread,
+  markAllAsRead,
+  deleteOne,
+  deleteAll
+};

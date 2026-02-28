@@ -7,10 +7,10 @@ const receiveWebhook = async (req, res) => {
     if (data?.origin !== 'chat') return res.status(200).json({ ok: true });
 
     await crispMessageRepository.create(
-      data?.session_id     || 'unknown',
-      data?.user?.email    || null,
+      data?.session_id || 'unknown',
+      data?.user?.email || null,
       data?.user?.nickname || 'Visiteur',
-      data?.content        || ''
+      data?.content || ''
     );
 
     return res.status(200).json({ ok: true });
@@ -23,7 +23,7 @@ const receiveWebhook = async (req, res) => {
 const getMessages = async (req, res) => {
   try {
     const messages = await crispMessageRepository.findAll();
-    const unread   = await crispMessageRepository.countUnread();
+    const unread = await crispMessageRepository.countUnread();
     return res.status(200).json({ success: true, data: { messages, unread } });
   } catch (error) {
     return res.status(500).json({ success: false, error: { message: error.message } });
@@ -39,4 +39,38 @@ const markAsRead = async (req, res) => {
   }
 };
 
-module.exports = { receiveWebhook, getMessages, markAsRead };
+const markAllAsRead = async (req, res) => {
+  try {
+    await crispMessageRepository.markAllAsRead();
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+};
+
+const deleteOne = async (req, res) => {
+  try {
+    await crispMessageRepository.deleteOne(req.params.id);
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+};
+
+const deleteAll = async (req, res) => {
+  try {
+    await crispMessageRepository.deleteAll();
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+};
+
+module.exports = {
+  receiveWebhook,
+  getMessages,
+  markAsRead,
+  markAllAsRead,
+  deleteOne,
+  deleteAll
+};
