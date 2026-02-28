@@ -8,14 +8,15 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h4 className="font-serif text-xl mb-4">Mémoria</h4>
-            <p className="text-gray-400 text-sm">Entretien de sépultures avec respect et professionnalisme</p>
+            <ul className="space-y-2 text-sm text-gray-400">
+              <li><Link to="/" className="hover:text-white transition">Entretien de sépultures avec respect et professionnalisme</Link></li>
+            </ul>
           </div>
           <div>
             <h4 className="font-semibold mb-4">Services</h4>
             <ul className="space-y-2 text-sm text-gray-400">
               <li><Link to="/services" className="hover:text-white transition">Nettoyage de tombes</Link></li>
               <li><Link to="/services" className="hover:text-white transition">Fleurissement</Link></li>
-              <li><Link to="/services" className="hover:text-white transition">Rénovation</Link></li>
             </ul>
           </div>
           <div>
@@ -23,7 +24,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-gray-400">
               <li><Link to="/a-propos" className="hover:text-white transition">À propos</Link></li>
               <li><Link to="/contact" className="hover:text-white transition">Contact</Link></li>
-              <li><Link to="/" className="hover:text-white transition">Mentions légales</Link></li>
+              <li><span className="text-gray-500 cursor-default">Mentions légales</span></li>
             </ul>
           </div>
           <div>

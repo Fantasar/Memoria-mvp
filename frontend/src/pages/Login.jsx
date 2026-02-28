@@ -9,6 +9,8 @@ import { validateEmail } from '../utils/validators';
 import authService from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
 import Navbar from '../components/layout/Navbar';
+import Footer from '../components/layout/Footer';
+
 
 function Login() {
   const navigate = useNavigate();
@@ -129,6 +131,8 @@ function Login() {
           </div>
 
         </AuthLayout>
+        {/* Footer */}
+        <Footer />
       </div>
     </>
   );

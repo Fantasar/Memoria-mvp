@@ -51,7 +51,7 @@ const About = () => {
         <div className="max-w-4xl mx-auto px-6 text-center space-y-8 relative z-10">
           <h1 className="text-5xl md:text-6xl font-serif font-bold leading-tight">
             <span className=" text-white px-3 py-1 rounded-md">Notre mission</span><br />
-            Prendre soin des leurs avec respect
+            Prendre soin de leurs repos avec respect
           </h1>
           <p className="text-xl text-white/90 max-w-3xl mx-auto">
             Nous accompagnons les familles dans l’entretien des sépultures, avec dignité et transparence.
@@ -67,13 +67,12 @@ const About = () => {
               <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-md">Notre histoire</span>
             </h2>
             <p className="text-gray-600 text-lg leading-relaxed">
-              Fondé en 2026, Mémoria est né d’un constat simple : de nombreuses familles, éloignées géographiquement ou physiquement,
-              peinent à entretenir les sépultures de leurs proches. <br></br>Notre équipe, composée de professionnels du monde funéraire et de développeurs,
-              a créé une solution digitale pour faciliter cet entretien, avec respect et transparence.
+              Mémoria est né en 2026 d'une réalité que beaucoup connaissent : la distance, le temps, ou simplement la vie, nous éloignent parfois des lieux où reposent ceux que l'on aime. Pourtant, entretenir une sépulture, c'est continuer à honorer leur mémoire.<br></br>
+              Face à ce constat, nous avons imaginé une plateforme simple et humaine, qui connecte les familles à des prestataires certifiés, capables d'intervenir avec soin, respect et professionnalisme. <br></br>
+              Chaque mission est suivie, photographiée et validée — pour que vous puissiez être serein, où que vous soyez.
             </p>
             <p className="text-gray-600 text-lg leading-relaxed">
-              Aujourd’hui, nous travaillons en local pour couvire la Nouvelle-Aquitaine, et notre réseau s’étend chaque mois.
-              Notre objectif : offrir un service accessible, sécurisé et humain.
+              Aujourd'hui, Mémoria couvre la Nouvelle-Aquitaine et grandit chaque mois. Notre ambition reste la même : rendre ce geste d'amour accessible à tous.
             </p>
           </div>
           <div className="relative bg-white p-6 rounded-xl shadow-sm">
@@ -149,7 +148,8 @@ const About = () => {
               <span className="text-sm font-semibold tracking-wider uppercase text-gray-400">Mémoria</span>
             </div>
             <h2 className="text-5xl md:text-6xl font-bold mb-4" style={{ letterSpacing: '-0.02em' }}>Notre parcours</h2>
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto">Des professionnels passionnés au service de votre sérénité</p>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">Mémoria est avant tout un projet humain. Né dans le cadre d'un projet de fin de scolarité en développement web, il porte dès le départ une vraie conviction : <br></br>
+              La technologie peut servir des causes profondes, et pas seulement pratiques.</p>
           </div>
 
           {/* Contenu principal : une image à gauche, texte à droite */}
@@ -165,12 +165,8 @@ const About = () => {
               <h3 className="text-3xl font-bold">Philippe Lapique</h3>
               <p className="text-gray-300 text-lg">Fondateur & Développeur</p>
               <p className="text-gray-400 leading-relaxed">
-                Philippe a fondé Mémoria avec la conviction que la technologie peut servir à préserver la mémoire et le respect des défunts.
-                Passionné par l’innovation et le service aux familles, il veille à ce que chaque fonctionnalité de la plateforme réponde à un besoin humain et pratique.
-              </p>
-              <p className="text-gray-400 leading-relaxed">
-                Son approche allie rigueur technique et sensibilité, pour un service à la fois performant et respectueux.
-              </p>
+                Étudiant en fin de formation en développement web et applications, Philippe a mené Mémoria de la conception à la mise en production : architecture base de données, développement backend et frontend, intégration de paiement, gestion des rôles et des workflows métier.<br></br>
+                Curieux, autonome et rigoureux, il aborde chaque projet avec le souci du détail et une vraie sensibilité pour l'expérience utilisateur.<br></br> Mémoria reflète sa capacité à porter un projet complet de bout en bout</p>
             </div>
           </div>
         </div>

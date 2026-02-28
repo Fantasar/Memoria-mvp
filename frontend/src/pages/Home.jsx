@@ -15,6 +15,8 @@ import iconnettoyage from '../assets/nettoyage.png';
 import iconinspection from '../assets/inspection.png';
 import iconvisite from '../assets/visite.png';
 import Navbar from '../components/layout/Navbar';
+import Footer from '../components/layout/Footer';
+
 
 
 // ─── Étoiles décoratives fixées à la génération ───────────────────────────────
@@ -142,7 +144,7 @@ const TEAM = [
 const FAQ_ITEMS = [
   {
     q: 'Comment fonctionne le paiement ?',
-    a: 'Le paiement s\'effectue en ligne via Stripe de manière 100% sécurisée. Le montant est bloqué jusqu\'à validation des photos avant/après par vos soins. Vous ne payez que si vous êtes satisfait du résultat.',
+    a: 'Le paiement s\'effectue en ligne via Stripe de manière 100% sécurisée. Le montant est bloqué jusqu\'à validation des photos avant/après par notre équipe.',
   },
   {
     q: 'Qui sont les prestataires ?',
@@ -167,6 +169,28 @@ const Home = () => {
   const [ballPosition, setBallPosition] = useState({ top: 150, left: 210 });
   const [sliderPos1, setSliderPos1] = useState(50);
   const [sliderPos2, setSliderPos2] = useState(70);
+
+  // ─── Drag-to-scroll pour la section avis ─────────────────────────────────
+  const scrollRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const onMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+
+  const onMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const onMouseUp = () => setIsDragging(false);
 
   useEffect(() => {
     // Animation des compteurs
@@ -255,7 +279,7 @@ const Home = () => {
 
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6 ml-6">
-            <p className="text-gray-800 text-4xl font-light tracking-wide">Honorer leur mémoire avec dignité</p>
+            <p className="text-gray-800 text-4xl font-light tracking-wide">Honorez leur mémoire avec dignité</p>
             <h1 className="text-6xl lg:text-8xl font-serif font-bold leading-tight">
               <span className="whitespace-nowrap">PRENEZ SOIN DE</span>
               <br />
@@ -265,7 +289,7 @@ const Home = () => {
               Confiez l'entretien des sépultures à{' '}
               <span className="bg-blue-200 px-2">des professionnels certifiés.</span>
               <br />
-              <span className="whitespace-nowrap">Respect, dignité et transparence garantis.</span>
+              <span className="whitespace-nowrap">Respect, qualité et transparence garantis.</span>
             </p>
             <div className="flex gap-4 pt-4 relative z-20">
               <Link to="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-lg text-lg font-semibold transition-all transform hover:scale-105">
@@ -315,14 +339,14 @@ const Home = () => {
               {
                 num: '1', from: 'from-blue-500', to: 'to-blue-600', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', checkColor: 'text-blue-600',
                 title: 'Choisissez un service',
-                desc: 'Sélectionnez le type d\'entretien adapté aux besoins de la sépulture : nettoyage, fleurissement ou rénovation.',
+                desc: 'Sélectionnez le type d\'entretien adapté aux besoins de la sépulture : nettoyage ou fleurissement',
                 items: ['Tarifs transparents affichés à l\'avance', 'Paiement sécurisé par Stripe'],
                 icon: <img src={iconcommande} alt="Respect" className="w-10 h-10 object-contain" />,
               },
               {
                 num: '2', from: 'from-green-500', to: 'to-green-600', iconBg: 'bg-green-100', iconColor: 'text-green-600', checkColor: 'text-green-600',
                 title: 'Un prestataire intervient',
-                desc: 'Un professionnel certifié se charge de l\'entretien avec soin et respect, dans votre zone d\'intervention.',
+                desc: 'Un professionnel qualifié se charge de l\'entretien avec soin et respect, dans votre zone d\'intervention.',
                 items: ['Prestataires vérifiés et certifiés', 'Intervention rapide dans votre région'],
                 icon: <img src={iconcamion} alt="Respect" className="w-10 h-10 object-contain" />,
               },
@@ -434,8 +458,6 @@ const Home = () => {
         </div>
       </section>
 
-
-
       {/* ── Avis clients ────────────────────────────────────────────────────── */}
       <section className="bg-white py-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
@@ -443,8 +465,16 @@ const Home = () => {
             <h2 className="text-4xl font-serif font-bold text-gray-900 mb-4">Ils nous font confiance</h2>
           </div>
 
-          {/* Défilement infini — CSS défini dans index.css ou tailwind.config */}
-          <div className="flex gap-6 animate-scroll">
+          {/* Défilement infini avec drag-to-scroll */}
+          <div
+            ref={scrollRef}
+            className={`flex gap-6 overflow-x-auto scrollbar-hide select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'
+              } ${!isDragging ? 'animate-scroll' : ''}`}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+          >
             {/* Double la liste pour l'effet boucle */}
             {[...REVIEWS, ...REVIEWS].map((review, i) => (
               <ReviewCard key={i} {...review} />
@@ -534,7 +564,7 @@ const Home = () => {
               </div>
               <span className="text-sm font-semibold tracking-wider uppercase text-gray-400">Mémoria</span>
             </div>
-            <h2 className="text-5xl md:text-6xl font-bold mb-4" style={{ letterSpacing: '-0.02em' }}>Nos équipe</h2>
+            <h2 className="text-5xl md:text-6xl font-bold mb-4" style={{ letterSpacing: '-0.02em' }}>Notre équipe</h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">Des professionnels passionnés au service de votre sérénité</p>
           </div>
 
@@ -552,47 +582,15 @@ const Home = () => {
               <p className="text-gray-300 text-lg">Fondateur & Développeur</p>
               <p className="text-gray-400 leading-relaxed">
                 Philippe a fondé Mémoria avec la conviction que la technologie peut servir à préserver la mémoire et le respect des défunts.
-                Passionné par l’innovation et le service aux familles, il veille à ce que chaque fonctionnalité de la plateforme réponde à un besoin humain et pratique.
+                Passionné par l'innovation et le service aux familles, il veille à ce que chaque fonctionnalité de la plateforme réponde à un besoin humain et pratique.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h4 className="font-serif text-xl mb-4">Mémoria</h4>
-              <p className="text-gray-400 text-sm">Entretien de sépultures avec respect et professionnalisme</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Services</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>Nettoyage de tombes</li>
-                <li>Fleurissement</li>
-                <li>Rénovation</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Entreprise</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>À propos</li>
-                <li>Contact</li>
-                <li>Mentions légales</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Contact</h4>
-              <p className="text-sm text-gray-400">contact@memoria.fr<br />Bordeaux, France</p>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-500">
-            © 2026 Mémoria. Tous droits réservés.
-          </div>
-        </div>
-      </footer>
+      {/* Footer */}
+      <Footer />
 
     </div>
   );

@@ -1,29 +1,33 @@
 // frontend/src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/layout/ProtectedRoute';
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import TestBanner from './components/layout/TestBanner';
+
 
 // Pages publiques
-import Home               from './pages/Home';
-import Login              from './pages/Login';
-import Register           from './pages/Register';
-import About              from './pages/About';
-import Contact            from './pages/Contact';
-import Services           from './pages/Services';
-import ForgotPassword     from './pages/ForgotPassword';
-import ResetPassword      from './pages/ResetPassword';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Services from './pages/Services';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 // Dashboards
-import DashboardClient    from './pages/dashboards/DashboardClient';
+import DashboardClient from './pages/dashboards/DashboardClient';
 import DashboardPrestataire from './pages/dashboards/DashboardPrestataire';
-import DashboardAdmin     from './pages/dashboards/DashboardAdmin';
+import DashboardAdmin from './pages/dashboards/DashboardAdmin';
 
 // Commandes
-import NewOrder           from './pages/orders/NewOrder';
-import Checkout           from './pages/orders/Checkout';
-import OrderDetails       from './pages/orders/OrderDetails';
+import NewOrder from './pages/orders/NewOrder';
+import Checkout from './pages/orders/Checkout';
+import OrderDetails from './pages/orders/OrderDetails';
 
 // Prestataire
-import MesMissions     from './pages/orders/MesMissions';
+import MesMissions from './pages/orders/MesMissions';
 import CompleteMission from './pages/orders/CompleteMission';
 
 /**
@@ -34,20 +38,31 @@ import CompleteMission from './pages/orders/CompleteMission';
  * Les routes statiques (/orders/new, /orders/checkout) doivent être
  * déclarées AVANT les routes dynamiques (/orders/:id)
  */
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 function App() {
   return (
     <Router>
+      <ScrollToTop />
+      <TestBanner />
       <Routes>
 
         {/* ── Routes publiques ───────────────────────────────────────── */}
-        <Route path="/"         element={<Home />} />
-        <Route path="/login"    element={<Login />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/a-propos" element={<About />} />
-        <Route path="/contact"   element={<Contact />} />
-        <Route path="/services"  element={<Services />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/services" element={<Services />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password"  element={<ResetPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* ── Routes client ──────────────────────────────────────────── */}
         <Route
