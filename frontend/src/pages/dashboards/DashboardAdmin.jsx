@@ -135,6 +135,17 @@ function DashboardAdmin() {
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [loadingMessages, setLoadingMessages] = useState(false);
 
+  // Modal pour récupèrer les documents du prestataire
+  const [providerDocuments, setProviderDocuments] = useState({});
+  const [loadingProviderDocs, setLoadingProviderDocs] = useState({});
+  const [expandedProviderDocs, setExpandedProviderDocs] = useState({});
+  const [allProviderDocs, setAllProviderDocs] = useState([]);
+  const [loadingAllDocs, setLoadingAllDocs] = useState(false);
+  const [searchDocs, setSearchDocs] = useState('');
+  const [filterDocType, setFilterDocType] = useState('all');
+  const [unreadDocs, setUnreadDocs] = useState(0);
+
+
   const NAV_SECTIONS = [
     { key: 'overview', label: 'Aperçu' },
     { key: 'messages', label: `Messages${unreadMessages > 0 ? ` (${unreadMessages})` : ''}` },
@@ -146,6 +157,7 @@ function DashboardAdmin() {
     { key: 'finances', label: 'Finances' },
     { key: 'cemeteries', label: 'Cimetières' },
     { key: 'services', label: 'Services' },
+    { key: 'documents', label: `Documents${unreadDocs > 0 ? ` (${unreadDocs})` : ''}` },
     { key: 'history', label: 'Historique' },
   ];
 
@@ -160,11 +172,19 @@ function DashboardAdmin() {
     fetchFinances();
     fetchCemeteries();
     fetchServices();
+    fetchAllProviderDocs();
+    fetchProviderDocuments();
   }, []);
 
   useEffect(() => {
     fetchCrispMessages();
     const interval = setInterval(fetchCrispMessages, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadDocs();
+    const interval = setInterval(fetchUnreadDocs, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -225,6 +245,20 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingUsers(false); }
   };
 
+  const fetchAllProviderDocs = async () => {
+    setLoadingAllDocs(true);
+    try {
+      const res = await axios.get('/api/documents/admin', authHeaders());
+      setAllProviderDocs(res.data.data || []);
+      await axios.patch('/api/documents/admin/all', {}, authHeaders());
+      setUnreadDocs(0);
+    } catch {
+      // Échec silencieux
+    } finally {
+      setLoadingAllDocs(false);
+    }
+  };
+
   const fetchFinances = async () => {
     try {
       const res = await axios.get('/api/stats', authHeaders());
@@ -273,6 +307,36 @@ function DashboardAdmin() {
       setLoadingMessages(false);
     }
   };
+
+  const fetchProviderDocuments = async (providerId) => {
+    // Toggle — si déjà chargé, juste afficher/masquer
+    if (providerDocuments[providerId] !== undefined) {
+      setExpandedProviderDocs(prev => ({ ...prev, [providerId]: !prev[providerId] }));
+      return;
+    }
+    setLoadingProviderDocs(prev => ({ ...prev, [providerId]: true }));
+    try {
+      const res = await axios.get('/api/documents/admin', authHeaders());
+      // Filtre les documents de ce prestataire uniquement
+      const docs = (res.data.data || []).filter(d => d.user_id === providerId);
+      setProviderDocuments(prev => ({ ...prev, [providerId]: docs }));
+      setExpandedProviderDocs(prev => ({ ...prev, [providerId]: true }));
+    } catch {
+      setProviderDocuments(prev => ({ ...prev, [providerId]: [] }));
+    } finally {
+      setLoadingProviderDocs(prev => ({ ...prev, [providerId]: false }));
+    }
+  };
+
+  const fetchUnreadDocs = async () => {
+    try {
+      const res = await axios.get('/api/documents/admin/unread', authHeaders());
+      setUnreadDocs(res.data.data?.count || 0);
+    } catch {
+      // Échec silencieux
+    }
+  };
+
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const handleApproveProvider = async (providerId) => {
@@ -1530,34 +1594,231 @@ function DashboardAdmin() {
         </div>
       );
 
+      case 'documents': return (
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold">Documents prestataires</h2>
+            <div className="flex gap-3 items-center">
+              {unreadDocs > 0 && (
+                <button
+                  onClick={async () => {
+                    await axios.patch('/api/documents/admin/all', {}, authHeaders());
+                    setUnreadDocs(0);
+                    fetchAllProviderDocs();
+                  }}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium">
+                  ✅ Tout marquer comme lu ({unreadDocs})
+                </button>
+              )}
+              <span className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                {allProviderDocs.length} document{allProviderDocs.length > 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+
+          {/* Filtres */}
+          <div className="flex gap-3 mb-6">
+            <input
+              type="text"
+              value={searchDocs}
+              onChange={e => setSearchDocs(e.target.value)}
+              placeholder="Rechercher par nom, email..."
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <select value={filterDocType} onChange={e => setFilterDocType(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="all">Tous les types</option>
+              <option value="rib">RIB</option>
+              <option value="kbis">Kbis</option>
+              <option value="assurance">Assurance RC</option>
+              <option value="identite">Pièce d'identité</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+
+          {loadingAllDocs ? <Spinner /> : (() => {
+            // Filtrage combiné recherche + type
+            const filtered = allProviderDocs.filter(doc => {
+              const matchSearch = searchDocs.trim() === '' ||
+                `${doc.prenom} ${doc.nom} ${doc.email}`.toLowerCase().includes(searchDocs.toLowerCase());
+              const matchType = filterDocType === 'all' || doc.type === filterDocType;
+              return matchSearch && matchType;
+            });
+
+            if (filtered.length === 0) return (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-4xl mb-2">📄</p>
+                <p className="text-gray-600">Aucun document trouvé</p>
+              </div>
+            );
+
+            // Groupement par prestataire
+            const grouped = filtered.reduce((acc, doc) => {
+              const key = doc.user_id;
+              if (!acc[key]) acc[key] = { prenom: doc.prenom, nom: doc.nom, email: doc.email, docs: [] };
+              acc[key].docs.push(doc);
+              return acc;
+            }, {});
+
+            return (
+              <div className="space-y-4">
+                {Object.entries(grouped).map(([userId, { prenom, nom, email, docs }]) => (
+                  <div key={userId} className="bg-white border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div>
+                        <p className="font-semibold text-gray-900">{prenom} {nom}</p>
+                        <p className="text-sm text-gray-500">{email}</p>
+                      </div>
+                      <span className="ml-auto px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                        {docs.length} document{docs.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {docs.map(doc => (
+                        <div key={doc.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl">📄</span>
+                            <div>
+                              <p className="font-medium text-sm text-gray-900">
+                                {doc.type === 'rib' ? 'RIB' :
+                                  doc.type === 'kbis' ? 'Kbis' :
+                                    doc.type === 'assurance' ? 'Assurance RC' :
+                                      doc.type === 'identite' ? "Pièce d'identité" :
+                                        doc.label || 'Autre'}
+                              </p>
+                              <p className="text-xs text-gray-500">{doc.file_name}</p>
+                              <p className="text-xs text-gray-400">
+                                {new Date(doc.uploaded_at).toLocaleDateString('fr-FR', {
+                                  day: 'numeric', month: 'long', year: 'numeric'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                              className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium">
+                              👁️ Consulter
+                            </a>
+                            <button
+                              onClick={async () => {
+                                if (!window.confirm('Supprimer ce document ?')) return;
+                                await axios.delete(`/api/documents/admin/${doc.id}`, authHeaders());
+                                fetchAllProviderDocs();
+                                fetchUnreadDocs();
+                              }}
+                              className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium">
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      );
+
       case 'providers': return (
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold">Prestataires à valider</h2>
-            <span className="px-3 py-1 rounded-full text-sm bg-orange-100 text-orange-800">{pendingProviders.length} en attente</span>
+            <span className="px-3 py-1 rounded-full text-sm bg-orange-100 text-orange-800">
+              {pendingProviders.length} en attente
+            </span>
           </div>
           {loadingProviders ? <Spinner /> : pendingProviders.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg"><p className="text-gray-600">Aucun prestataire en attente</p></div>
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <p className="text-gray-600">Aucun prestataire en attente</p>
+            </div>
           ) : (
             <div className="space-y-4">
               {pendingProviders.map(provider => (
                 <div key={provider.id} className="border border-gray-200 rounded-lg p-6 bg-white">
                   <div className="flex items-center gap-3 mb-4">
                     <h3 className="text-lg font-semibold">{provider.prenom} {provider.nom}</h3>
-                    <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">En attente</span>
+                    <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                      En attente
+                    </span>
                   </div>
+
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div><p className="text-sm text-gray-500">Email</p><p className="font-medium">{provider.email}</p></div>
                     <div><p className="text-sm text-gray-500">SIRET</p><p className="font-medium">{provider.siret || '-'}</p></div>
                     <div><p className="text-sm text-gray-500">Zone</p><p className="font-medium">{provider.zone_intervention || '-'}</p></div>
+                    <div><p className="text-sm text-gray-500">Téléphone</p><p className="font-medium">{provider.telephone || '-'}</p></div>
                   </div>
 
-                  {approveError[provider.id] && <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{approveError[provider.id]}</p></div>}
+                  {/* ── Documents prestataire ─────────────────────── */}
+                  <div className="mb-4">
+                    <button
+                      onClick={() => fetchProviderDocuments(provider.id)}
+                      disabled={loadingProviderDocs[provider.id]}
+                      className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition disabled:opacity-50">
+                      {loadingProviderDocs[provider.id] ? '⏳ Chargement...' :
+                        expandedProviderDocs[provider.id] ? '🔼 Masquer les documents' : '📄 Voir les documents'}
+                    </button>
+
+                    {expandedProviderDocs[provider.id] && (
+                      <div className="mt-3">
+                        {!providerDocuments[provider.id] || providerDocuments[provider.id].length === 0 ? (
+                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <p className="text-yellow-800 text-sm">⚠️ Aucun document fourni par ce prestataire</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {providerDocuments[provider.id].map(doc => (
+                              <div key={doc.id}
+                                className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xl">📄</span>
+                                  <div>
+                                    <p className="font-medium text-sm text-gray-900">
+                                      {doc.type === 'rib' ? 'RIB' :
+                                        doc.type === 'kbis' ? 'Kbis' :
+                                          doc.type === 'assurance' ? 'Assurance RC' :
+                                            doc.type === 'identite' ? "Pièce d'identité" :
+                                              doc.label || 'Autre'}
+                                    </p>
+                                    <p className="text-xs text-gray-500">{doc.file_name}</p>
+                                    <p className="text-xs text-gray-400">
+                                      {new Date(doc.uploaded_at).toLocaleDateString('fr-FR', {
+                                        day: 'numeric', month: 'long', year: 'numeric'
+                                      })}
+                                    </p>
+                                  </div>
+                                </div>
+                                <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                                  className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium">
+                                  👁️ Consulter
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {approveError[provider.id] && (
+                    <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-red-800 text-sm">{approveError[provider.id]}</p>
+                    </div>
+                  )}
 
                   <div className="flex gap-3">
-                    <button onClick={() => handleApproveProvider(provider.id)} className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition">✓ Valider</button>
+                    <button onClick={() => handleApproveProvider(provider.id)}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                      ✓ Valider
+                    </button>
                     <button onClick={() => { setShowRejectModal(provider.id); setRejectError(null); }}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition">✗ Rejeter</button>
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                      ✗ Rejeter
+                    </button>
                   </div>
 
                   {/* Modal rejet inline */}
@@ -1565,7 +1826,11 @@ function DashboardAdmin() {
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
                         <h3 className="text-lg font-semibold mb-4">Rejeter le prestataire</h3>
-                        {rejectError && <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{rejectError}</p></div>}
+                        {rejectError && (
+                          <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                            <p className="text-red-800 text-sm">{rejectError}</p>
+                          </div>
+                        )}
                         <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)}
                           className="w-full border border-gray-300 rounded-lg p-3 mb-4" rows="4"
                           placeholder="Ex: Documents incomplets... (min 10 caractères)" />
