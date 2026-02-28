@@ -5,10 +5,9 @@ import Footer from '../components/layout/Footer';
 const Services = () => {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      {/* Navbar */}
       <Navbar />
 
-      {/* Hero Section avec fond doux */}
+      {/* Hero Section */}
       <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-20 pb-12 bg-gradient-to-b from-green-50 to-green-100">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
           <h1 className="text-5xl md:text-6xl font-serif font-bold leading-tight">
@@ -29,34 +28,36 @@ const Services = () => {
             <span className="bg-green-200 px-2">Nos forfaits</span>
           </h2>
 
-          {/* Forfaits Nettoyage */}
+          {/* Nettoyage */}
           <div className="mb-16">
             <h3 className="text-2xl font-bold text-gray-900 mb-6 border-b-2 border-green-200 pb-2 inline-block">
-              Nettoyage régulier
+              🌿 Nettoyage des pierres tombales
             </h3>
             <p className="text-gray-600 mb-8">
-              Un entretien complet (désherbage, nettoyage de la pierre, polissage) adapté à votre fréquence.
+              Nettoyage complet de la pierre tombale avec produits adaptés, disponible en prestation unique ou en formule d'entretien régulier.
             </p>
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fréquence</th>
-                    <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durée estimée</th>
+                    <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prestation</th>
+                    <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                     <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix TTC</th>
                     <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {[
-                    { frequency: "Toutes les 2 semaines", duration: "1h30", price: "49€" },
-                    { frequency: "Toutes les 3 semaines", duration: "2h00", price: "65€" },
-                    { frequency: "1 fois par mois", duration: "2h30", price: "79€" },
+                    { name: "Nettoyage pierre tombale", description: "Nettoyage complet de la pierre tombale avec produits adaptés", price: "45,00€" },
+                    { name: "Entretien Trimestriel", description: "Nettoyage complet tous les 3 mois", price: "110,00€" },
+                    { name: "Entretien Semestriel", description: "Nettoyage complet tous les 6 mois", price: "200,00€" },
+                    { name: "Entretien Annuel", description: "Nettoyage complet une fois par an", price: "350,00€" },
+                    { name: "Abonnement Mensuel Entretien", description: "Nettoyage mensuel", price: "40,00€ / mois" },
                   ].map((item, index) => (
                     <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="py-4 px-6 whitespace-nowrap text-sm font-medium text-gray-900">{item.frequency}</td>
-                      <td className="py-4 px-6 whitespace-nowrap text-sm text-gray-500">{item.duration}</td>
-                      <td className="py-4 px-6 whitespace-nowrap text-sm text-gray-900">{item.price}</td>
+                      <td className="py-4 px-6 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
+                      <td className="py-4 px-6 text-sm text-gray-500">{item.description}</td>
+                      <td className="py-4 px-6 whitespace-nowrap text-sm font-semibold text-gray-900">{item.price}</td>
                       <td className="py-4 px-6 whitespace-nowrap text-sm font-medium">
                         <Link
                           to="/register"
@@ -75,34 +76,34 @@ const Services = () => {
             </p>
           </div>
 
-          {/* Forfait Livraison de fleurs */}
+          {/* Livraison de fleurs */}
           <div>
             <h3 className="text-2xl font-bold text-gray-900 mb-6 border-b-2 border-green-200 pb-2 inline-block">
-              Livraison de fleurs
+              🌿 Livraison de fleurs
             </h3>
             <p className="text-gray-600 mb-8">
-              Fleurissement saisonnier avec des fleurs fraîches ou artificielles, livrées et installées par nos soigneurs.
+              Fleurissement saisonnier avec des fleurs fraîches ou artificielles, livrées et installées par nos prestataires.
             </p>
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Détails</th>
-                    <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix (hors commission)</th>
+                    <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prestation</th>
+                    <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix TTC</th>
                     <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {[
-                    { type: "Bouquet saisonnier", details: "Fleurs fraîches + installation", price: "29€" },
-                    { type: "Composition artificielle", details: "Durable (3-6 mois) + installation", price: "45€" },
-                    { type: "Abonnement mensuel", details: "Renouvellement automatique", price: "25€/mois" },
+                    { name: "Bouquet Saisonnier", description: "Bouquet de fleurs de saison fraîches", price: "35,00€" },
+                    { name: "Composition Artificielle", description: "Composition florale artificielle durable", price: "45,00€" },
+                    { name: "Abonnement Mensuel Fleurs", description: "Dépôt mensuel de fleurs fraîches", price: "28,00€ / mois" },
                   ].map((item, index) => (
                     <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="py-4 px-6 whitespace-nowrap text-sm font-medium text-gray-900">{item.type}</td>
-                      <td className="py-4 px-6 whitespace-nowrap text-sm text-gray-500">{item.details}</td>
-                      <td className="py-4 px-6 whitespace-nowrap text-sm text-gray-900">{item.price}</td>
+                      <td className="py-4 px-6 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
+                      <td className="py-4 px-6 text-sm text-gray-500">{item.description}</td>
+                      <td className="py-4 px-6 whitespace-nowrap text-sm font-semibold text-gray-900">{item.price}</td>
                       <td className="py-4 px-6 whitespace-nowrap text-sm font-medium">
                         <Link
                           to="/register"
@@ -119,6 +120,7 @@ const Services = () => {
           </div>
         </div>
       </section>
+
       {/* Explication du système */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-4xl mx-auto px-6 space-y-6">
@@ -128,19 +130,19 @@ const Services = () => {
           <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-md space-y-4">
             <p className="text-gray-700 text-lg leading-relaxed">
               Chez Mémoria, nous sélectionnons rigoureusement nos prestataires :
-              <ul className="list-disc pl-6 my-4 space-y-2">
-                <li><strong>Certifiés et formés</strong> : Chaque intervenant est vérifié et évalué après chaque mission.</li>
-                <li><strong>Transparence totale</strong> : Vous payez le prix affiché, nous prélevons 20% pour couvrir les frais de plateforme.</li>
-                <li><strong>Photos avant/après</strong> : Validation obligatoire de notre équipe avant paiement au prestataire.</li>
-              </ul>
             </p>
+            <ul className="list-disc pl-6 my-4 space-y-2 text-gray-700 text-lg">
+              <li><strong>Certifiés et formés</strong> : Chaque intervenant est vérifié et évalué après chaque mission.</li>
+              <li><strong>Transparence totale</strong> : Vous payez le prix affiché, nous prélevons 20% pour couvrir les frais de plateforme.</li>
+              <li><strong>Photos avant/après</strong> : Validation obligatoire de notre équipe avant paiement au prestataire.</li>
+            </ul>
             <p className="text-gray-700 text-lg leading-relaxed">
               Notre mission : vous offrir une sérénité totale, où que vous soyez.
             </p>
           </div>
         </div>
       </section>
-      {/* Footer */}
+
       <Footer />
     </div>
   );

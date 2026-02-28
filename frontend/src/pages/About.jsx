@@ -51,7 +51,7 @@ const About = () => {
         <div className="max-w-4xl mx-auto px-6 text-center space-y-8 relative z-10">
           <h1 className="text-5xl md:text-6xl font-serif font-bold leading-tight">
             <span className=" text-white px-3 py-1 rounded-md">Notre mission</span><br />
-            Prendre soin des leurs avec respect
+            Prendre soin de leurs repos avec respect
           </h1>
           <p className="text-xl text-white/90 max-w-3xl mx-auto">
             Nous accompagnons les familles dans l’entretien des sépultures, avec dignité et transparence.
@@ -72,7 +72,7 @@ const About = () => {
               a créé une solution digitale pour faciliter cet entretien, avec respect et transparence.
             </p>
             <p className="text-gray-600 text-lg leading-relaxed">
-              Aujourd’hui, nous travaillons en local pour couvire la Nouvelle-Aquitaine, et notre réseau s’étend chaque mois.
+              Aujourd’hui, nous travaillons en local pour couvrir la Nouvelle-Aquitaine, et notre réseau s’étend chaque mois.
               Notre objectif : offrir un service accessible, sécurisé et humain.
             </p>
           </div>
