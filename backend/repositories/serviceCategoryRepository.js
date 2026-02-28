@@ -16,10 +16,10 @@ const pool = require('../config/db');
 const findAllActive = async () => {
   try {
     const result = await pool.query(
-      `SELECT id, name, description, base_price
+      `SELECT id, name, description, base_price, category
        FROM service_categories
        WHERE is_active = true
-       ORDER BY base_price ASC`
+       ORDER BY category, id`
     );
     return result.rows;
   } catch (error) {
