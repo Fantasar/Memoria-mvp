@@ -35,7 +35,7 @@ const handleError = (error, res, fallbackMessage) => {
  */
 const createPaymentIntent = async (req, res) => {
   try {
-    const { cemetery_id, service_category_id, cemetery_location } = req.body;
+    const { cemetery_id, service_category_id, cemetery_location, comment } = req.body;
 
     if (!cemetery_id || !service_category_id) {
       return res.status(400).json({
@@ -76,7 +76,8 @@ const createPaymentIntent = async (req, res) => {
       client_id:           req.user.userId.toString(),
       cemetery_id:         cemetery_id.toString(),
       service_category_id: service_category_id.toString(),
-      cemetery_location:   cemetery_location || ''
+      cemetery_location:   cemetery_location || '',
+      comment:             comment || ''
     });
 
     return res.status(200).json({
@@ -127,13 +128,14 @@ const confirmPayment = async (req, res) => {
     }
 
     // Récupère les données de commande depuis les métadonnées Stripe
-    const { cemetery_id, service_category_id, cemetery_location } = paymentIntent.metadata;
+    const { cemetery_id, service_category_id, cemetery_location, comment } = paymentIntent.metadata;
 
     // Le prix est récupéré depuis la BDD dans orderService — pas depuis Stripe
     const order = await orderService.createOrder(req.user.userId, {
       cemetery_id:         parseInt(cemetery_id),
       service_category_id: parseInt(service_category_id),
-      cemetery_location:   cemetery_location || null
+      cemetery_location:   cemetery_location || null,
+      comment:             comment || null
     });
 
     return res.status(201).json({

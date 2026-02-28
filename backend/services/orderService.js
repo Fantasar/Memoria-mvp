@@ -37,7 +37,7 @@ const checkAdminAccess = async (adminId) => {
  */
 const createOrder = async (clientId, orderData) => {
   try {
-    const { cemetery_id, service_category_id, cemetery_location } = orderData;
+    const { cemetery_id, service_category_id, cemetery_location, comment } = orderData;
 
     const user = await userRepository.findById(clientId);
     if (!user) {
@@ -90,6 +90,7 @@ const createOrder = async (clientId, orderData) => {
       cemetery_id,
       service_category_id,
       cemetery_location,
+      comment: comment || null,
       status: 'pending',
       price
     });

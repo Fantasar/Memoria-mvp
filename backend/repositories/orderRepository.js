@@ -29,19 +29,20 @@ const create = async (orderData) => {
   try {
     const result = await pool.query(
       `INSERT INTO orders (
-         client_id, prestataire_id, cemetery_id,
-         service_category_id, cemetery_location,
-         status, price, created_at
-       )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-       RETURNING *`,
+     client_id, prestataire_id, cemetery_id,
+     service_category_id, cemetery_location,
+     comment, status, price, created_at
+   )
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+   RETURNING *`,
       [
         orderData.client_id,
-        orderData.prestataire_id    || null,
+        orderData.prestataire_id || null,
         orderData.cemetery_id,
         orderData.service_category_id,
         orderData.cemetery_location || null,
-        orderData.status            || 'pending',
+        orderData.comment || null,
+        orderData.status || 'pending',
         orderData.price
       ]
     );
@@ -181,21 +182,21 @@ const findAvailable = async (zone) => {
   try {
     const result = await pool.query(
       `SELECT
-         o.*,
-         uc.email     AS client_email,
-         c.name       AS cemetery_name,
-         c.city       AS cemetery_city,
-         c.department AS cemetery_department,
-         sc.name      AS service_name,
-         sc.base_price
-       FROM orders o
-       LEFT JOIN users uc              ON o.client_id           = uc.id
-       LEFT JOIN cemeteries c          ON o.cemetery_id         = c.id
-       LEFT JOIN service_categories sc ON o.service_category_id = sc.id
-       WHERE o.prestataire_id IS NULL
-         AND o.status = 'pending'
-         AND (c.department ILIKE $1 OR c.city ILIKE $1)
-       ORDER BY o.created_at DESC`,
+     o.*,
+     uc.email     AS client_email,
+     c.name       AS cemetery_name,
+     c.city       AS cemetery_city,
+     c.department AS cemetery_department,
+     sc.name      AS service_name,
+     sc.base_price
+   FROM orders o
+   LEFT JOIN users uc              ON o.client_id           = uc.id
+   LEFT JOIN cemeteries c          ON o.cemetery_id         = c.id
+   LEFT JOIN service_categories sc ON o.service_category_id = sc.id
+   WHERE o.prestataire_id IS NULL
+    AND o.status = ANY(ARRAY['pending', 'paid']::order_status_enum[])
+    AND (c.department ILIKE $1 OR c.city ILIKE $1)
+   ORDER BY o.created_at DESC`,
       [`%${zone}%`]
     );
     return result.rows;
@@ -482,8 +483,8 @@ const getDashboardStats = async (userId) => {
 
     return {
       orders_in_progress: parseInt(inProgressResult.rows[0].count),
-      orders_completed:   parseInt(completedResult.rows[0].count),
-      last_order_date:    lastOrderResult.rows[0]?.created_at || null
+      orders_completed: parseInt(completedResult.rows[0].count),
+      last_order_date: lastOrderResult.rows[0]?.created_at || null
     };
   } catch (error) {
     throw new Error(`orderRepository.getDashboardStats : ${error.message}`);
@@ -516,18 +517,18 @@ const checkTimeSlotAvailability = async (prestataireId, scheduledDate, scheduled
 
     const [reqHours, reqMinutes] = scheduledTime.split(':').map(Number);
     const requestedStart = reqHours * 60 + reqMinutes;
-    const requestedEnd   = requestedStart + (durationHours * 60);
+    const requestedEnd = requestedStart + (durationHours * 60);
 
     for (const mission of result.rows) {
       const [missionHours, missionMinutes] = mission.scheduled_time.split(':').map(Number);
       const missionStart = missionHours * 60 + missionMinutes;
-      const missionEnd   = missionStart + (parseFloat(mission.duration_hours) * 60);
+      const missionEnd = missionStart + (parseFloat(mission.duration_hours) * 60);
 
       // Trois cas de chevauchement possibles
       if (
         (requestedStart >= missionStart && requestedStart < missionEnd) ||
-        (requestedEnd   >  missionStart && requestedEnd   <= missionEnd) ||
-        (requestedStart <= missionStart && requestedEnd   >= missionEnd)
+        (requestedEnd > missionStart && requestedEnd <= missionEnd) ||
+        (requestedStart <= missionStart && requestedEnd >= missionEnd)
       ) {
         return false;
       }

@@ -14,7 +14,7 @@ const pool = require('../config/db');
 const findAllActive = async () => {
   try {
     const result = await pool.query(
-      `SELECT id, name, city, postal_code, department
+      `SELECT id, name, city, postal_code, department, latitude, longitude
        FROM cemeteries
        WHERE is_active = true
        ORDER BY department, city, name`
