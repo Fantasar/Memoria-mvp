@@ -20,8 +20,8 @@ function NewOrder() {
   const [formData, setFormData] = useState({
     cemetery_id: '',
     service_category_id: '',
-    cemetery_location:   '',
-    comment:             '',
+    cemetery_location: '',
+    comment: '',
   });
 
   // ─── Chargement initial ────────────────────────────────────────────────────
@@ -89,7 +89,7 @@ function NewOrder() {
           cemetery_id: parseInt(formData.cemetery_id),
           service_category_id: parseInt(formData.service_category_id),
           cemetery_location: formData.cemetery_location.trim(),
-          comment:             formData.comment.trim() || null,
+          comment: formData.comment.trim() || null,
         },
       },
     });
@@ -133,7 +133,6 @@ function NewOrder() {
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
 
-          {/* ── Section 1 : Localisation ─────────────────────────────────── */}
           {/* ── Section 1 : Localisation ─────────────────────────────────── */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Localisation</h2>
@@ -192,40 +191,83 @@ function NewOrder() {
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Type de service</h2>
 
-            <div className="space-y-3">
-              {serviceCategories.map(service => (
-                <label
-                  key={service.id}
-                  className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all ${formData.service_category_id === String(service.id)
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                >
-                  <input
-                    type="radio"
-                    name="service"
-                    value={service.id}
-                    checked={formData.service_category_id === String(service.id)}
-                    onChange={handleServiceChange}
-                    className="mt-1 mr-3 text-blue-600 focus:ring-blue-500"
-                  />
-                  <div className="flex-1 flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-gray-900">{service.name}</p>
-                      {service.description && <p className="text-sm text-gray-600 mt-1">{service.description}</p>}
+            {/* Groupe Entretien */}
+            <div className="mb-6">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-lg">🪨</span>
+                <h3 className="font-semibold text-gray-700">Entretien de votre pierre tombale</h3>
+                <div className="flex-1 h-px bg-gray-200" />
+              </div>
+              <div className="space-y-3">
+                {serviceCategories.filter(s => s.category === 'entretien').map(service => (
+                  <label key={service.id}
+                    className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all ${formData.service_category_id === String(service.id)
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                      }`}>
+                    <input
+                      type="radio"
+                      name="service"
+                      value={service.id}
+                      checked={formData.service_category_id === String(service.id)}
+                      onChange={handleServiceChange}
+                      className="mt-1 mr-3 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1 flex justify-between items-start">
+                      <div>
+                        <p className="font-semibold text-gray-900">{service.name}</p>
+                        {service.description && <p className="text-sm text-gray-600 mt-1">{service.description}</p>}
+                      </div>
+                      <p className="text-lg font-bold text-blue-600 ml-4">
+                        {parseFloat(service.base_price).toFixed(2)} €
+                      </p>
                     </div>
-                    <p className="text-lg font-bold text-blue-600 ml-4">
-                      {parseFloat(service.base_price).toFixed(2)} €
-                    </p>
-                  </div>
-                </label>
-              ))}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Séparateur */}
+            <div className="border-t border-gray-200 my-4" />
+
+            {/* Groupe Fleurs */}
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-lg">💐</span>
+                <h3 className="font-semibold text-gray-700">Service de livraison de fleurs</h3>
+                <div className="flex-1 h-px bg-gray-200" />
+              </div>
+              <div className="space-y-3">
+                {serviceCategories.filter(s => s.category === 'fleurs').map(service => (
+                  <label key={service.id}
+                    className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all ${formData.service_category_id === String(service.id)
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                      }`}>
+                    <input
+                      type="radio"
+                      name="service"
+                      value={service.id}
+                      checked={formData.service_category_id === String(service.id)}
+                      onChange={handleServiceChange}
+                      className="mt-1 mr-3 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1 flex justify-between items-start">
+                      <div>
+                        <p className="font-semibold text-gray-900">{service.name}</p>
+                        {service.description && <p className="text-sm text-gray-600 mt-1">{service.description}</p>}
+                      </div>
+                      <p className="text-lg font-bold text-blue-600 ml-4">
+                        {parseFloat(service.base_price).toFixed(2)} €
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
             </div>
 
             {errors.service_category_id && <p className="mt-2 text-sm text-red-600">{errors.service_category_id}</p>}
           </div>
-
-          <div className="border-t border-gray-200" />
 
           {/* ── Section 3 : Commentaire optionnel ───────────────────────── */}
           <div>
