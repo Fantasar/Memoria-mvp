@@ -44,6 +44,7 @@ function Checkout() {
             cemetery_id:          orderData.cemetery_id,
             service_category_id:  orderData.service_category_id,
             cemetery_location:    orderData.cemetery_location,
+            comment:             orderData.comment || null,
           },
           {
             headers: {

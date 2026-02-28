@@ -1,24 +1,27 @@
 // frontend/src/pages/orders/NewOrder.jsx
 import { useState, useEffect } from 'react';
-import { useNavigate }         from 'react-router-dom';
-import { useAuth }             from '../../hooks/useAuth';
-import axios                   from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import axios from 'axios';
+import CemeteryMap from '../../components/maps/CemeteryMap';
+
 
 function NewOrder() {
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const { token } = useAuth();
 
-  const [cemeteries,        setCemeteries]        = useState([]);
+  const [cemeteries, setCemeteries] = useState([]);
   const [serviceCategories, setServiceCategories] = useState([]);
-  const [loading,           setLoading]           = useState(true);
-  const [error,             setError]             = useState(null);
-  const [errors,            setErrors]            = useState({});
-  const [selectedPrice,     setSelectedPrice]     = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [selectedPrice, setSelectedPrice] = useState(0);
 
   const [formData, setFormData] = useState({
-    cemetery_id:         '',
+    cemetery_id: '',
     service_category_id: '',
     cemetery_location:   '',
+    comment:             '',
   });
 
   // ─── Chargement initial ────────────────────────────────────────────────────
@@ -29,7 +32,7 @@ function NewOrder() {
           axios.get('/api/cemeteries'),
           axios.get('/api/service-categories'),
         ]);
-        setCemeteries(cemRes.data.data        || []);
+        setCemeteries(cemRes.data.data || []);
         setServiceCategories(svcRes.data.data || []);
       } catch {
         setError('Impossible de charger les données. Veuillez réessayer.');
@@ -45,12 +48,12 @@ function NewOrder() {
   // Handler générique — efface l'erreur du champ modifié
   const handleField = (field) => (e) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
-    setErrors(prev  => ({ ...prev, [field]: '' }));
+    setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
   // Handler service — met aussi à jour selectedPrice
   const handleServiceChange = (e) => {
-    const id      = e.target.value;
+    const id = e.target.value;
     const service = serviceCategories.find(s => s.id === parseInt(id));
     setFormData(prev => ({ ...prev, service_category_id: id }));
     setSelectedPrice(service ? parseFloat(service.base_price) : 0);
@@ -62,15 +65,15 @@ function NewOrder() {
     const value = e.target.value;
     if (value.length > 255) return;
     setFormData(prev => ({ ...prev, cemetery_location: value }));
-    setErrors(prev  => ({ ...prev, cemetery_location: '' }));
+    setErrors(prev => ({ ...prev, cemetery_location: '' }));
   };
 
   // ─── Validation ────────────────────────────────────────────────────────────
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.cemetery_id)              newErrors.cemetery_id         = 'Veuillez sélectionner un cimetière';
-    if (!formData.service_category_id)      newErrors.service_category_id = 'Veuillez sélectionner un service';
-    if (!formData.cemetery_location.trim()) newErrors.cemetery_location   = "Veuillez préciser l'emplacement de la tombe";
+    if (!formData.cemetery_id) newErrors.cemetery_id = 'Veuillez sélectionner un cimetière';
+    if (!formData.service_category_id) newErrors.service_category_id = 'Veuillez sélectionner un service';
+    if (!formData.cemetery_location.trim()) newErrors.cemetery_location = "Veuillez préciser l'emplacement de la tombe";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -83,9 +86,10 @@ function NewOrder() {
     navigate('/orders/checkout', {
       state: {
         orderData: {
-          cemetery_id:         parseInt(formData.cemetery_id),
+          cemetery_id: parseInt(formData.cemetery_id),
           service_category_id: parseInt(formData.service_category_id),
-          cemetery_location:   formData.cemetery_location.trim(),
+          cemetery_location: formData.cemetery_location.trim(),
+          comment:             formData.comment.trim() || null,
         },
       },
     });
@@ -130,10 +134,11 @@ function NewOrder() {
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
 
           {/* ── Section 1 : Localisation ─────────────────────────────────── */}
+          {/* ── Section 1 : Localisation ─────────────────────────────────── */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Localisation</h2>
 
-            <div>
+            <div className="mb-4">
               <label htmlFor="cemetery" className="block text-sm font-medium text-gray-700 mb-2">
                 Cimetière <span className="text-red-500">*</span>
               </label>
@@ -153,6 +158,19 @@ function NewOrder() {
               {errors.cemetery_id && <p className="mt-1 text-sm text-red-600">{errors.cemetery_id}</p>}
             </div>
 
+            {/* Carte interactive — clic sur marqueur = sélection du cimetière */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 mb-2">💡 Ou cliquez directement sur un cimetière sur la carte</p>
+              <CemeteryMap
+                cemeteries={cemeteries}
+                selectedId={formData.cemetery_id}
+                onSelect={(cemetery) => {
+                  setFormData(prev => ({ ...prev, cemetery_id: String(cemetery.id) }));
+                  setErrors(prev => ({ ...prev, cemetery_id: '' }));
+                }}
+              />
+            </div>
+
             <div className="mt-4">
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                 Emplacement de la tombe <span className="text-red-500">*</span>
@@ -170,8 +188,6 @@ function NewOrder() {
             </div>
           </div>
 
-          <div className="border-t border-gray-200" />
-
           {/* ── Section 2 : Service ──────────────────────────────────────── */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Type de service</h2>
@@ -180,11 +196,10 @@ function NewOrder() {
               {serviceCategories.map(service => (
                 <label
                   key={service.id}
-                  className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all ${
-                    formData.service_category_id === String(service.id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
+                  className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all ${formData.service_category_id === String(service.id)
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-300 hover:border-gray-400'
+                    }`}
                 >
                   <input
                     type="radio"
@@ -212,7 +227,22 @@ function NewOrder() {
 
           <div className="border-t border-gray-200" />
 
-          {/* ── Section 3 : Récapitulatif ────────────────────────────────── */}
+          {/* ── Section 3 : Commentaire optionnel ───────────────────────── */}
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Informations complémentaires</h2>
+            <p className="text-sm text-gray-500 mb-3">Optionnel — précisez toute information utile pour le prestataire</p>
+            <textarea
+              value={formData.comment}
+              onChange={e => setFormData(prev => ({ ...prev, comment: e.target.value }))}
+              placeholder="Ex: La tombe est dans un état particulier, apporter des roses blanches, accès par le portail nord..."
+              rows={4}
+              maxLength={500}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            />
+            <p className="mt-1 text-xs text-gray-500 text-right">{(formData.comment || '').length}/500 caractères</p>
+          </div>
+
+          {/* ── Section 4 : Récapitulatif ────────────────────────────────── */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="font-semibold text-gray-900 mb-3">Récapitulatif</h3>
             <div className="space-y-2 text-sm">
