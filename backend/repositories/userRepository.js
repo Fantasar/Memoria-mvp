@@ -334,6 +334,23 @@ const findByRole = async (role) => {
   }
 };
 
+/**
+ * Récupère un utilisateur par son numéro de téléphone
+ * @param {string} telephone
+ * @returns {Array}
+ */
+const findByTelephone = async (telephone) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, prenom FROM users WHERE telephone = $1',
+      [telephone]
+    );
+    return result.rows;
+  } catch (error) {
+    throw new Error(`userRepository.findByTelephone : ${error.message}`);
+  }
+};
+
 module.exports = {
   findByEmail,
   findById,
@@ -349,5 +366,6 @@ module.exports = {
   getAllUsers,
   updateZone,
   resetRejection,
-  toggleBlock
+  toggleBlock,
+  findByTelephone
 };
