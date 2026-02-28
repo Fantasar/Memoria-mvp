@@ -4,7 +4,6 @@ const passwordResetService = require('../services/passwordResetService');
 /**
  * Contrôleur de réinitialisation de mot de passe par SMS.
  * Responsabilité : valider les champs, appeler passwordResetService, formater la réponse.
- * Ne contient aucune logique métier — tout est délégué au service.
  */
 
 /**

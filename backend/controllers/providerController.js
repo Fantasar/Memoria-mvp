@@ -148,6 +148,11 @@ const getZoneStats = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Permet à un prestataire rejeté de soumettre une nouvelle demande de validation
+ * @route   PATCH /api/provider/reapply
+ * @access  Prestataire uniquement
+ */
 const reapply = async (req, res, next) => {
   try {
     const result = await providerService.reapply(req.user.userId);

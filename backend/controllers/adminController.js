@@ -35,7 +35,7 @@ const createAdmin = async (req, res) => {
   try {
     const result = await authService.createAdminUser(
       req.body,
-      req.user.email // Transmis au service pour le log de sécurité
+      req.user.email
     );
 
     return res.status(201).json({
@@ -71,6 +71,11 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Bloque ou débloque un compte utilisateur
+ * @route   PATCH /api/admin/users/:id/block
+ * @access  Admin uniquement
+ */
 const toggleBlockUser = async (req, res, next) => {
   try {
     const result = await authService.toggleBlockUser(req.params.id);
@@ -84,6 +89,11 @@ const toggleBlockUser = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Supprime définitivement un compte utilisateur
+ * @route   DELETE /api/admin/users/:id
+ * @access  Admin uniquement
+ */
 const deleteUser = async (req, res, next) => {
   try {
     await authService.deleteUser(req.params.id, req.user.userId);
@@ -96,6 +106,11 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Récupère toutes les commandes d'un utilisateur spécifique
+ * @route   GET /api/admin/users/:id/orders
+ * @access  Admin uniquement
+ */
 const getUserOrders = async (req, res) => {
   try {
     const orders = await orderService.getUserOrders(req.params.id, 'admin');
