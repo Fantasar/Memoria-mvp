@@ -170,6 +170,28 @@ const Home = () => {
   const [sliderPos1, setSliderPos1] = useState(50);
   const [sliderPos2, setSliderPos2] = useState(70);
 
+  // ─── Drag-to-scroll pour la section avis ─────────────────────────────────
+  const scrollRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const onMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+
+  const onMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const onMouseUp = () => setIsDragging(false);
+
   useEffect(() => {
     // Animation des compteurs
     const counters = document.querySelectorAll('.counter');
@@ -436,8 +458,6 @@ const Home = () => {
         </div>
       </section>
 
-
-
       {/* ── Avis clients ────────────────────────────────────────────────────── */}
       <section className="bg-white py-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
@@ -445,8 +465,16 @@ const Home = () => {
             <h2 className="text-4xl font-serif font-bold text-gray-900 mb-4">Ils nous font confiance</h2>
           </div>
 
-          {/* Défilement infini — CSS défini dans index.css ou tailwind.config */}
-          <div className="flex gap-6 animate-scroll">
+          {/* Défilement infini avec drag-to-scroll */}
+          <div
+            ref={scrollRef}
+            className={`flex gap-6 overflow-x-auto scrollbar-hide select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'
+              } ${!isDragging ? 'animate-scroll' : ''}`}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+          >
             {/* Double la liste pour l'effet boucle */}
             {[...REVIEWS, ...REVIEWS].map((review, i) => (
               <ReviewCard key={i} {...review} />
@@ -554,12 +582,13 @@ const Home = () => {
               <p className="text-gray-300 text-lg">Fondateur & Développeur</p>
               <p className="text-gray-400 leading-relaxed">
                 Philippe a fondé Mémoria avec la conviction que la technologie peut servir à préserver la mémoire et le respect des défunts.
-                Passionné par l’innovation et le service aux familles, il veille à ce que chaque fonctionnalité de la plateforme réponde à un besoin humain et pratique.
+                Passionné par l'innovation et le service aux familles, il veille à ce que chaque fonctionnalité de la plateforme réponde à un besoin humain et pratique.
               </p>
             </div>
           </div>
         </div>
       </section>
+
       {/* Footer */}
       <Footer />
 
