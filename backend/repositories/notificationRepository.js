@@ -50,6 +50,7 @@ const findByUserId = async (userId, limit = 50) => {
        LEFT JOIN cemeteries c          ON o.cemetery_id         = c.id
        LEFT JOIN service_categories sc ON o.service_category_id = sc.id
        WHERE n.user_id = $1
+          OR n.type = 'contact_message'
        ORDER BY n.created_at DESC
        LIMIT $2`,
       [userId, limit]
@@ -92,7 +93,7 @@ const markAsRead = async (notificationId, userId) => {
     const result = await pool.query(
       `UPDATE notifications
        SET is_read = TRUE
-       WHERE id = $1 AND user_id = $2
+       WHERE id = $1 AND (user_id = $2 OR type = 'contact_message')
        RETURNING id, user_id, is_read`,
       [notificationId, userId]
     );
@@ -101,6 +102,7 @@ const markAsRead = async (notificationId, userId) => {
     throw new Error(`notificationRepository.markAsRead : ${error.message}`);
   }
 };
+
 
 /**
  * Marque toutes les notifications non lues d'un utilisateur comme lues
@@ -113,7 +115,7 @@ const markAllAsRead = async (userId) => {
     const result = await pool.query(
       `UPDATE notifications
        SET is_read = TRUE
-       WHERE user_id = $1 AND is_read = FALSE
+       WHERE (user_id = $1 OR type = 'contact_message') AND is_read = FALSE
        RETURNING id, user_id, is_read`,
       [userId]
     );
@@ -134,7 +136,7 @@ const deleteById = async (notificationId, userId) => {
   try {
     const result = await pool.query(
       `DELETE FROM notifications
-       WHERE id = $1 AND user_id = $2
+       WHERE id = $1 AND (user_id = $2 OR type = 'contact_message')
        RETURNING id`,
       [notificationId, userId]
     );
