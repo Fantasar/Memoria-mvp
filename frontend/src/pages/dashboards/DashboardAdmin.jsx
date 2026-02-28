@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Navbar from '../../components/layout/Navbar';
+import CrispChat from '../../components/layout/CrispChat';
+
 
 
 const authHeaders = () => ({
@@ -1633,6 +1635,8 @@ function DashboardAdmin() {
           </div>
         </div>
       )}
+
+      <CrispChat user={user} />
 
     </div>
   );
