@@ -10,23 +10,24 @@ import ZoneMap from '../../components/maps/ZoneMap';
 import Navbar from '../../components/layout/Navbar';
 import CrispChat from '../../components/layout/CrispChat';
 
-
+/** Génère les headers d'authentification JWT depuis le localStorage */
 const authHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 });
 
+// Sections de la navbar — extraites pour éviter de les redéclarer à chaque render
 const NAV_TABS = [
-  { key: 'overview', label: 'Aperçu' },
-  { key: 'available', label: 'Missions disponibles' },
-  { key: 'missions', label: 'Mes missions' },
-  { key: 'calendar', label: 'Calendrier' },
-  { key: 'finances', label: 'Finances' },
-  { key: 'alerts', label: 'Alertes' },
-  { key: 'zone', label: "Zone d'intervention" },
-  { key: 'evaluations', label: 'Évaluations' },
-  { key: 'history', label: 'Historique' },
-  { key: 'documents', label: 'Documents' },
-  { key: 'profile', label: 'Profil' },
+  { key: 'overview',    label: '📊 Aperçu' },
+  { key: 'available',   label: '📋 Missions disponibles' },
+  { key: 'missions',    label: '💼 Mes missions' },
+  { key: 'calendar',    label: '📅 Calendrier' },
+  { key: 'finances',    label: '💰 Finances' },
+  { key: 'alerts',      label: '🔔 Alertes' },
+  { key: 'zone',        label: "📍 Zone d'intervention" },
+  { key: 'evaluations', label: '⭐ Évaluations' },
+  { key: 'history',     label: '📜 Historique' },
+  { key: 'documents',   label: '📁 Documents' },
+  { key: 'profile',     label: '👤 Profil' },
 ];
 
 function DashboardPrestataire() {
@@ -115,6 +116,7 @@ function DashboardPrestataire() {
 
   // ─── Fetch functions ───────────────────────────────────────────────────────
 
+  /** Récupère les statistiques du prestataire (missions, revenus, note moyenne) */
   const fetchStats = async () => {
     try {
       const res = await axios.get('/api/stats/provider', authHeaders());
@@ -122,6 +124,7 @@ function DashboardPrestataire() {
     } catch { /* silencieux */ } finally { setLoadingStats(false); }
   };
 
+  /** Récupère les missions disponibles à accepter dans la zone d'intervention */
   const fetchAvailableMissions = async () => {
     try {
       const res = await axios.get('/api/orders/available', authHeaders());
@@ -129,6 +132,7 @@ function DashboardPrestataire() {
     } catch { /* silencieux */ } finally { setLoadingAvailable(false); }
   };
 
+  /** Récupère les missions en cours du prestataire connecté */
   const fetchMyMissions = async () => {
     try {
       const res = await axios.get('/api/orders', authHeaders());
@@ -136,6 +140,7 @@ function DashboardPrestataire() {
     } catch { /* silencieux */ } finally { setLoadingMissions(false); }
   };
 
+  /** Récupère l'historique des missions terminées ou annulées */
   const fetchHistory = async () => {
     try {
       const res = await axios.get('/api/orders/history', authHeaders());
@@ -143,6 +148,7 @@ function DashboardPrestataire() {
     } catch { /* silencieux */ } finally { setLoadingHistory(false); }
   };
 
+  /** Récupère le calendrier des interventions planifiées */
   const fetchCalendar = async () => {
     try {
       const res = await axios.get('/api/orders/calendar', authHeaders());
@@ -150,6 +156,7 @@ function DashboardPrestataire() {
     } catch { /* silencieux */ } finally { setLoadingCalendar(false); }
   };
 
+  /** Récupère les données financières du prestataire (gains, paiements en attente) */
   const fetchFinances = async () => {
     setLoadingFinances(true);
     try {
@@ -158,6 +165,7 @@ function DashboardPrestataire() {
     } catch { /* silencieux */ } finally { setLoadingFinances(false); }
   };
 
+  /** Récupère les notifications — appelé toutes les 10 secondes via setInterval */
   const fetchNotifications = async () => {
     setLoadingNotifications(true);
     try {
@@ -167,6 +175,7 @@ function DashboardPrestataire() {
     } catch { /* silencieux */ } finally { setLoadingNotifications(false); }
   };
 
+  /** Récupère les statistiques et la zone d'intervention du prestataire */
   const fetchZoneStats = async () => {
     setLoadingZoneStats(true);
     try {
@@ -176,6 +185,7 @@ function DashboardPrestataire() {
     } catch { /* silencieux */ } finally { setLoadingZoneStats(false); }
   };
 
+  /** Récupère les évaluations reçues avec la note moyenne et le total */
   const fetchReviews = async () => {
     setLoadingReviews(true);
     try {
@@ -188,6 +198,7 @@ function DashboardPrestataire() {
     } catch { /* silencieux */ } finally { setLoadingReviews(false); }
   };
 
+  /** Récupère les documents administratifs uploadés par le prestataire */
   const fetchDocuments = async () => {
     setLoadingDocs(true);
     try {
@@ -202,6 +213,7 @@ function DashboardPrestataire() {
 
   // ─── Handlers notifications ────────────────────────────────────────────────
 
+  /** Marque une notification spécifique comme lue */
   const handleMarkAsRead = async (id) => {
     try {
       await axios.patch(`/api/notifications/${id}/read`, {}, authHeaders());
@@ -209,6 +221,7 @@ function DashboardPrestataire() {
     } catch { /* silencieux */ }
   };
 
+  /** Marque toutes les notifications non lues comme lues */
   const handleMarkAllAsRead = async () => {
     try {
       await axios.patch('/api/notifications/read-all', {}, authHeaders());
@@ -216,6 +229,7 @@ function DashboardPrestataire() {
     } catch { /* silencieux */ }
   };
 
+  /** Supprime une notification après confirmation */
   const handleDeleteNotification = async (id) => {
     if (!window.confirm('Supprimer cette notification ?')) return;
     try {
@@ -226,6 +240,7 @@ function DashboardPrestataire() {
 
   // ─── Handler zone ──────────────────────────────────────────────────────────
 
+  /** Met à jour la zone d'intervention du prestataire — minimum 2 caractères */
   const handleUpdateZone = async () => {
     if (!newZone || newZone.trim().length < 2) {
       setZoneError('Zone invalide (minimum 2 caractères)');
@@ -250,6 +265,7 @@ function DashboardPrestataire() {
 
   // ─── Handler planification ─────────────────────────────────────────────────
 
+  /** Ouvre le modal de planification pour une mission disponible */
   const handleAcceptMission = (mission) => {
     setMissionToSchedule(mission);
     const tomorrow = new Date();
@@ -259,6 +275,7 @@ function DashboardPrestataire() {
     setSchedulingError('');
   };
 
+  /** Ferme le modal de planification et réinitialise les états associés */
   const closePlanificationModal = () => {
     setMissionToSchedule(null);
     setSelectedDate('');
@@ -266,6 +283,7 @@ function DashboardPrestataire() {
     setSchedulingError('');
   };
 
+  /** Confirme la planification et envoie la date/heure au backend */
   const confirmScheduleMission = async () => {
     if (!selectedDate || !selectedTime) {
       setSchedulingError('Date et heure sont obligatoires');
@@ -290,6 +308,10 @@ function DashboardPrestataire() {
 
   // ─── Export PDF finances ───────────────────────────────────────────────────
 
+  /**
+  * Charge une image distante et la convertit en base64 via un canvas
+  * Nécessaire pour intégrer le logo Mémoria dans le PDF généré par jsPDF
+  */
   const loadImageAsBase64 = (src) =>
     new Promise((resolve, reject) => {
       const img = new Image();
@@ -305,6 +327,10 @@ function DashboardPrestataire() {
       img.onerror = reject;
     });
 
+  /**
+  * Génère et télécharge un relevé financier PDF pour le prestataire
+  * Inclut les statistiques globales et l'historique des paiements
+  */
   const exportFinancesPDF = async () => {
     if (!finances) return;
     const doc = new jsPDF();
@@ -387,12 +413,14 @@ function DashboardPrestataire() {
 
   // ─── Spinner helper ────────────────────────────────────────────────────────
 
+  /** Composant spinner réutilisable affiché pendant les chargements */
   const Spinner = () => (
     <div className="flex justify-center py-12">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600" />
     </div>
   );
 
+  // Applique le filtre actif sur l'historique des missions
   const filteredHistory = historyFilter === 'all'
     ? history
     : history.filter(o => o.status === historyFilter);
