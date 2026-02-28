@@ -563,6 +563,12 @@ function DashboardPrestataire() {
                     <div><p className="text-sm text-gray-500">Rémunération</p><p className="font-medium text-green-600">{(parseFloat(mission.price) * 0.80).toFixed(2)}€</p></div>
                     <div><p className="text-sm text-gray-500">Créée le</p><p className="font-medium">{new Date(mission.created_at).toLocaleDateString('fr-FR')}</p></div>
                   </div>
+                  {mission.comment && (
+                    <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-xs font-medium text-blue-700 mb-1">💬 Instructions du client</p>
+                      <p className="text-sm text-blue-900">{mission.comment}</p>
+                    </div>
+                  )}
                   <button onClick={() => handleAcceptMission(mission)}
                     className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition">
                     ✓ Accepter et planifier
