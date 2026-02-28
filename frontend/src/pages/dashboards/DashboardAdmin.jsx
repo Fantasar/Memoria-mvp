@@ -4,24 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Navbar from '../../components/layout/Navbar';
+import CrispChat from '../../components/layout/CrispChat';
+
 
 
 const authHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 });
-
-const NAV_SECTIONS = [
-  { key: 'overview', label: 'Aperçu' },
-  { key: 'disputes', label: 'Litiges' },
-  { key: 'interventions', label: 'Interventions' },
-  { key: 'providers', label: 'Prestataires' },
-  { key: 'users', label: 'Utilisateurs' },
-  { key: 'gallery', label: 'Galerie photos' },
-  { key: 'finances', label: 'Finances' },
-  { key: 'cemeteries', label: 'Cimetières' },
-  { key: 'services', label: 'Services' },
-  { key: 'history', label: 'Historique' },
-];
 
 const STATUS_CONFIG = {
   pending: { label: '⏳ En attente', color: 'bg-yellow-100 text-yellow-800' },
@@ -141,6 +130,24 @@ function DashboardAdmin() {
   const [loadingClientOrders, setLoadingClientOrders] = useState(false);
   const [disputesTab, setDisputesTab] = useState('disputes');
 
+  // Modal pour Message avec Crips
+  const [crispMessages, setCrispMessages] = useState([]);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+
+  const NAV_SECTIONS = [
+    { key: 'overview', label: 'Aperçu' },
+    { key: 'messages', label: `Messages${unreadMessages > 0 ? ` (${unreadMessages})` : ''}` },
+    { key: 'disputes', label: 'Litiges' },
+    { key: 'interventions', label: 'Interventions' },
+    { key: 'providers', label: 'Prestataires' },
+    { key: 'users', label: 'Utilisateurs' },
+    { key: 'gallery', label: 'Galerie photos' },
+    { key: 'finances', label: 'Finances' },
+    { key: 'cemeteries', label: 'Cimetières' },
+    { key: 'services', label: 'Services' },
+    { key: 'history', label: 'Historique' },
+  ];
 
   useEffect(() => {
     fetchStats();
@@ -153,6 +160,12 @@ function DashboardAdmin() {
     fetchFinances();
     fetchCemeteries();
     fetchServices();
+  }, []);
+
+  useEffect(() => {
+    fetchCrispMessages();
+    const interval = setInterval(fetchCrispMessages, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   // ─── Fetch functions ───────────────────────────────────────────────────────
@@ -248,6 +261,18 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingProviderCalendar(false); }
   };
 
+  const fetchCrispMessages = async () => {
+    try {
+      setLoadingMessages(true);
+      const res = await axios.get('/api/admin/messages', authHeaders());
+      setCrispMessages(res.data.data.messages || []);
+      setUnreadMessages(res.data.data.unread || 0);
+    } catch {
+      // Échec silencieux
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const handleApproveProvider = async (providerId) => {
@@ -450,6 +475,95 @@ function DashboardAdmin() {
           )}
         </div>
       );
+
+      case 'messages':
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold">Messages</h2>
+              <div className="flex gap-3">
+                {unreadMessages > 0 && (
+                  <button
+                    onClick={async () => {
+                      await axios.patch('/api/admin/messages', {}, authHeaders());
+                      fetchCrispMessages();
+                    }}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium">
+                    ✅ Tout marquer comme lu ({unreadMessages})
+                  </button>
+                )}
+                {crispMessages.length > 0 && (
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm('Supprimer tous les messages ?')) return;
+                      await axios.delete('/api/admin/messages', authHeaders());
+                      fetchCrispMessages();
+                    }}
+                    className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium">
+                    🗑️ Tout supprimer
+                  </button>
+                )}
+                <a href="https://app.crisp.chat" target="_blank" rel="noopener noreferrer"
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center gap-2">
+                  💬 Ouvrir Crisp
+                </a>
+              </div>
+            </div>
+
+            {loadingMessages ? (
+              <p className="text-gray-500">Chargement...</p>
+            ) : crispMessages.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+                <p className="text-4xl mb-3">💬</p>
+                <p className="text-gray-500">Aucun message pour le moment</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {crispMessages.map(msg => (
+                  <div
+                    key={msg.id}
+                    className={`bg-white border rounded-lg p-4 flex items-start justify-between gap-4 ${!msg.is_read ? 'border-purple-300 bg-purple-50' : 'border-gray-200'
+                      }`}>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {!msg.is_read && (
+                          <span className="w-2 h-2 bg-purple-600 rounded-full inline-block" />
+                        )}
+                        <p className="font-semibold text-gray-900">{msg.from_name || 'Visiteur'}</p>
+                        {msg.from_email && (
+                          <p className="text-sm text-gray-500">{msg.from_email}</p>
+                        )}
+                      </div>
+                      <p className="text-gray-700">{msg.content}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(msg.received_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric', month: 'long', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {!msg.is_read && (
+                        <button
+                          onClick={async () => {
+                            await axios.patch(`/api/admin/messages/${msg.id}`, {}, authHeaders());
+                            fetchCrispMessages();
+                          }}
+                          className="text-xs px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-lg">
+                          Marquer lu
+                        </button>
+                      )}
+                      <a href="https://app.crisp.chat" target="_blank" rel="noopener noreferrer"
+                        className="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-center">
+                        Répondre
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
 
       case 'history': return (
         <div>
@@ -1633,7 +1747,6 @@ function DashboardAdmin() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

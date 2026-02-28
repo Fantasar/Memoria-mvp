@@ -8,6 +8,7 @@ import autoTable from 'jspdf-autotable';
 import logoMemoria from '../../assets/Logos_Mémoria-remove.png';
 import ZoneMap from '../../components/maps/ZoneMap';
 import Navbar from '../../components/layout/Navbar';
+import CrispChat from '../../components/layout/CrispChat';
 
 
 const authHeaders = () => ({
@@ -91,9 +92,13 @@ function DashboardPrestataire() {
     fetchHistory();
     fetchCalendar();
     fetchFinances();
-    fetchNotifications();
     fetchZoneStats();
     fetchReviews();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   // ─── Fetch functions ───────────────────────────────────────────────────────
@@ -1275,6 +1280,7 @@ function DashboardPrestataire() {
           </div>
         </div>
       )}
+      <CrispChat user={user} />
 
     </div>
   );

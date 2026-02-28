@@ -39,6 +39,8 @@ const notificationRoutes    = require('./routes/notificationRoutes');
 const reviewRoutes          = require('./routes/reviewRoutes');
 const usersRoutes           = require('./routes/users');
 const passwordResetRoutes   = require('./routes/passwordReset');
+const webhookRoutes         = require('./routes/webhooks');
+const crispMessageRoutes    = require('./routes/crispMessages');
 
 app.use('/api/auth',               authRoutes);
 app.use('/api/admin',              adminRoutes);
@@ -53,6 +55,8 @@ app.use('/api/notifications',      notificationRoutes);
 app.use('/api/reviews',            reviewRoutes);
 app.use('/api/users',              usersRoutes);
 app.use('/api/auth',               passwordResetRoutes);
+app.use('/api/webhooks',           webhookRoutes);
+app.use('/api/admin/messages',     crispMessageRoutes);
 
 
 

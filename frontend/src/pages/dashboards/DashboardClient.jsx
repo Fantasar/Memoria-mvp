@@ -9,6 +9,8 @@ import axios from 'axios';
 // Composants orders
 import OrderListPreview from '../../components/orders/OrderListPreview';
 import OrderListFull from '../../components/orders/OrderListFull';
+import CrispChat from '../../components/layout/CrispChat';
+
 
 // Composants clients — dossier "clients" avec s
 import PhotoGallery from '../../components/client/PhotoGallery';
@@ -82,6 +84,8 @@ function DashboardClient() {
   useEffect(() => {
     fetchStats();
     fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchStats = async () => {
@@ -549,6 +553,8 @@ function DashboardClient() {
           </div>
         </div>
       )}
+
+      <CrispChat user={user} />
 
     </div>
   );
