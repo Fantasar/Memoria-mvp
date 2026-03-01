@@ -4,9 +4,13 @@
  */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import axios from 'axios';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext';
 import './index.css';
+
+// Configure l'URL de base globale pour tous les appels axios directs (production Render)
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
