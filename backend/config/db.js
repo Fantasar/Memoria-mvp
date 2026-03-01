@@ -3,16 +3,23 @@ require('dotenv').config();
 
 /**
  * Pool de connexions PostgreSQL.
- * Réutilise les connexions existantes pour optimiser les performances.
- * Toutes les variables de connexion sont chargées depuis le fichier .env
+ * En production (Render) : utilise DATABASE_URL
+ * En local : utilise les variables séparées DB_HOST, DB_PORT, etc.
  */
-const pool = new Pool({
-  host:     process.env.DB_HOST,
-  port:     Number(process.env.DB_PORT),
-  database: process.env.DB_NAME,
-  user:     process.env.DB_USER,
-  password: process.env.DB_PASSWORD
-});
+const pool = new Pool(
+  process.env.DATABASE_URL
+    ? {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false } // Requis par Render
+      }
+    : {
+        host:     process.env.DB_HOST,
+        port:     Number(process.env.DB_PORT),
+        database: process.env.DB_NAME,
+        user:     process.env.DB_USER,
+        password: process.env.DB_PASSWORD
+      }
+);
 
 // Vérifie la connexion au démarrage et libère immédiatement le client
 pool.connect((err, client, release) => {
