@@ -1,17 +1,26 @@
-const crispMessageRepository = require('../repositories/crispMessageRepository');
+// backend/controllers/crispMessageController.js
+const crispMessageService = require('../services/crispmessageservice');
 
+/**
+ * Contrôleur des messages Crisp.
+ * Responsabilité : extraire les données de req, appeler crispMessageService, formater res.
+ * Ne contient aucune logique métier — tout est délégué au service.
+ */
+
+/**
+ * @desc    Reçoit et enregistre un événement depuis le webhook Crisp
+ * @route   POST /api/crisp/webhook
+ * @access  Public (Crisp uniquement)
+ */
 const receiveWebhook = async (req, res) => {
   try {
     const { event, data } = req.body;
+
+    // On ne traite que les messages entrants depuis le chat
     if (event !== 'message:send') return res.status(200).json({ ok: true });
     if (data?.origin !== 'chat') return res.status(200).json({ ok: true });
 
-    await crispMessageRepository.create(
-      data?.session_id || 'unknown',
-      data?.user?.email || null,
-      data?.user?.nickname || 'Visiteur',
-      data?.content || ''
-    );
+    await crispMessageService.receiveWebhook(data);
 
     return res.status(200).json({ ok: true });
   } catch (error) {
@@ -20,46 +29,70 @@ const receiveWebhook = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Récupère tous les messages Crisp avec le compteur de non-lus
+ * @route   GET /api/admin/messages
+ * @access  Admin uniquement
+ */
 const getMessages = async (req, res) => {
   try {
-    const messages = await crispMessageRepository.findAll();
-    const unread = await crispMessageRepository.countUnread();
-    return res.status(200).json({ success: true, data: { messages, unread } });
+    const data = await crispMessageService.getMessages();
+    return res.status(200).json({ success: true, data });
   } catch (error) {
     return res.status(500).json({ success: false, error: { message: error.message } });
   }
 };
 
+/**
+ * @desc    Marque un message spécifique comme lu
+ * @route   PATCH /api/admin/messages/:id
+ * @access  Admin uniquement
+ */
 const markAsRead = async (req, res) => {
   try {
-    await crispMessageRepository.markAsRead(req.params.id);
+    await crispMessageService.markAsRead(req.params.id);
     return res.status(200).json({ success: true });
   } catch (error) {
     return res.status(500).json({ success: false, error: { message: error.message } });
   }
 };
 
+/**
+ * @desc    Marque tous les messages comme lus
+ * @route   PATCH /api/admin/messages
+ * @access  Admin uniquement
+ */
 const markAllAsRead = async (req, res) => {
   try {
-    await crispMessageRepository.markAllAsRead();
+    await crispMessageService.markAllAsRead();
     return res.status(200).json({ success: true });
   } catch (error) {
     return res.status(500).json({ success: false, error: { message: error.message } });
   }
 };
 
+/**
+ * @desc    Supprime un message spécifique
+ * @route   DELETE /api/admin/messages/:id
+ * @access  Admin uniquement
+ */
 const deleteOne = async (req, res) => {
   try {
-    await crispMessageRepository.deleteOne(req.params.id);
+    await crispMessageService.deleteOne(req.params.id);
     return res.status(200).json({ success: true });
   } catch (error) {
     return res.status(500).json({ success: false, error: { message: error.message } });
   }
 };
 
+/**
+ * @desc    Supprime tous les messages Crisp
+ * @route   DELETE /api/admin/messages
+ * @access  Admin uniquement
+ */
 const deleteAll = async (req, res) => {
   try {
-    await crispMessageRepository.deleteAll();
+    await crispMessageService.deleteAll();
     return res.status(200).json({ success: true });
   } catch (error) {
     return res.status(500).json({ success: false, error: { message: error.message } });
