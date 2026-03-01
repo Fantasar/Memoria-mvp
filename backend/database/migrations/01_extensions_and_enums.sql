@@ -9,16 +9,18 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
 -- Statuts du cycle de vie d'une commande
 CREATE TYPE public.order_status_enum AS ENUM (
-    'pending',            -- Commande créée, en attente d'un prestataire
-    'accepted',           -- Prestataire a accepté la mission
-    'in_progress',        -- Intervention en cours
-    'completed',          -- Prestataire a terminé, en attente de validation
-    'awaiting_validation',-- En attente de validation admin
-    'validated',          -- Admin a validé, paiement prestataire déclenché
-    'cancelled',          -- Mission annulée par le prestataire
-    'paid',               -- Paiement prestataire effectué
-    'disputed',           -- Litige signalé
-    'refunded'            -- Client remboursé suite à litige
+    'pending',                -- Commande créée, en attente d'un prestataire
+    'accepted',               -- Prestataire a accepté la mission
+    'in_progress',            -- Intervention en cours
+    'completed',              -- Prestataire a terminé, en attente de validation
+    'awaiting_validation',    -- En attente de validation admin
+    'validated',              -- Admin a validé, paiement prestataire déclenché
+    'cancelled',              -- Mission annulée par le prestataire
+    'paid',                   -- Paiement prestataire effectué
+    'disputed',               -- Litige signalé
+    'refunded',               -- Client remboursé suite à litige
+    'correction_requested',   -- Une correction est réclamer
+    'correction_submitted'    -- Une correction est suivie
 );
 
 -- Statuts d'un paiement Stripe

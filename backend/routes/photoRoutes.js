@@ -29,23 +29,12 @@ const upload = multer({
 
 // POST /api/photos/upload          — Upload une photo vers Cloudinary (prestataire)
 // Chaîne : authenticateToken → multer → controller
-router.post('/upload',
-  authenticateToken,
-  upload.single('photo'),
-  photoController.uploadPhoto
-);
+router.post('/upload',authenticateToken, upload.single('photo'), photoController.uploadPhoto);
 
 // GET  /api/photos/order/:orderId  — Photos d'une commande spécifique
-router.get('/order/:orderId',
-  authenticateToken,
-  photoController.getOrderPhotos
-);
+router.get('/order/:orderId', authenticateToken, photoController.getOrderPhotos);
 
 // GET  /api/photos                 — Toutes les photos avec contexte (admin uniquement)
-router.get('/',
-  authenticateToken,
-  authenticateAdmin,
-  photoController.getAllPhotos
-);
+router.get('/', authenticateToken, authenticateAdmin, photoController.getAllPhotos);
 
 module.exports = router;

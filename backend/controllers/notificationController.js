@@ -14,8 +14,6 @@ const notificationService = require('../services/notificationService');
  */
 const getUserNotifications = async (req, res, next) => {
   try {
-    console.log('🔍 req.user:', req.user); // ← ajoute ça
-
     const data = await notificationService.getUserNotifications(req.user.userId);
 
     return res.status(200).json({

@@ -567,6 +567,11 @@ const reportDispute = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Annule une commande à la demande du client
+ * @route   PATCH /api/orders/:id/cancel
+ * @access  Client uniquement
+ */
 const cancelOrderClient = async (req, res) => {
   try {
     const order = await orderService.cancelOrderClient(req.params.id, req.user.userId);

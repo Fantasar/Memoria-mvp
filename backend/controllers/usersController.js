@@ -1,7 +1,16 @@
 // backend/controllers/usersController.js
-const userRepository = require('../repositories/userRepository');
-const bcrypt         = require('bcrypt');
+const authService = require('../services/authService');
 
+/**
+ * Contrôleur de gestion du profil utilisateur.
+ * Responsabilité : valider les champs, appeler authService, formater la réponse.
+ */
+
+/**
+ * @desc    Met à jour le profil de l'utilisateur connecté
+ * @route   PATCH /api/users/profile
+ * @access  Privé
+ */
 const updateProfile = async (req, res) => {
   try {
     const { prenom, nom, email, telephone } = req.body;
@@ -13,15 +22,11 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    const updated = await userRepository.update(req.user.userId, { prenom, nom, email, telephone });
+    const updated = await authService.updateProfile(req.user.userId, { prenom, nom, email, telephone });
 
-    // Retourne le user avec role (string) et non role_id
     return res.status(200).json({
       success: true,
-      data: {
-        ...updated,
-        role: req.user.role
-      },
+      data: { ...updated, role: req.user.role },
       message: 'Profil mis à jour avec succès'
     });
 
@@ -33,6 +38,11 @@ const updateProfile = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Met à jour le mot de passe de l'utilisateur connecté
+ * @route   PATCH /api/users/password
+ * @access  Privé
+ */
 const updatePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -51,19 +61,7 @@ const updatePassword = async (req, res) => {
       });
     }
 
-    // Récupère le hash actuel
-    const user     = await userRepository.findById(req.user.userId);
-    const isValid  = await bcrypt.compare(currentPassword, user.password_hash);
-
-    if (!isValid) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'INVALID_PASSWORD', message: 'Mot de passe actuel incorrect' }
-      });
-    }
-
-    const newHash = await bcrypt.hash(newPassword, 10);
-    await userRepository.updatePassword(req.user.userId, newHash);
+    await authService.updatePassword(req.user.userId, currentPassword, newPassword);
 
     return res.status(200).json({
       success: true,
@@ -71,6 +69,9 @@ const updatePassword = async (req, res) => {
     });
 
   } catch (error) {
+    if (error.code === 'INVALID_PASSWORD') {
+      return res.status(400).json({ success: false, error: { code: error.code, message: error.message } });
+    }
     return res.status(500).json({
       success: false,
       error: { code: 'SERVER_ERROR', message: 'Erreur lors du changement de mot de passe' }

@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Navbar from '../../components/layout/Navbar';
-import CrispChat from '../../components/layout/CrispChat';
 
 
 
@@ -152,18 +151,18 @@ function DashboardAdmin() {
 
 
   const NAV_SECTIONS = [
-    { key: 'overview', label: 'Aperçu' },
-    { key: 'messages', label: `Messages${(unreadMessages + unreadContactNotifs) > 0 ? ` (${unreadMessages + unreadContactNotifs})` : ''}` },
-    { key: 'disputes', label: 'Litiges' },
-    { key: 'interventions', label: 'Interventions' },
-    { key: 'providers', label: 'Prestataires' },
-    { key: 'users', label: 'Utilisateurs' },
-    { key: 'gallery', label: 'Galerie photos' },
-    { key: 'finances', label: 'Finances' },
-    { key: 'cemeteries', label: 'Cimetières' },
-    { key: 'services', label: 'Services' },
-    { key: 'documents', label: `Documents${unreadDocs > 0 ? ` (${unreadDocs})` : ''}` },
-    { key: 'history', label: 'Historique' },
+    { key: 'overview',      label: `📊 Aperçu` },
+    { key: 'messages',      label: `💬 Messages${(unreadMessages + unreadContactNotifs) > 0 ? ` (${unreadMessages + unreadContactNotifs})` : ''}` },
+    { key: 'disputes',      label: `🚨 Litiges` },
+    { key: 'interventions', label: `🔄 Interventions` },
+    { key: 'providers',     label: `🧑‍🔧 Prestataires` },
+    { key: 'users',         label: `👥 Utilisateurs` },
+    { key: 'gallery',       label: `📷 Galerie photos` },
+    { key: 'finances',      label: `💰 Finances` },
+    { key: 'cemeteries',    label: `🪦 Cimetières` },
+    { key: 'services',      label: `🌿 Services` },
+    { key: 'documents',     label: `📁 Documents${unreadDocs > 0 ? ` (${unreadDocs})` : ''}` },
+    { key: 'history',       label: `📜 Historique` },
   ];
 
   useEffect(() => {
@@ -196,6 +195,7 @@ function DashboardAdmin() {
 
   // ─── Fetch functions ───────────────────────────────────────────────────────
 
+  /** Récupère les statistiques globales de la plateforme */
   const fetchStats = async () => {
     try {
       const res = await axios.get('/api/stats', authHeaders());
@@ -203,6 +203,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingStats(false); }
   };
 
+  /** Récupère les prestataires en attente de validation */
   const fetchPendingProviders = async () => {
     try {
       const res = await axios.get('/api/providers/pending', authHeaders());
@@ -210,6 +211,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingProviders(false); }
   };
 
+  /** Récupère les commandes en attente de validation admin et leurs photos */
   const fetchPendingOrders = async () => {
     try {
       const res = await axios.get('/api/orders/pending-validation', authHeaders());
@@ -219,6 +221,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingOrders(false); }
   };
 
+  /** Récupère les commandes en litige et leurs photos associées */
   const fetchDisputedOrders = async () => {
     try {
       const res = await axios.get('/api/orders/disputed', authHeaders());
@@ -228,6 +231,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingDisputes(false); }
   };
 
+  /** Récupère les photos d'une commande spécifique */
   const fetchOrderPhotos = async (orderId) => {
     try {
       const res = await axios.get(`/api/photos/order/${orderId}`, authHeaders());
@@ -235,6 +239,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ }
   };
 
+  /** Récupère toutes les commandes de la plateforme */
   const fetchAllOrders = async () => {
     try {
       const res = await axios.get('/api/orders', authHeaders());
@@ -242,6 +247,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingAllOrders(false); }
   };
 
+  /** Récupère tous les utilisateurs et les sépare en clients et prestataires */
   const fetchAllUsers = async () => {
     try {
       const res = await axios.get('/api/admin/users', authHeaders());
@@ -251,6 +257,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingUsers(false); }
   };
 
+  /** Récupère tous les documents prestataires et les marque automatiquement comme lus */
   const fetchAllProviderDocs = async () => {
     setLoadingAllDocs(true);
     try {
@@ -265,6 +272,7 @@ function DashboardAdmin() {
     }
   };
 
+  /** Récupère les données financières via les statistiques */
   const fetchFinances = async () => {
     try {
       const res = await axios.get('/api/stats', authHeaders());
@@ -272,6 +280,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingFinances(false); }
   };
 
+  /** Récupère la liste des cimetières */
   const fetchCemeteries = async () => {
     try {
       const res = await axios.get('/api/cemeteries', authHeaders());
@@ -279,6 +288,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingCemeteries(false); }
   };
 
+  /** Récupère la liste des services disponibles */
   const fetchServices = async () => {
     try {
       const res = await axios.get('/api/service-categories/admin', authHeaders());
@@ -286,6 +296,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingServices(false); }
   };
 
+  /** Récupère toutes les photos de missions */
   const fetchAllPhotos = async () => {
     try {
       const res = await axios.get('/api/photos', authHeaders());
@@ -293,6 +304,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingPhotos(false); }
   };
 
+  /** Récupère le planning d'un prestataire spécifique */
   const fetchProviderCalendar = async (providerId) => {
     setLoadingProviderCalendar(true);
     try {
@@ -301,6 +313,7 @@ function DashboardAdmin() {
     } catch { /* silencieux */ } finally { setLoadingProviderCalendar(false); }
   };
 
+  /** Récupère les messages Crisp — appelé toutes les 10 secondes via setInterval */
   const fetchCrispMessages = async () => {
     try {
       setLoadingMessages(true);
@@ -314,6 +327,10 @@ function DashboardAdmin() {
     }
   };
 
+  /**
+  * Récupère les documents d'un prestataire spécifique
+  * Toggle l'affichage si les documents sont déjà chargés
+  */
   const fetchProviderDocuments = async (providerId) => {
     // Toggle — si déjà chargé, juste afficher/masquer
     if (providerDocuments[providerId] !== undefined) {
@@ -334,6 +351,7 @@ function DashboardAdmin() {
     }
   };
 
+  /** Récupère le nombre de documents non lus — appelé toutes les 10 secondes via setInterval */
   const fetchUnreadDocs = async () => {
     try {
       const res = await axios.get('/api/documents/admin/unread', authHeaders());
@@ -343,6 +361,7 @@ function DashboardAdmin() {
     }
   };
 
+  /** Récupère les notifications de type contact_message et calcule le compteur non lus */
   const fetchContactNotifications = async () => {
     setLoadingContactNotifs(true);
     try {
@@ -360,6 +379,7 @@ function DashboardAdmin() {
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
+  /** Valide un prestataire après confirmation */
   const handleApproveProvider = async (providerId) => {
     if (!window.confirm('Valider ce prestataire ?')) return;
     try {
@@ -370,6 +390,7 @@ function DashboardAdmin() {
     }
   };
 
+  /** Rejette un prestataire avec un motif — minimum 10 caractères requis */
   const handleRejectProvider = async (providerId) => {
     if (!rejectReason.trim() || rejectReason.length < 10) {
       setRejectError('Le motif doit contenir au moins 10 caractères');
@@ -389,6 +410,7 @@ function DashboardAdmin() {
     }
   };
 
+  /** Valide une intervention et débloque le paiement au prestataire */
   const handleValidateOrder = async (orderId) => {
     if (!window.confirm('Valider cette intervention ? Le paiement sera débloqué.')) return;
     try {
@@ -400,6 +422,7 @@ function DashboardAdmin() {
     }
   };
 
+  /** Ouvre un litige sur une commande en attente de validation */
   const handleMarkAsDisputed = async (orderId) => {
     if (!disputeReason.trim() || disputeReason.length < 10) {
       setDisputeError('Le motif doit contenir au moins 10 caractères');
@@ -420,6 +443,10 @@ function DashboardAdmin() {
     }
   };
 
+  /**
+  * Résout un litige selon l'action choisie par l'admin
+  * @param {string} action - 'validate' | 'refund' | 'request_correction'
+  */
   const handleResolveDispute = async (orderId, action) => {
     const messages = {
       validate: 'Valider malgré le litige ?',
@@ -436,6 +463,7 @@ function DashboardAdmin() {
     }
   };
 
+  /** Ajoute un nouveau cimetière — gère le cas de doublon */
   const handleAddCemetery = async (e) => {
     e.preventDefault();
     setCemeteryError(null);
@@ -457,6 +485,7 @@ function DashboardAdmin() {
     }
   };
 
+  /** Ajoute un nouveau service — gère le cas de doublon */
   const handleAddService = async (e) => {
     e.preventDefault();
     setServiceError(null);
@@ -478,6 +507,7 @@ function DashboardAdmin() {
     }
   };
 
+  /** Ferme le panneau calendrier prestataire et réinitialise les états associés */
   const closeProviderCalendar = () => {
     setSelectedProviderCalendar(null);
     setSelectedProviderInfo(null);

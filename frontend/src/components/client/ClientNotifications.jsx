@@ -4,41 +4,45 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * Icône et couleur de fond selon le type de notification
+ * Mapping type de notification → icône et couleur de bordure/fond
+ * Utilisé pour personnaliser visuellement chaque carte de notification
  */
 const NOTIFICATION_STYLES = {
-  mission_accepted: { icon: '✅', color: 'bg-green-50 border-green-200' },
-  photos_available: { icon: '📷', color: 'bg-blue-50 border-blue-200' },
-  mission_completed: { icon: '🎉', color: 'bg-purple-50 border-purple-200' },
-  dispute_resolved: { icon: '✅', color: 'bg-green-50 border-green-200' },
-  refund_processed: { icon: '💸', color: 'bg-orange-50 border-orange-200' },
-  correction_requested: { icon: '🔄', color: 'bg-yellow-50 border-yellow-200' },
+  mission_accepted:    { icon: '✅', color: 'bg-green-50 border-green-200' },
+  photos_available:    { icon: '📷', color: 'bg-blue-50 border-blue-200' },
+  mission_completed:   { icon: '🎉', color: 'bg-purple-50 border-purple-200' },
+  dispute_resolved:    { icon: '✅', color: 'bg-green-50 border-green-200' },
+  refund_processed:    { icon: '💸', color: 'bg-orange-50 border-orange-200' },
+  correction_requested:{ icon: '🔄', color: 'bg-yellow-50 border-yellow-200' },
 };
 
+// Style par défaut si le type de notification n'est pas référencé dans NOTIFICATION_STYLES
 const DEFAULT_STYLE = { icon: '🔔', color: 'bg-gray-50 border-gray-200' };
 
+/** Retourne le style associé à un type de notification, ou le style par défaut */
 const getStyle = (type) => NOTIFICATION_STYLES[type] ?? DEFAULT_STYLE;
 
+/** Génère les headers d'authentification JWT depuis le localStorage */
 const authHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 });
 
 /**
  * Panneau de notifications du dashboard client.
- * Permet de filtrer, marquer comme lu et supprimer les notifications.
- *
- * @param {Function} onNotificationRead - Callback pour mettre à jour le badge dans le parent
+ * Permet de filtrer (toutes / non lues), marquer comme lu et supprimer les notifications.
+ * @param {Function} onNotificationRead - Callback déclenché après lecture pour mettre à jour le badge parent
  */
 function ClientNotifications({ onNotificationRead }) {
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // 'all' | 'unread'
+  const [loading, setLoading]             = useState(true);
+  const [filter, setFilter]               = useState('all'); // 'all' | 'unread'
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchNotifications();
   }, []);
 
+  /** Récupère toutes les notifications de l'utilisateur connecté */
   const fetchNotifications = async () => {
     setLoading(true);
     try {
@@ -53,6 +57,7 @@ function ClientNotifications({ onNotificationRead }) {
     }
   };
 
+  /** Marque une notification spécifique comme lue et rafraîchit la liste */
   const markAsRead = async (notificationId) => {
     try {
       await axios.patch(`/api/notifications/${notificationId}/read`, {}, authHeaders());
@@ -63,6 +68,7 @@ function ClientNotifications({ onNotificationRead }) {
     }
   };
 
+  /** Marque toutes les notifications non lues comme lues */
   const markAllAsRead = async () => {
     try {
       // PATCH /api/notifications/read-all (pas POST /mark-all-read)
@@ -74,6 +80,7 @@ function ClientNotifications({ onNotificationRead }) {
     }
   };
 
+  /** Supprime une notification après confirmation de l'utilisateur */
   const deleteNotification = async (notificationId) => {
     if (!confirm('Supprimer cette notification ?')) return;
     try {
@@ -85,6 +92,7 @@ function ClientNotifications({ onNotificationRead }) {
     }
   };
 
+  // Applique le filtre actif sur la liste complète
   const filteredNotifications = filter === 'unread'
     ? notifications.filter(n => !n.is_read)
     : notifications;

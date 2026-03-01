@@ -1,21 +1,15 @@
 // backend/controllers/passwordResetController.js
-const pool                     = require('../config/db');
-const bcrypt                   = require('bcrypt');
-const passwordResetRepository  = require('../repositories/passwordResetRepository');
-const { sendPasswordResetSMS } = require('../services/smsService');
+const passwordResetService = require('../services/passwordResetService');
 
 /**
- * Convertit un numéro français local en format international Twilio
- * Ex: 0612345678 → +33612345678
- * @param {string} tel
- * @returns {string}
+ * Contrôleur de réinitialisation de mot de passe par SMS.
+ * Responsabilité : valider les champs, appeler passwordResetService, formater la réponse.
  */
-const formatTelephoneForSMS = (tel) => {
-  return tel.replace(/\s/g, '').replace(/^0/, '+33');
-};
 
 /**
- * Étape 1 : Demande de réinitialisation — envoie le code SMS
+ * @desc    Étape 1 — Reçoit le numéro de téléphone et déclenche l'envoi du code SMS
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
  */
 const requestReset = async (req, res) => {
   try {
@@ -28,32 +22,9 @@ const requestReset = async (req, res) => {
       });
     }
 
-    // Recherche en base avec le format stocké (ex: 0612345678)
-    const userResult = await pool.query(
-      'SELECT id, prenom FROM users WHERE telephone = $1',
-      [telephone]
-    );
+    await passwordResetService.requestReset(telephone);
 
-    // Réponse identique même si le numéro n'existe pas (sécurité)
-    if (userResult.rows.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: 'Si ce numéro est enregistré, un code vous a été envoyé'
-      });
-    }
-
-    const user = userResult.rows[0];
-
-    // Génère un code à 6 chiffres
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-    await passwordResetRepository.create(user.id, code);
-
-    // Envoi SMS avec le format international requis par Twilio
-    const telephoneFormatted = formatTelephoneForSMS(telephone);
-    console.log('Envoi SMS vers:', telephoneFormatted); // ← ajoute ça
-    await sendPasswordResetSMS(telephoneFormatted, code);
-
+    // Réponse identique même si le numéro n'existe pas (sécurité anti-énumération)
     return res.status(200).json({
       success: true,
       message: 'Si ce numéro est enregistré, un code vous a été envoyé'
@@ -61,7 +32,6 @@ const requestReset = async (req, res) => {
 
   } catch (error) {
     console.error('Erreur requestReset:', error.response?.data || error.message);
-    console.error('Erreur requestReset:', error.message);
     return res.status(500).json({
       success: false,
       error: { code: 'SERVER_ERROR', message: 'Erreur lors de l\'envoi du code' }
@@ -70,12 +40,15 @@ const requestReset = async (req, res) => {
 };
 
 /**
- * Étape 2 : Vérification du code + nouveau mot de passe
+ * @desc    Étape 2 — Vérifie le code SMS et met à jour le mot de passe
+ * @route   POST /api/auth/reset-password
+ * @access  Public
  */
 const resetPassword = async (req, res) => {
   try {
     const { telephone, code, newPassword } = req.body;
 
+    // Validation des champs obligatoires
     if (!telephone?.trim() || !code?.trim() || !newPassword?.trim()) {
       return res.status(400).json({
         success: false,
@@ -83,6 +56,7 @@ const resetPassword = async (req, res) => {
       });
     }
 
+    // Validation de la force du mot de passe
     if (newPassword.length < 8) {
       return res.status(400).json({
         success: false,
@@ -90,25 +64,7 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    // Vérifie le token en base (recherche par téléphone au format stocké)
-    const resetToken = await passwordResetRepository.verify(telephone.trim(), code.trim());
-
-    if (!resetToken) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'INVALID_CODE', message: 'Code invalide ou expiré' }
-      });
-    }
-
-    // Met à jour le mot de passe
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-    await pool.query(
-      'UPDATE users SET password_hash = $1 WHERE id = $2',
-      [passwordHash, resetToken.user_id]
-    );
-
-    // Invalide le token pour éviter toute réutilisation
-    await passwordResetRepository.markAsUsed(resetToken.id);
+    await passwordResetService.resetPassword(telephone.trim(), code.trim(), newPassword);
 
     return res.status(200).json({
       success: true,
@@ -116,6 +72,12 @@ const resetPassword = async (req, res) => {
     });
 
   } catch (error) {
+    if (error.code === 'INVALID_CODE') {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_CODE', message: error.message }
+      });
+    }
     console.error('Erreur resetPassword:', error.message);
     return res.status(500).json({
       success: false,

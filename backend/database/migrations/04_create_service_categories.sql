@@ -10,6 +10,7 @@ CREATE TABLE public.service_categories (
     description text,
     base_price  numeric(10,2),
     is_active   boolean DEFAULT true,
+    category    character varying(50) DEFAULT 'entretien',
     created_at  timestamp without time zone DEFAULT now(),
     updated_at  timestamp without time zone DEFAULT now(),
     CONSTRAINT service_categories_base_price_check CHECK ((base_price > 0::numeric))

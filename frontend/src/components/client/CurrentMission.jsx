@@ -3,39 +3,42 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import OrderTimeline from './OrderTimeline';
 
+/** Génère les headers d'authentification JWT depuis le localStorage */
 const authHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 });
 
-// Statuts indiquant qu'une mission est en cours côté client
+// Statuts indiquant qu'une mission est active côté client
 const IN_PROGRESS_STATUSES = ['accepted', 'awaiting_validation', 'disputed'];
 
 /**
- * Affiche la mission en cours du client avec timeline et photos avant/après.
- * Une seule mission "en cours" est affichée à la fois.
+ * Affiche la ou les missions en cours du client avec timeline et photos avant/après.
+ * Les photos sont chargées uniquement pour les missions en awaiting_validation ou disputed.
  */
 function CurrentMission() {
-  const [currentOrders, setCurrentOrders] = useState([]);
-  const [photosByOrder, setPhotosByOrder] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [currentOrders, setCurrentOrders]   = useState([]);
+  const [photosByOrder, setPhotosByOrder]   = useState({});
+  const [loading, setLoading]               = useState(true);
 
   useEffect(() => {
     fetchCurrentMission();
   }, []);
 
+  /** Récupère les commandes en cours et leurs photos associées */
   const fetchCurrentMission = async () => {
     setLoading(true);
     try {
       const response = await axios.get('/api/orders', authHeaders());
       const orders = response.data.data || [];
 
+      // Filtre uniquement les commandes dont le statut indique une mission active
       const inProgressOrders = orders.filter(o =>
         IN_PROGRESS_STATUSES.includes(o.status)
       );
 
       setCurrentOrders(inProgressOrders);
 
-      // Charge les photos pour chaque mission en awaiting_validation ou disputed
+      // Charge les photos uniquement pour les missions en attente de validation ou en litige
       const photosMap = {};
       await Promise.all(
         inProgressOrders
@@ -66,7 +69,7 @@ function CurrentMission() {
     );
   }
 
-  // En-tête commun aux deux états (vide et avec mission)
+  /** En-tête commun aux deux états (vide et avec mission) */
   const SectionHeader = () => (
     <div className="mb-6">
       <h2 className="text-2xl font-bold text-gray-900">Mission en cours</h2>

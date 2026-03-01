@@ -1,17 +1,21 @@
 // backend/controllers/providerDocumentController.js
-const cloudinary = require('../config/cloudinary');
-const providerDocumentRepository = require('../repositories/providerDocumentRepository');
-const streamifier = require('streamifier');
-
-const DOCUMENT_TYPES = ['rib', 'kbis', 'assurance', 'identite', 'autre'];
+const providerDocumentService = require('../services/providerDocumentService');
 
 /**
- * Upload d'un document prestataire vers Cloudinary
+ * Contrôleur des documents prestataires.
+ * Responsabilité : valider les champs, appeler providerDocumentService, formater la réponse.
+ */
+
+/**
+ * @desc    Upload un document prestataire vers Cloudinary
+ * @route   POST /api/provider/documents
+ * @access  Prestataire uniquement
  */
 const uploadDocument = async (req, res) => {
   try {
     const { type, label } = req.body;
 
+    // Validation du fichier
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -19,13 +23,15 @@ const uploadDocument = async (req, res) => {
       });
     }
 
-    if (!DOCUMENT_TYPES.includes(type)) {
+    // Validation du type de document
+    if (!type) {
       return res.status(400).json({
         success: false,
-        error: { code: 'INVALID_TYPE', message: 'Type de document invalide' }
+        error: { code: 'MISSING_TYPE', message: 'Type de document requis' }
       });
     }
 
+    // Le libellé est obligatoire pour le type "autre"
     if (type === 'autre' && !label?.trim()) {
       return res.status(400).json({
         success: false,
@@ -33,30 +39,19 @@ const uploadDocument = async (req, res) => {
       });
     }
 
-    // Upload vers Cloudinary dans un dossier dédié
-    const uploadResult = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        {
-          folder: `memoria/documents/${req.user.userId}`,
-          resource_type: 'auto', // accepte PDF + images
-          public_id: `${type}_${Date.now()}`,
-        },
-        (error, result) => error ? reject(error) : resolve(result)
-      );
-      streamifier.createReadStream(req.file.buffer).pipe(stream);
-    });
-
-    const document = await providerDocumentRepository.create(
+    const document = await providerDocumentService.uploadDocument(
       req.user.userId,
       type,
-      label || null,
-      uploadResult.secure_url,
-      req.file.originalname
+      label,
+      req.file
     );
 
     return res.status(201).json({ success: true, data: document });
 
   } catch (error) {
+    if (error.code === 'INVALID_TYPE') {
+      return res.status(400).json({ success: false, error: { code: error.code, message: error.message } });
+    }
     console.error('Erreur uploadDocument:', error.message);
     return res.status(500).json({
       success: false,
@@ -66,11 +61,13 @@ const uploadDocument = async (req, res) => {
 };
 
 /**
- * Récupère les documents du prestataire connecté
+ * @desc    Récupère les documents du prestataire connecté
+ * @route   GET /api/provider/documents
+ * @access  Prestataire uniquement
  */
 const getMyDocuments = async (req, res) => {
   try {
-    const documents = await providerDocumentRepository.findByUserId(req.user.userId);
+    const documents = await providerDocumentService.getMyDocuments(req.user.userId);
     return res.status(200).json({ success: true, data: documents });
   } catch (error) {
     return res.status(500).json({
@@ -81,11 +78,13 @@ const getMyDocuments = async (req, res) => {
 };
 
 /**
- * Récupère tous les documents pour l'admin
+ * @desc    Récupère tous les documents pour le dashboard admin
+ * @route   GET /api/admin/documents
+ * @access  Admin uniquement
  */
 const getAllDocuments = async (req, res) => {
   try {
-    const documents = await providerDocumentRepository.findAllWithProvider();
+    const documents = await providerDocumentService.getAllDocuments();
     return res.status(200).json({ success: true, data: documents });
   } catch (error) {
     return res.status(500).json({
@@ -96,11 +95,13 @@ const getAllDocuments = async (req, res) => {
 };
 
 /**
- * Supprime un document (prestataire propriétaire uniquement)
+ * @desc    Supprime un document — prestataire propriétaire uniquement
+ * @route   DELETE /api/provider/documents/:id
+ * @access  Prestataire uniquement
  */
 const deleteDocument = async (req, res) => {
   try {
-    await providerDocumentRepository.deleteOne(req.params.id, req.user.userId);
+    await providerDocumentService.deleteDocument(req.params.id, req.user.userId);
     return res.status(200).json({ success: true });
   } catch (error) {
     return res.status(500).json({
@@ -110,37 +111,60 @@ const deleteDocument = async (req, res) => {
   }
 };
 
-const markAsRead = async (req, res) => {
-  try {
-    await providerDocumentRepository.markAsRead(req.params.id);
-    return res.status(200).json({ success: true });
-  } catch (error) {
-    return res.status(500).json({ success: false, error: { message: error.message } });
-  }
-};
-
-const markAllAsRead = async (req, res) => {
-  try {
-    await providerDocumentRepository.markAllAsRead();
-    return res.status(200).json({ success: true });
-  } catch (error) {
-    return res.status(500).json({ success: false, error: { message: error.message } });
-  }
-};
-
-const countUnread = async (req, res) => {
-  try {
-    const count = await providerDocumentRepository.countUnread();
-    return res.status(200).json({ success: true, data: { count } });
-  } catch (error) {
-    return res.status(500).json({ success: false, error: { message: error.message } });
-  }
-};
-
+/**
+ * @desc    Supprime un document sans restriction de propriétaire
+ * @route   DELETE /api/admin/documents/:id
+ * @access  Admin uniquement
+ */
 const adminDeleteDocument = async (req, res) => {
   try {
-    await providerDocumentRepository.deleteOne(req.params.id);
+    await providerDocumentService.adminDeleteDocument(req.params.id);
     return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: { code: 'SERVER_ERROR', message: error.message }
+    });
+  }
+};
+
+/**
+ * @desc    Marque un document spécifique comme lu
+ * @route   PATCH /api/admin/documents/:id/read
+ * @access  Admin uniquement
+ */
+const markAsRead = async (req, res) => {
+  try {
+    await providerDocumentService.markAsRead(req.params.id);
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+};
+
+/**
+ * @desc    Marque tous les documents comme lus
+ * @route   PATCH /api/admin/documents/read-all
+ * @access  Admin uniquement
+ */
+const markAllAsRead = async (req, res) => {
+  try {
+    await providerDocumentService.markAllAsRead();
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+};
+
+/**
+ * @desc    Retourne le nombre de documents non lus
+ * @route   GET /api/admin/documents/unread-count
+ * @access  Admin uniquement
+ */
+const countUnread = async (req, res) => {
+  try {
+    const count = await providerDocumentService.countUnread();
+    return res.status(200).json({ success: true, data: { count } });
   } catch (error) {
     return res.status(500).json({ success: false, error: { message: error.message } });
   }
@@ -151,8 +175,8 @@ module.exports = {
   getMyDocuments,
   getAllDocuments,
   deleteDocument,
+  adminDeleteDocument,
   markAsRead,
   markAllAsRead,
-  countUnread,
-  adminDeleteDocument
+  countUnread
 };

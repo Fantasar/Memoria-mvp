@@ -210,6 +210,12 @@ const getAllUsers = async () => {
   return await userRepository.getAllUsers();
 };
 
+/**
+ * Bloque ou débloque un compte utilisateur selon son état actuel
+ * Inverse automatiquement is_blocked — pas besoin de préciser l'action souhaitée
+ * @param {string} userId
+ * @returns {Object} - L'utilisateur mis à jour avec le nouvel état is_blocked
+ */
 const toggleBlockUser = async (userId) => {
   try {
     const user = await userRepository.findById(userId);
@@ -226,6 +232,13 @@ const toggleBlockUser = async (userId) => {
   }
 };
 
+/**
+ * Supprime définitivement un compte utilisateur
+ * Un admin ne peut pas supprimer son propre compte (protection contre l'auto-suppression)
+ * @param {string} userId  - Identifiant de l'utilisateur à supprimer
+ * @param {string} adminId - Identifiant de l'admin qui effectue la suppression
+ * @returns {Object}       - { id } de l'utilisateur supprimé
+ */
 const deleteUser = async (userId, adminId) => {
   try {
     if (userId == adminId) {
@@ -248,11 +261,60 @@ const deleteUser = async (userId, adminId) => {
   }
 };
 
+/**
+ * Met à jour le profil d'un utilisateur connecté
+ * @param {string} userId
+ * @param {Object} profileData - { prenom, nom, email, telephone }
+ * @returns {Object} - L'utilisateur mis à jour
+ */
+const updateProfile = async (userId, profileData) => {
+  const updated = await userRepository.update(userId, profileData);
+  if (!updated) {
+    const error = new Error('Utilisateur introuvable');
+    error.code = 'USER_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+  return updated;
+};
+
+/**
+ * Met à jour le mot de passe d'un utilisateur connecté
+ * Vérifie l'ancien mot de passe avant d'appliquer le nouveau
+ * @param {string} userId
+ * @param {string} currentPassword - Mot de passe actuel en clair
+ * @param {string} newPassword     - Nouveau mot de passe en clair
+ * @returns {void}
+ */
+const updatePassword = async (userId, currentPassword, newPassword) => {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    const error = new Error('Utilisateur introuvable');
+    error.code = 'USER_NOT_FOUND';
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Vérifie que l'ancien mot de passe est correct
+  const isValid = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!isValid) {
+    const error = new Error('Mot de passe actuel incorrect');
+    error.code = 'INVALID_PASSWORD';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const newHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  await userRepository.updatePassword(userId, newHash);
+};
+
 module.exports = {
   registerUser,
   loginUser,
   createAdminUser,
   getAllUsers,
   deleteUser,
-  toggleBlockUser
+  toggleBlockUser,
+  updateProfile,
+  updatePassword
 };

@@ -18,18 +18,19 @@ import CurrentMission from '../../components/client/CurrentMission';
 import ClientNotifications from '../../components/client/ClientNotifications';
 import Navbar from '../../components/layout/Navbar';
 
+/** Génère les headers d'authentification JWT depuis le localStorage */
 const authHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 });
 
 // Sections de la sidebar — extraites pour éviter de les redéclarer à chaque render
 const NAV_SECTIONS = [
-  { key: 'overview', icon: '📊', label: 'Aperçu' },
+  { key: 'overview',       icon: '📊', label: 'Aperçu' },
   { key: 'currentMission', icon: '🔄', label: 'Mission en cours' },
-  { key: 'orders', icon: '📋', label: 'Historique des commandes' },
-  { key: 'gallery', icon: '📷', label: 'Galerie photos' },
-  { key: 'notifications', icon: '🔔', label: 'Notifications' },
-  { key: 'profile', icon: '👤', label: 'Profil' },
+  { key: 'orders',         icon: '📋', label: 'Historique des commandes' },
+  { key: 'gallery',        icon: '📷', label: 'Galerie photos' },
+  { key: 'notifications',  icon: '🔔', label: 'Notifications' },
+  { key: 'profile',        icon: '👤', label: 'Profil' },
 ];
 
 /**
@@ -88,6 +89,7 @@ function DashboardClient() {
     return () => clearInterval(interval);
   }, []);
 
+  /** Récupère les statistiques du dashboard client (missions en cours, terminées, dernière commande) */
   const fetchStats = async () => {
     try {
       const response = await axios.get('/api/orders/dashboard-stats', authHeaders());
@@ -97,6 +99,7 @@ function DashboardClient() {
     }
   };
 
+  /** Récupère le nombre de notifications non lues — appelé toutes les 10 secondes via setInterval */
   const fetchUnreadCount = async () => {
     try {
       const response = await axios.get('/api/notifications', authHeaders());
@@ -107,6 +110,7 @@ function DashboardClient() {
     }
   };
 
+  /** Ouvre le modal d'évaluation pour une commande terminée */
   const openReviewModal = (order) => {
     setOrderToReview(order);
     setReviewRating(5);
@@ -115,6 +119,7 @@ function DashboardClient() {
     setShowReviewModal(true);
   };
 
+  /** Ferme le modal d'évaluation et réinitialise tous les états associés */
   const closeReviewModal = () => {
     setShowReviewModal(false);
     setOrderToReview(null);
@@ -123,6 +128,10 @@ function DashboardClient() {
     setReviewError(null);
   };
 
+  /**
+  * Soumet l'évaluation du prestataire pour une commande terminée
+  * Gère le cas où la commande a déjà été évaluée (ALREADY_REVIEWED)
+  */
   const handleSubmitReview = async () => {
     if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
       setReviewError('Veuillez sélectionner une note entre 1 et 5 étoiles');
