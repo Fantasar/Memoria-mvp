@@ -12,7 +12,8 @@ CREATE TABLE public.orders (
     cemetery_id          integer NOT NULL,
     service_category_id  integer NOT NULL,
     cemetery_location    character varying(255),        -- Emplacement précis de la tombe
-    status               public.order_status_enum DEFAULT 'pending'::public.order_status_enum NOT NULL,
+    status        
+    comment             text,       public.order_status_enum DEFAULT 'pending'::public.order_status_enum NOT NULL,
     price                numeric(10,2) NOT NULL,
     -- Planning
     scheduled_date       date,
@@ -28,6 +29,7 @@ CREATE TABLE public.orders (
     cancellation_reason  text,
     dispute_reason       text,
     resolution_action    character varying(50),
+    comment              text,
     created_at           timestamp without time zone DEFAULT now(),
     updated_at           timestamp without time zone DEFAULT now(),
     CONSTRAINT orders_price_check CHECK ((price > 0::numeric))

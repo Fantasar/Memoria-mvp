@@ -24,6 +24,7 @@ CREATE TABLE public.users (
     deleted_at       timestamp without time zone,
         -- Blocage compte
     is_blocked       boolean DEFAULT false,
+    telephone        character varying(20),
     -- Timestamps
     created_at       timestamp without time zone DEFAULT now(),
     updated_at       timestamp without time zone DEFAULT now(),
