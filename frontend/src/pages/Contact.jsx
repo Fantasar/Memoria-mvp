@@ -69,7 +69,7 @@ const Contact = () => {
     }
 
     try {
-      await axios.post('http://localhost:5500/api/contact', formData);
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/contact`, formData);
       setSuccess('Votre message a été envoyé avec succès ! Nous vous répondrons sous 24h.');
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch {
