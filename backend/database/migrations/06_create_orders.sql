@@ -11,9 +11,8 @@ CREATE TABLE public.orders (
     prestataire_id       uuid,                          -- NULL jusqu'à acceptation
     cemetery_id          integer NOT NULL,
     service_category_id  integer NOT NULL,
-    cemetery_location    character varying(255),        -- Emplacement précis de la tombe
-    status        
-    comment             text,       public.order_status_enum DEFAULT 'pending'::public.order_status_enum NOT NULL,
+    cemetery_location    character varying(255),
+    status               public.order_status_enum DEFAULT 'pending'::public.order_status_enum NOT NULL,
     price                numeric(10,2) NOT NULL,
     -- Planning
     scheduled_date       date,
