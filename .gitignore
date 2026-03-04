@@ -22,10 +22,7 @@ pnpm-debug.log*
 
 # ── Uploads locaux ────────────────────────────────────────────
 backend/uploads/
-*.jpg
 *.jpeg
-*.png
-*.gif
 *.webp
 
 # ── Éditeurs ──────────────────────────────────────────────────
