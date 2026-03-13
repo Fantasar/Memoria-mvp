@@ -1,28 +1,39 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mémoria — Prenez soin de la mémoire de vos proches</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap"
+    rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --ink:        #16140f;
-      --parchment:  #f0ebe0;
-      --sage:       #5e7a52;
-      --sage-light: #7d9e6e;
-      --gold:       #b89050;
-      --stone:      #7a7060;
-      --mist:       #ddd8cc;
-      --deep:       #221f18;
-      --white:      #faf7f0;
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    html { scroll-behavior: smooth; }
+    :root {
+      --ink: #16140f;
+      --parchment: #f0ebe0;
+      --sage: #5e7a52;
+      --sage-light: #7d9e6e;
+      --gold: #b89050;
+      --stone: #7a7060;
+      --mist: #ddd8cc;
+      --deep: #221f18;
+      --white: #faf7f0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
 
     body {
       font-family: 'Jost', sans-serif;
@@ -42,281 +53,623 @@
       opacity: 0.6;
     }
 
-    .container { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(28px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes lineGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+      from {
+        opacity: 0;
+        transform: translateY(28px);
+      }
 
-    .fade-up { animation: fadeUp 0.9s cubic-bezier(0.16,1,0.3,1) both; }
-    .delay-1 { animation-delay: 0.15s; }
-    .delay-2 { animation-delay: 0.3s; }
-    .delay-3 { animation-delay: 0.45s; }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes lineGrow {
+      from {
+        transform: scaleX(0);
+      }
+
+      to {
+        transform: scaleX(1);
+      }
+    }
+
+    .fade-up {
+      animation: fadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .delay-1 {
+      animation-delay: 0.15s;
+    }
+
+    .delay-2 {
+      animation-delay: 0.3s;
+    }
+
+    .delay-3 {
+      animation-delay: 0.45s;
+    }
 
     /* NAV */
     nav {
-      position: fixed; top: 0; left: 0; right: 0;
-      z-index: 100; padding: 22px 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 22px 0;
       transition: background 0.4s, padding 0.4s;
     }
+
     nav.scrolled {
-      background: rgba(22,20,15,0.92);
+      background: rgba(22, 20, 15, 0.92);
       backdrop-filter: blur(12px);
       padding: 14px 0;
-      border-bottom: 1px solid rgba(184,144,80,0.15);
+      border-bottom: 1px solid rgba(184, 144, 80, 0.15);
     }
-    nav .container { display: flex; align-items: center; justify-content: space-between; }
+
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
     .nav-logo {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 1.5rem; font-weight: 600;
+      font-size: 1.5rem;
+      font-weight: 600;
       letter-spacing: 0.08em;
-      color: var(--parchment); text-decoration: none;
+      color: var(--parchment);
+      text-decoration: none;
     }
-    .nav-logo span { color: var(--gold); }
-    .nav-links { display: flex; align-items: center; gap: 36px; list-style: none; }
+
+    .nav-logo span {
+      color: var(--gold);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      list-style: none;
+    }
+
     .nav-links a {
-      font-size: 0.78rem; font-weight: 400;
-      letter-spacing: 0.16em; text-transform: uppercase;
-      color: var(--mist); text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 400;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--mist);
+      text-decoration: none;
       transition: color 0.3s;
     }
-    .nav-links a:hover { color: var(--gold); }
+
+    .nav-links a:hover {
+      color: var(--gold);
+    }
+
     .nav-cta {
-      font-size: 0.75rem !important; font-weight: 500 !important;
-      letter-spacing: 0.18em !important; text-transform: uppercase !important;
-      color: var(--ink) !important; background: var(--gold);
-      padding: 10px 22px; border-radius: 2px;
+      font-size: 0.75rem !important;
+      font-weight: 500 !important;
+      letter-spacing: 0.18em !important;
+      text-transform: uppercase !important;
+      color: var(--ink) !important;
+      background: var(--gold);
+      padding: 10px 22px;
+      border-radius: 2px;
       transition: background 0.3s, transform 0.2s !important;
     }
-    .nav-cta:hover { background: #c8a060 !important; transform: translateY(-1px); }
+
+    .nav-cta:hover {
+      background: #c8a060 !important;
+      transform: translateY(-1px);
+    }
 
     /* HERO */
     #hero {
       min-height: 100vh;
-      display: flex; flex-direction: column; justify-content: flex-end;
-      position: relative; overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      position: relative;
+      overflow: hidden;
     }
+
     .hero-bg {
-      position: absolute; inset: 0;
+      position: absolute;
+      inset: 0;
       background:
-        radial-gradient(ellipse at 20% 60%, rgba(94,122,82,0.18) 0%, transparent 55%),
-        radial-gradient(ellipse at 80% 20%, rgba(184,144,80,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 60%, rgba(94, 122, 82, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 20%, rgba(184, 144, 80, 0.08) 0%, transparent 50%),
         linear-gradient(160deg, #0e0d0a 0%, #1a1710 40%, #0f0e0b 100%);
     }
+
     .hero-cross {
-      position: absolute; right: 12%; top: 50%; transform: translateY(-50%);
-      width: 3px; height: 120px;
-      background: linear-gradient(to bottom, transparent, rgba(184,144,80,0.25), transparent);
+      position: absolute;
+      right: 12%;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 120px;
+      background: linear-gradient(to bottom, transparent, rgba(184, 144, 80, 0.25), transparent);
       animation: fadeIn 2s 0.8s both;
     }
-    .hero-cross::before {
-      content: ''; position: absolute; top: 30%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 60px; height: 3px;
-      background: linear-gradient(to right, transparent, rgba(184,144,80,0.25), transparent);
-    }
-    .hero-cross-2 { right: 20%; height: 80px; opacity: 0.5; animation-delay: 1.1s; }
-    .hero-cross-2::before { width: 38px; }
 
-    .hero-content { position: relative; z-index: 2; padding: 0 0 100px; }
+    .hero-cross::before {
+      content: '';
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(to right, transparent, rgba(184, 144, 80, 0.25), transparent);
+    }
+
+    .hero-cross-2 {
+      right: 20%;
+      height: 80px;
+      opacity: 0.5;
+      animation-delay: 1.1s;
+    }
+
+    .hero-cross-2::before {
+      width: 38px;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 0 0 100px;
+    }
 
     .hero-eyebrow {
-      font-size: 0.72rem; font-weight: 400;
-      letter-spacing: 0.28em; text-transform: uppercase;
-      color: var(--gold); margin-bottom: 20px;
-      display: flex; align-items: center; gap: 14px;
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
+
     .hero-eyebrow::before {
-      content: ''; display: block; width: 40px; height: 1px;
-      background: var(--gold); transform-origin: left;
+      content: '';
+      display: block;
+      width: 40px;
+      height: 1px;
+      background: var(--gold);
+      transform-origin: left;
       animation: lineGrow 0.8s 0.3s both;
     }
 
     h1 {
       font-family: 'Cormorant Garamond', serif;
       font-size: clamp(3.2rem, 7vw, 6rem);
-      font-weight: 300; line-height: 1.05;
-      color: var(--parchment); margin-bottom: 28px;
+      font-weight: 300;
+      line-height: 1.05;
+      color: var(--parchment);
+      margin-bottom: 28px;
     }
-    h1 em { font-style: italic; color: var(--sage-light); }
+
+    h1 em {
+      font-style: italic;
+      color: var(--sage-light);
+    }
 
     .hero-description {
-      font-size: 1rem; color: var(--stone);
-      max-width: 480px; line-height: 1.7; margin-bottom: 44px;
+      font-size: 1rem;
+      color: var(--stone);
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 44px;
     }
-    .hero-actions { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
 
     .btn-primary {
-      display: inline-flex; align-items: center; gap: 10px;
-      font-size: 0.78rem; font-weight: 500;
-      letter-spacing: 0.18em; text-transform: uppercase;
-      color: var(--ink); background: var(--gold);
-      padding: 16px 32px; border-radius: 2px; text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink);
+      background: var(--gold);
+      padding: 16px 32px;
+      border-radius: 2px;
+      text-decoration: none;
       transition: background 0.3s, transform 0.25s;
     }
-    .btn-primary:hover { background: #c8a060; transform: translateY(-2px); }
+
+    .btn-primary:hover {
+      background: #c8a060;
+      transform: translateY(-2px);
+    }
+
     .btn-ghost {
-      font-size: 0.78rem; color: var(--mist); text-decoration: none;
-      border-bottom: 1px solid rgba(240,235,224,0.25); padding-bottom: 2px;
+      font-size: 0.78rem;
+      color: var(--mist);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(240, 235, 224, 0.25);
+      padding-bottom: 2px;
       transition: color 0.3s, border-color 0.3s;
     }
-    .btn-ghost:hover { color: var(--parchment); border-color: var(--parchment); }
+
+    .btn-ghost:hover {
+      color: var(--parchment);
+      border-color: var(--parchment);
+    }
 
     .divider {
       height: 1px;
-      background: linear-gradient(to right, transparent, rgba(184,144,80,0.3), transparent);
+      background: linear-gradient(to right, transparent, rgba(184, 144, 80, 0.3), transparent);
     }
 
     /* SECTIONS */
-    section { padding: 110px 0; }
-    .section-label {
-      font-size: 0.68rem; font-weight: 400;
-      letter-spacing: 0.3em; text-transform: uppercase;
-      color: var(--gold); margin-bottom: 16px;
+    section {
+      padding: 110px 0;
     }
+
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 400;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+
     h2 {
       font-family: 'Cormorant Garamond', serif;
       font-size: clamp(2.2rem, 4.5vw, 3.4rem);
-      font-weight: 300; line-height: 1.15; color: var(--parchment);
+      font-weight: 300;
+      line-height: 1.15;
+      color: var(--parchment);
     }
-    h2 em { font-style: italic; color: var(--sage-light); }
+
+    h2 em {
+      font-style: italic;
+      color: var(--sage-light);
+    }
 
     /* FEATURES */
-    #features { background: var(--deep); }
-    .features-intro { text-align: center; max-width: 560px; margin: 0 auto 80px; }
-    .features-intro p { margin-top: 16px; font-size: 0.95rem; color: var(--stone); line-height: 1.7; }
-    .features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
+    #features {
+      background: var(--deep);
+    }
+
+    .features-intro {
+      text-align: center;
+      max-width: 560px;
+      margin: 0 auto 80px;
+    }
+
+    .features-intro p {
+      margin-top: 16px;
+      font-size: 0.95rem;
+      color: var(--stone);
+      line-height: 1.7;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+    }
 
     .feature-card {
-      background: rgba(240,235,224,0.03);
-      border: 1px solid rgba(184,144,80,0.1);
-      padding: 48px 36px; position: relative; overflow: hidden;
+      background: rgba(240, 235, 224, 0.03);
+      border: 1px solid rgba(184, 144, 80, 0.1);
+      padding: 48px 36px;
+      position: relative;
+      overflow: hidden;
       transition: background 0.4s, border-color 0.4s, transform 0.4s;
     }
+
     .feature-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
       background: linear-gradient(to right, transparent, var(--gold), transparent);
-      transform: scaleX(0); transition: transform 0.5s;
+      transform: scaleX(0);
+      transition: transform 0.5s;
     }
-    .feature-card:hover { background: rgba(240,235,224,0.055); border-color: rgba(184,144,80,0.25); transform: translateY(-4px); }
-    .feature-card:hover::before { transform: scaleX(1); }
+
+    .feature-card:hover {
+      background: rgba(240, 235, 224, 0.055);
+      border-color: rgba(184, 144, 80, 0.25);
+      transform: translateY(-4px);
+    }
+
+    .feature-card:hover::before {
+      transform: scaleX(1);
+    }
 
     .feature-img {
-      width: 100%; aspect-ratio: 16/10;
-      background: rgba(94,122,82,0.07);
-      border: 1px solid rgba(184,144,80,0.12);
-      border-radius: 3px; margin-bottom: 28px;
-      display: flex; align-items: center; justify-content: center;
+      width: 100%;
+      aspect-ratio: 16/10;
+      background: rgba(94, 122, 82, 0.07);
+      border: 1px solid rgba(184, 144, 80, 0.12);
+      border-radius: 3px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       overflow: hidden;
     }
-    .feature-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 2px; }
+
+    .feature-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 2px;
+    }
+
     .feature-img-placeholder {
-      font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
-      color: var(--stone); text-align: center; padding: 20px; line-height: 1.9;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--stone);
+      text-align: center;
+      padding: 20px;
+      line-height: 1.9;
     }
 
     .feature-number {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 0.8rem; letter-spacing: 0.2em; color: var(--gold); margin-bottom: 12px;
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      margin-bottom: 12px;
     }
+
     .feature-card h3 {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 1.5rem; font-weight: 400; color: var(--parchment);
-      margin-bottom: 14px; line-height: 1.2;
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--parchment);
+      margin-bottom: 14px;
+      line-height: 1.2;
     }
-    .feature-card p { font-size: 0.88rem; line-height: 1.75; color: var(--stone); }
+
+    .feature-card p {
+      font-size: 0.88rem;
+      line-height: 1.75;
+      color: var(--stone);
+    }
 
     /* ABOUT */
-    #about { background: var(--ink); position: relative; }
-    #about::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(to right, transparent, rgba(184,144,80,0.3), transparent);
+    #about {
+      background: var(--ink);
+      position: relative;
     }
-    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
 
-    .about-story h2 { margin-bottom: 28px; }
-    .about-story p { font-size: 0.93rem; line-height: 1.85; color: var(--stone); margin-bottom: 18px; }
-    .about-story p strong { color: var(--parchment); font-weight: 400; }
+    #about::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(184, 144, 80, 0.3), transparent);
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: start;
+    }
+
+    .about-story h2 {
+      margin-bottom: 28px;
+    }
+
+    .about-story p {
+      font-size: 0.93rem;
+      line-height: 1.85;
+      color: var(--stone);
+      margin-bottom: 18px;
+    }
+
+    .about-story p strong {
+      color: var(--parchment);
+      font-weight: 400;
+    }
+
     .about-story a.holberton-link {
-      color: var(--gold); text-decoration: none;
-      border-bottom: 1px solid rgba(184,144,80,0.4);
+      color: var(--gold);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(184, 144, 80, 0.4);
       transition: border-color 0.3s;
     }
-    .about-story a.holberton-link:hover { border-color: var(--gold); }
 
-    .about-meta { padding-top: 16px; }
-    .about-meta-section { margin-bottom: 52px; }
+    .about-story a.holberton-link:hover {
+      border-color: var(--gold);
+    }
+
+    .about-meta {
+      padding-top: 16px;
+    }
+
+    .about-meta-section {
+      margin-bottom: 52px;
+    }
+
     .about-meta-section h4 {
-      font-size: 0.65rem; font-weight: 400;
-      letter-spacing: 0.3em; text-transform: uppercase;
-      color: var(--gold); margin-bottom: 24px;
+      font-size: 0.65rem;
+      font-weight: 400;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 24px;
       padding-bottom: 12px;
-      border-bottom: 1px solid rgba(184,144,80,0.2);
+      border-bottom: 1px solid rgba(184, 144, 80, 0.2);
     }
 
     .team-name {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 1.2rem; font-weight: 400; color: var(--parchment);
-      margin-bottom: 10px; display: block;
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: var(--parchment);
+      margin-bottom: 10px;
+      display: block;
     }
-    .team-links { display: flex; gap: 16px; flex-wrap: wrap; }
+
+    .team-links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
     .team-links a {
-      font-size: 0.75rem; font-weight: 400;
-      letter-spacing: 0.12em; text-transform: uppercase;
-      color: var(--stone); text-decoration: none;
-      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--stone);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       transition: color 0.3s;
     }
-    .team-links a:hover { color: var(--gold); }
-    .team-links a svg { width: 13px; height: 13px; }
+
+    .team-links a:hover {
+      color: var(--gold);
+    }
+
+    .team-links a svg {
+      width: 13px;
+      height: 13px;
+    }
 
     .repo-link {
-      display: inline-flex; align-items: center; gap: 10px;
-      font-size: 0.78rem; font-weight: 400;
-      letter-spacing: 0.14em; text-transform: uppercase;
-      color: var(--mist); text-decoration: none;
-      border: 1px solid rgba(240,235,224,0.15);
-      padding: 14px 24px; border-radius: 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+      font-weight: 400;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--mist);
+      text-decoration: none;
+      border: 1px solid rgba(240, 235, 224, 0.15);
+      padding: 14px 24px;
+      border-radius: 2px;
       transition: border-color 0.3s, color 0.3s;
     }
-    .repo-link:hover { border-color: var(--gold); color: var(--gold); }
-    .repo-link svg { width: 16px; height: 16px; }
+
+    .repo-link:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .repo-link svg {
+      width: 16px;
+      height: 16px;
+    }
 
     /* FOOTER */
     footer {
       background: var(--deep);
-      border-top: 1px solid rgba(184,144,80,0.12);
+      border-top: 1px solid rgba(184, 144, 80, 0.12);
       padding: 40px 0;
     }
+
     .footer-inner {
-      display: flex; align-items: center;
-      justify-content: space-between; flex-wrap: wrap; gap: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
     }
-    .footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--stone); }
-    .footer-logo span { color: var(--gold); }
-    .footer-copy { font-size: 0.75rem; color: var(--stone); }
+
+    .footer-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      color: var(--stone);
+    }
+
+    .footer-logo span {
+      color: var(--gold);
+    }
+
+    .footer-copy {
+      font-size: 0.75rem;
+      color: var(--stone);
+    }
 
     /* SCROLL REVEAL */
     .reveal {
-      opacity: 0; transform: translateY(30px);
-      transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.22s; }
-    .reveal-delay-3 { transition-delay: 0.34s; }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 {
+      transition-delay: 0.1s;
+    }
+
+    .reveal-delay-2 {
+      transition-delay: 0.22s;
+    }
+
+    .reveal-delay-3 {
+      transition-delay: 0.34s;
+    }
 
     /* RESPONSIVE */
     @media (max-width: 860px) {
-      .features-grid { grid-template-columns: 1fr; }
-      .about-grid { grid-template-columns: 1fr; gap: 52px; }
-      .nav-links { display: none; }
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .about-grid {
+        grid-template-columns: 1fr;
+        gap: 52px;
+      }
+
+      .nav-links {
+        display: none;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- NAV -->
@@ -343,8 +696,8 @@
     <div class="hero-content container">
       <p class="hero-eyebrow fade-up">Marketplace funéraire · Nouvelle-Aquitaine</p>
       <h1 class="fade-up delay-1">
-        Honorer<br/>
-        la mémoire<br/>
+        Honorer<br />
+        la mémoire<br />
         de vos <em>proches.</em>
       </h1>
       <p class="hero-description fade-up delay-2">
@@ -353,7 +706,9 @@
       </p>
       <div class="hero-actions fade-up delay-3">
         <a href="https://memoria-mvp-rust.vercel.app/" target="_blank" rel="noopener" class="btn-primary">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
           Voir l'application
         </a>
         <a href="#features" class="btn-ghost">Découvrir les fonctionnalités</a>
@@ -369,7 +724,8 @@
       <div class="features-intro reveal">
         <p class="section-label">Fonctionnalités</p>
         <h2>Trois piliers <em>essentiels</em></h2>
-        <p>Un parcours complet, de la commande à la validation — pensé pour les familles, les prestataires et les administrateurs.</p>
+        <p>Un parcours complet, de la commande à la validation — pensé pour les familles, les prestataires et les
+          administrateurs.</p>
       </div>
 
       <div class="features-grid">
@@ -377,52 +733,43 @@
         <div class="feature-card reveal reveal-delay-1">
           <div class="feature-number">01</div>
           <div class="feature-img">
-            <!-- Remplace par : <img src="assets/img/feature-commande.png" alt="Commande en ligne" /> -->
-            <div class="feature-img-placeholder">
-              Ajoute ton screenshot ici<br/>
-              <span style="opacity:0.5;font-size:0.62rem">assets/img/feature-commande.png</span>
-            </div>
+            <img src="assets/img/feature-commande.png" alt="Commande en ligne" />
           </div>
-          <h3>Commande en ligne simplifiée</h3>
-          <p>
-            Le client indique le cimetière, choisit le type de prestation et paie en sécurité
-            via Stripe. Le paiement reste bloqué jusqu'à validation de l'intervention.
-          </p>
         </div>
-
-        <div class="feature-card reveal reveal-delay-2">
-          <div class="feature-number">02</div>
-          <div class="feature-img">
-            <!-- Remplace par : <img src="assets/img/feature-photos.png" alt="Photos avant/après" /> -->
-            <div class="feature-img-placeholder">
-              Ajoute ton screenshot ici<br/>
-              <span style="opacity:0.5;font-size:0.62rem">assets/img/feature-photos.png</span>
-            </div>
-          </div>
-          <h3>Preuve photo avant / après</h3>
-          <p>
-            Le prestataire uploade des photos de la sépulture avant et après l'intervention.
-            La famille reçoit une notification et valide à distance via son dashboard.
-          </p>
-        </div>
-
-        <div class="feature-card reveal reveal-delay-3">
-          <div class="feature-number">03</div>
-          <div class="feature-img">
-            <!-- Remplace par : <img src="assets/img/feature-dashboard.png" alt="Dashboard admin" /> -->
-            <div class="feature-img-placeholder">
-              Ajoute ton screenshot ici<br/>
-              <span style="opacity:0.5;font-size:0.62rem">assets/img/feature-dashboard.png</span>
-            </div>
-          </div>
-          <h3>Supervision administrateur</h3>
-          <p>
-            L'administrateur valide les interventions, approuve les prestataires certifiés
-            et libère les paiements. Contrôle total sur la qualité du service.
-          </p>
-        </div>
-
+        <h3>Commande en ligne simplifiée</h3>
+        <p>
+          Le client indique le cimetière, choisit le type de prestation et paie en sécurité
+          via Stripe. Le paiement reste bloqué jusqu'à validation de l'intervention.
+        </p>
       </div>
+
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-number">02</div>
+        <div class="feature-img">
+          <img src="assets/img/feature-photos.png" alt="Photos avant/après" />
+        </div>
+      </div>
+      <h3>Preuve photo avant / après</h3>
+      <p>
+        Le prestataire uploade des photos de la sépulture avant et après l'intervention.
+        La famille reçoit une notification et valide à distance via son dashboard.
+      </p>
+    </div>
+
+    <div class="feature-card reveal reveal-delay-3">
+      <div class="feature-number">03</div>
+      <div class="feature-img">
+        <img src="assets/img/feature-dashboard.png" alt="Supervision administrateur" />
+      </div>
+    </div>
+    <h3>Supervision administrateur</h3>
+    <p>
+      L'administrateur valide les interventions, approuve les prestataires certifiés
+      et libère les paiements. Contrôle total sur la qualité du service.
+    </p>
+    </div>
+
+    </div>
     </div>
   </section>
 
@@ -436,7 +783,7 @@
         <div class="about-story reveal">
           <p class="section-label">À propos</p>
           <h2>Une idée née <em>d'une réalité familiale</em></h2>
-          <br/>
+          <br />
           <p>
             <strong>Après quinze ans en restauration bistronomique</strong>, j'ai entamé une reconversion vers
             le développement web — un domaine qui me fascinait depuis le collège, quand je passais
@@ -445,7 +792,7 @@
           <p>
             L'idée de Mémoria est née d'une observation dans ma propre famille :
             <strong>comment honorer la mémoire d'un proche quand la distance ou la vie quotidienne
-            rend les visites au cimetière impossibles ?</strong> Cette culpabilité silencieuse,
+              rend les visites au cimetière impossibles ?</strong> Cette culpabilité silencieuse,
             je l'ai vue peser sur des proches — et je n'ai trouvé aucune solution adaptée en France.
           </p>
           <p>
@@ -455,7 +802,8 @@
           </p>
           <p>
             Ce projet est mon projet de fin d'études pour
-            <a href="https://www.holbertonschool.fr/" target="_blank" rel="noopener" class="holberton-link">Holberton School Bordeaux</a>
+            <a href="https://www.holbertonschool.fr/" target="_blank" rel="noopener" class="holberton-link">Holberton
+              School Bordeaux</a>
             (Promotion C27 — RNCP Niveau 5 Développeur Web), développé en solo de décembre 2025
             à mars 2026.
           </p>
@@ -468,15 +816,24 @@
             <span class="team-name">Philippe Lapique</span>
             <div class="team-links">
               <a href="https://www.linkedin.com/in/philippe-lapique-b17282379" target="_blank" rel="noopener">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                  <circle cx="4" cy="4" r="2" />
+                </svg>
                 LinkedIn
               </a>
               <a href="https://github.com/Fantasar" target="_blank" rel="noopener">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" />
+                </svg>
                 GitHub
               </a>
               <a href="https://twitter.com/" target="_blank" rel="noopener">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" />
+                </svg>
                 Twitter / X
               </a>
             </div>
@@ -485,7 +842,10 @@
           <div class="about-meta-section">
             <h4>Dépôt GitHub</h4>
             <a href="https://github.com/Fantasar/Memoria-mvp" target="_blank" rel="noopener" class="repo-link">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                <path
+                  d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" />
+              </svg>
               Fantasar / Memoria-mvp
             </a>
           </div>
@@ -493,8 +853,8 @@
           <div class="about-meta-section">
             <h4>Stack technique</h4>
             <p style="font-size:0.83rem; color: var(--stone); line-height:2;">
-              React · Vite · Tailwind CSS · Vercel<br/>
-              Node.js · Express · PostgreSQL · Render<br/>
+              React · Vite · Tailwind CSS · Vercel<br />
+              Node.js · Express · PostgreSQL · Render<br />
               Stripe · Cloudinary · Brevo · Google Maps · Crisp
             </p>
           </div>
@@ -510,7 +870,8 @@
       <div class="footer-inner">
         <span class="footer-logo">Mém<span>o</span>ria</span>
         <span class="footer-copy">Holberton School Bordeaux · C27 · 2026</span>
-        <a href="https://memoria-mvp-rust.vercel.app/" target="_blank" rel="noopener" class="btn-primary" style="padding:12px 24px; font-size:0.72rem;">
+        <a href="https://memoria-mvp-rust.vercel.app/" target="_blank" rel="noopener" class="btn-primary"
+          style="padding:12px 24px; font-size:0.72rem;">
           Voir l'app →
         </a>
       </div>
@@ -535,4 +896,5 @@
     reveals.forEach(el => observer.observe(el));
   </script>
 </body>
+
 </html>
