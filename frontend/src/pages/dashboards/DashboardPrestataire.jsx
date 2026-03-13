@@ -17,17 +17,17 @@ const authHeaders = () => ({
 
 // Sections de la navbar — extraites pour éviter de les redéclarer à chaque render
 const NAV_TABS = [
-  { key: 'overview',    label: ' Aperçu' },
-  { key: 'available',   label: ' Missions disponibles' },
-  { key: 'missions',    label: ' Mes missions' },
-  { key: 'calendar',    label: ' Calendrier' },
-  { key: 'finances',    label: ' Finances' },
-  { key: 'alerts',      label: ' Alertes' },
-  { key: 'zone',        label: " Zone d'intervention" },
+  { key: 'overview',    label: '📊 Aperçu' },
+  { key: 'available',   label: '📋 Missions disponibles' },
+  { key: 'missions',    label: '💼 Mes missions' },
+  { key: 'calendar',    label: '📅 Calendrier' },
+  { key: 'finances',    label: '💰 Finances' },
+  { key: 'alerts',      label: '🔔 Alertes' },
+  { key: 'zone',        label: "📍 Zone d'intervention" },
   { key: 'evaluations', label: '⭐ Évaluations' },
-  { key: 'history',     label: ' Historique' },
-  { key: 'documents',   label: ' Documents' },
-  { key: 'profile',     label: ' Profil' },
+  { key: 'history',     label: '📜 Historique' },
+  { key: 'documents',   label: '📁 Documents' },
+  { key: 'profile',     label: '👤 Profil' },
 ];
 
 function DashboardPrestataire() {
@@ -35,6 +35,8 @@ function DashboardPrestataire() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
 
   // Données
   const [availableMissions, setAvailableMissions] = useState([]);
@@ -452,7 +454,7 @@ function DashboardPrestataire() {
 
               {stats.monthly?.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
-                  <h3 className="text-lg font-semibold mb-4"> Évolution sur 6 mois</h3>
+                  <h3 className="text-lg font-semibold mb-4">📈 Évolution sur 6 mois</h3>
                   <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
                     {stats.monthly.map((month, i) => (
                       <div key={i} className="border border-gray-200 rounded-lg p-4 text-center">
@@ -468,7 +470,7 @@ function DashboardPrestataire() {
 
               {stats.recent_missions?.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4"> Missions récentes</h3>
+                  <h3 className="text-lg font-semibold mb-4">🕐 Missions récentes</h3>
                   <div className="space-y-3">
                     {stats.recent_missions.map(mission => (
                       <div key={mission.id} onClick={() => navigate(`/orders/${mission.id}`)}
@@ -485,8 +487,8 @@ function DashboardPrestataire() {
                               mission.status === 'awaiting_validation' ? 'bg-blue-100 text-blue-800' :
                                 'bg-gray-100 text-gray-800'
                             }`}>
-                            {mission.status === 'completed' && ' Terminée'}
-                            {mission.status === 'accepted' && ' En cours'}
+                            {mission.status === 'completed' && '✅ Terminée'}
+                            {mission.status === 'accepted' && '🔄 En cours'}
                             {mission.status === 'awaiting_validation' && '⏰ En validation'}
                           </span>
                         </div>
@@ -552,8 +554,8 @@ function DashboardPrestataire() {
                           </div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-gray-900 mb-1">{mission.cemetery_name}</h4>
-                            <p className="text-sm text-gray-600"> {mission.cemetery_city}</p>
-                            <p className="text-sm text-gray-600"> {mission.service_name}</p>
+                            <p className="text-sm text-gray-600">📍 {mission.cemetery_city}</p>
+                            <p className="text-sm text-gray-600">🔧 {mission.service_name}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-sm text-gray-500">Vous recevrez</p>
@@ -593,13 +595,13 @@ function DashboardPrestataire() {
                   </div>
                   {mission.comment && (
                     <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-xs font-medium text-blue-700 mb-1"> Instructions du client</p>
+                      <p className="text-xs font-medium text-blue-700 mb-1">💬 Instructions du client</p>
                       <p className="text-sm text-blue-900">{mission.comment}</p>
                     </div>
                   )}
                   <button onClick={() => handleAcceptMission(mission)}
                     className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition">
-                     Accepter et planifier
+                    ✓ Accepter et planifier
                   </button>
                 </div>
               ))}
@@ -629,11 +631,11 @@ function DashboardPrestataire() {
                             mission.status === 'correction_requested' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                       }`}>
-                      {mission.status === 'accepted' && ' En cours'}
-                      {mission.status === 'in_progress' && ' En cours'}
+                      {mission.status === 'accepted' && '🔄 En cours'}
+                      {mission.status === 'in_progress' && '🔄 En cours'}
                       {mission.status === 'awaiting_validation' && '⏰ En validation'}
-                      {mission.status === 'completed' && ' Terminée'}
-                      {mission.status === 'correction_requested' && '️ Correction demandée'}
+                      {mission.status === 'completed' && '✅ Terminée'}
+                      {mission.status === 'correction_requested' && '⚠️ Correction demandée'}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mb-4">
@@ -646,8 +648,8 @@ function DashboardPrestataire() {
                     <button onClick={(e) => { e.stopPropagation(); navigate(`/missions/${mission.id}/complete`); }}
                       className={`w-full ${mission.status === 'correction_requested' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'} text-white px-4 py-3 rounded-lg font-medium transition`}>
                       {mission.status === 'correction_requested'
-                        ? ' Corriger et re-uploader les photos'
-                        : ' Terminer et uploader les photos'}
+                        ? '🔄 Corriger et re-uploader les photos'
+                        : '📸 Terminer et uploader les photos'}
                     </button>
                   )}
                 </div>
@@ -671,8 +673,8 @@ function DashboardPrestataire() {
                 className={`px-4 py-2 rounded-full text-sm font-medium transition ${historyFilter === f ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}>
                 {f === 'all' && `Toutes (${history.length})`}
-                {f === 'completed' && ` Validées (${history.filter(h => h.status === 'completed').length})`}
-                {f === 'refunded' && ` Remboursées (${history.filter(h => h.status === 'refunded').length})`}
+                {f === 'completed' && `✅ Validées (${history.filter(h => h.status === 'completed').length})`}
+                {f === 'refunded' && `💸 Remboursées (${history.filter(h => h.status === 'refunded').length})`}
               </button>
             ))}
           </div>
@@ -690,13 +692,13 @@ function DashboardPrestataire() {
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900">{order.cemetery_name}</h3>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {order.status === 'completed' ? ' Validée' : ' Remboursée'}
+                          {order.status === 'completed' ? '✅ Validée' : '💸 Remboursée'}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600"> {order.cemetery_city}</p>
-                      <p className="text-sm text-gray-600"> {order.service_name}</p>
+                      <p className="text-sm text-gray-600">📍 {order.cemetery_city}</p>
+                      <p className="text-sm text-gray-600">🔧 {order.service_name}</p>
                       <p className="text-xs text-gray-500 mt-2">
-                         {new Date(order.updated_at).toLocaleDateString('fr-FR')} ·  {order.client_prenom} {order.client_nom}
+                        📅 {new Date(order.updated_at).toLocaleDateString('fr-FR')} · 👤 {order.client_prenom} {order.client_nom}
                       </p>
                     </div>
                     <div className="text-right ml-6">
@@ -721,7 +723,7 @@ function DashboardPrestataire() {
                     <h3 className="text-xl font-bold">{selectedHistoryOrder.cemetery_name}</h3>
                     <p className="text-sm text-gray-500">{selectedHistoryOrder.service_name}</p>
                   </div>
-                  <button onClick={() => setSelectedHistoryOrder(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold"></button>
+                  <button onClick={() => setSelectedHistoryOrder(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
                 </div>
                 <div className="p-6 space-y-6">
                   <div className="bg-gray-50 rounded-lg p-4">
@@ -759,7 +761,7 @@ function DashboardPrestataire() {
             </div>
             <button onClick={exportFinancesPDF} disabled={!finances}
               className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50">
-               Export PDF
+              📄 Export PDF
             </button>
           </div>
           {loadingFinances ? <Spinner /> : !finances ? (
@@ -770,10 +772,10 @@ function DashboardPrestataire() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 {[
-                  { label: ' Total perçu', value: `${finances.total_earned.toFixed(2)}€`, sub: `${finances.missions_completed} missions`, from: 'from-green-500', to: 'to-green-600' },
+                  { label: '💰 Total perçu', value: `${finances.total_earned.toFixed(2)}€`, sub: `${finances.missions_completed} missions`, from: 'from-green-500', to: 'to-green-600' },
                   { label: '⏳ En attente', value: `${finances.pending_validation.toFixed(2)}€`, sub: 'Validation admin', from: 'from-orange-500', to: 'to-orange-600' },
-                  { label: ' Moyenne', value: `${finances.average_per_mission.toFixed(2)}€`, sub: 'Par mission', from: 'from-blue-500', to: 'to-blue-600' },
-                  { label: ' Complétées', value: finances.missions_completed, sub: 'Missions validées', from: 'from-purple-500', to: 'to-purple-600' },
+                  { label: '📊 Moyenne', value: `${finances.average_per_mission.toFixed(2)}€`, sub: 'Par mission', from: 'from-blue-500', to: 'to-blue-600' },
+                  { label: '✅ Complétées', value: finances.missions_completed, sub: 'Missions validées', from: 'from-purple-500', to: 'to-purple-600' },
                 ].map(kpi => (
                   <div key={kpi.label} className={`bg-gradient-to-br ${kpi.from} ${kpi.to} rounded-lg p-6 text-white shadow-lg`}>
                     <p className="text-sm opacity-90 mb-2">{kpi.label}</p>
@@ -785,7 +787,7 @@ function DashboardPrestataire() {
 
               {finances.monthly_breakdown?.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
-                  <h3 className="text-lg font-semibold mb-4"> Répartition mensuelle</h3>
+                  <h3 className="text-lg font-semibold mb-4">📈 Répartition mensuelle</h3>
                   <div className="space-y-3">
                     {finances.monthly_breakdown.map(month => (
                       <div key={month.month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -802,7 +804,7 @@ function DashboardPrestataire() {
 
               {finances.recent_payments?.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4"> Historique des paiements</h3>
+                  <h3 className="text-lg font-semibold mb-4">💸 Historique des paiements</h3>
                   <div className="space-y-3">
                     {finances.recent_payments.map(payment => (
                       <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -835,7 +837,7 @@ function DashboardPrestataire() {
             {unreadCount > 0 && (
               <button onClick={handleMarkAllAsRead}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition">
-                 Tout marquer comme lu
+                ✓ Tout marquer comme lu
               </button>
             )}
           </div>
@@ -847,16 +849,16 @@ function DashboardPrestataire() {
             <div className="space-y-3">
               {notifications.map(notif => {
                 const TYPE_CONFIG = {
-                  mission_validated: { icon: '', color: 'bg-green-100 border-green-300' },
-                  new_mission: { icon: '', color: 'bg-blue-100 border-blue-300' },
-                  dispute: { icon: '', color: 'bg-red-100 border-red-300' },
-                  reminder: { icon: '', color: 'bg-yellow-100 border-yellow-300' },
+                  mission_validated: { icon: '✅', color: 'bg-green-100 border-green-300' },
+                  new_mission: { icon: '🆕', color: 'bg-blue-100 border-blue-300' },
+                  dispute: { icon: '🚨', color: 'bg-red-100 border-red-300' },
+                  reminder: { icon: '📅', color: 'bg-yellow-100 border-yellow-300' },
                   schedule_needed: { icon: '⏰', color: 'bg-orange-100 border-orange-300' },
                   account_pending: { icon: '⏳', color: 'bg-yellow-100 border-yellow-300' },
-                  account_validated: { icon: '', color: 'bg-green-100 border-green-300' },
-                  account_rejected: { icon: '', color: 'bg-red-100 border-red-300' },
+                  account_validated: { icon: '✅', color: 'bg-green-100 border-green-300' },
+                  account_rejected: { icon: '❌', color: 'bg-red-100 border-red-300' },
                 };
-                const cfg = TYPE_CONFIG[notif.type] ?? { icon: '', color: 'bg-gray-100 border-gray-300' };
+                const cfg = TYPE_CONFIG[notif.type] ?? { icon: '🔔', color: 'bg-gray-100 border-gray-300' };
                 return (
                   <div key={notif.id} className={`border rounded-lg p-4 transition ${notif.is_read ? 'bg-white border-gray-200 opacity-70' : `${cfg.color} border-2`}`}>
                     <div className="flex items-start justify-between">
@@ -889,7 +891,7 @@ function DashboardPrestataire() {
                                   }}
                                   className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
                                 >
-                                   Refaire une demande
+                                  🔄 Refaire une demande
                                 </button>
                               )}
                             </div>
@@ -898,9 +900,9 @@ function DashboardPrestataire() {
                       </div>
                       <div className="flex items-center gap-2 ml-4">
                         {!notif.is_read && (
-                          <button onClick={() => handleMarkAsRead(notif.id)} className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition" title="Marquer comme lu"></button>
+                          <button onClick={() => handleMarkAsRead(notif.id)} className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition" title="Marquer comme lu">✓</button>
                         )}
-                        <button onClick={() => handleDeleteNotification(notif.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Supprimer">️</button>
+                        <button onClick={() => handleDeleteNotification(notif.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Supprimer">🗑️</button>
                       </div>
                     </div>
                   </div>
@@ -924,12 +926,12 @@ function DashboardPrestataire() {
           ) : (
             <div className="space-y-6">
               <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4"> Votre zone actuelle</h3>
+                <h3 className="text-lg font-semibold mb-4">📍 Votre zone actuelle</h3>
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                   <p className="text-2xl font-bold text-green-800">{zoneStats.zone}</p>
                 </div>
                 {zoneError && <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{zoneError}</p></div>}
-                {zoneSuccess && <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm"> Zone mise à jour avec succès !</p></div>}
+                {zoneSuccess && <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm">✅ Zone mise à jour avec succès !</p></div>}
                 <div className="space-y-3">
                   <label className="block text-sm font-medium text-gray-700">Nouvelle zone d'intervention</label>
                   <input type="text" value={newZone} onChange={e => setNewZone(e.target.value)}
@@ -937,13 +939,13 @@ function DashboardPrestataire() {
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
                   <button onClick={handleUpdateZone} disabled={updatingZone || !newZone || newZone.trim() === zoneStats.zone}
                     className="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    {updatingZone ? 'Mise à jour...' : ' Sauvegarder'}
+                    {updatingZone ? 'Mise à jour...' : '💾 Sauvegarder'}
                   </button>
                 </div>
               </div>
 
               <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4"> Votre zone couvre</h3>
+                <h3 className="text-lg font-semibold mb-4">📊 Votre zone couvre</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
                     { label: 'Cimetières disponibles', value: zoneStats.cemetery_count, from: 'from-green-500', to: 'to-green-600' },
@@ -960,7 +962,7 @@ function DashboardPrestataire() {
 
               {zoneStats.cemeteries.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4">️ Carte des cimetières</h3>
+                  <h3 className="text-lg font-semibold mb-4">🗺️ Carte des cimetières</h3>
                   <ZoneMap cemeteries={zoneStats.cemeteries} />
                 </div>
               )}
@@ -984,7 +986,7 @@ function DashboardPrestataire() {
                     <p className="text-5xl font-bold">{reviewsStats.average_rating.toFixed(1)}</p>
                     <div>
                       <div className="flex">
-                        {[1, 2, 3, 4, 5].map(s => <span key={s}>{s <= Math.round(reviewsStats.average_rating) ? '⭐' : ''}</span>)}
+                        {[1, 2, 3, 4, 5].map(s => <span key={s}>{s <= Math.round(reviewsStats.average_rating) ? '⭐' : '☆'}</span>)}
                       </div>
                       <p className="text-sm opacity-90 mt-1">{reviewsStats.total_reviews} avis</p>
                     </div>
@@ -1040,7 +1042,7 @@ function DashboardPrestataire() {
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-medium">{review.client_prenom} {review.client_nom?.charAt(0)}.</p>
-                              <div className="flex">{[1, 2, 3, 4, 5].map(s => <span key={s}>{s <= review.rating ? '⭐' : ''}</span>)}</div>
+                              <div className="flex">{[1, 2, 3, 4, 5].map(s => <span key={s}>{s <= review.rating ? '⭐' : '☆'}</span>)}</div>
                             </div>
                             <p className="text-sm text-gray-600">{review.service_name} — {review.cemetery_name}</p>
                           </div>
@@ -1136,7 +1138,7 @@ function DashboardPrestataire() {
               }}
               disabled={uploadingDoc}
               className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition disabled:opacity-50">
-              {uploadingDoc ? '⏳ Upload en cours...' : ' Envoyer le document'}
+              {uploadingDoc ? '⏳ Upload en cours...' : '📤 Envoyer le document'}
             </button>
           </div>
 
@@ -1148,7 +1150,7 @@ function DashboardPrestataire() {
               <p className="text-gray-500">Chargement...</p>
             ) : documents.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                <p className="text-4xl mb-2"></p>
+                <p className="text-4xl mb-2">📄</p>
                 <p>Aucun document envoyé pour le moment</p>
               </div>
             ) : (
@@ -1156,7 +1158,7 @@ function DashboardPrestataire() {
                 {documents.map(doc => (
                   <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl"></span>
+                      <span className="text-2xl">📄</span>
                       <div>
                         <p className="font-medium text-gray-900">
                           {doc.type === 'rib' ? 'RIB' :
@@ -1176,7 +1178,7 @@ function DashboardPrestataire() {
                     <div className="flex gap-2">
                       <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
                         className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium">
-                        ️ Voir
+                        👁️ Voir
                       </a>
                       <button
                         onClick={async () => {
@@ -1185,7 +1187,7 @@ function DashboardPrestataire() {
                           fetchDocuments();
                         }}
                         className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium">
-                        ️
+                        🗑️
                       </button>
                     </div>
                   </div>
@@ -1237,7 +1239,7 @@ function DashboardPrestataire() {
               <div className="bg-white rounded-xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-6 border-b">
                   <h3 className="text-lg font-bold">Modifier mes informations</h3>
-                  <button onClick={() => setShowEditProfile(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold"></button>
+                  <button onClick={() => setShowEditProfile(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
                 </div>
                 <div className="p-6 space-y-4">
                   {profileError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{profileError}</p></div>}
@@ -1297,7 +1299,7 @@ function DashboardPrestataire() {
               <div className="bg-white rounded-xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-6 border-b">
                   <h3 className="text-lg font-bold">Changer mon mot de passe</h3>
-                  <button onClick={() => setShowChangePassword(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold"></button>
+                  <button onClick={() => setShowChangePassword(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
                 </div>
                 <div className="p-6 space-y-4">
                   {passwordError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{passwordError}</p></div>}
@@ -1389,7 +1391,7 @@ function DashboardPrestataire() {
                 )}
                 {key === 'evaluations' && reviewsStats.total_reviews > 0 && (
                   <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
-                    {reviewsStats.average_rating.toFixed(1)}
+                    {reviewsStats.average_rating.toFixed(1)}★
                   </span>
                 )}
               </div>
@@ -1415,7 +1417,7 @@ function DashboardPrestataire() {
           <div className="bg-white rounded-xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-6 border-b">
               <h3 className="text-xl font-bold">Planifier l'intervention</h3>
-              <button onClick={closePlanificationModal} className="text-gray-400 hover:text-gray-600 text-2xl font-bold"></button>
+              <button onClick={closePlanificationModal} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
             </div>
             <div className="p-6 space-y-4">
               <div className="bg-gray-50 rounded-lg p-4">
@@ -1436,7 +1438,7 @@ function DashboardPrestataire() {
                   min={new Date().toISOString().split('T')[0]}
                   max={new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
-                <p className="text-xs text-gray-500 mt-1"> Maximum 15 jours à l'avance</p>
+                <p className="text-xs text-gray-500 mt-1">📅 Maximum 15 jours à l'avance</p>
               </div>
 
               <div>
@@ -1455,7 +1457,7 @@ function DashboardPrestataire() {
               {selectedDate && selectedTime && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-blue-800">
-                     Intervention prévue le <strong>{new Date(selectedDate).toLocaleDateString('fr-FR')}</strong> à <strong>{selectedTime}</strong>
+                    📍 Intervention prévue le <strong>{new Date(selectedDate).toLocaleDateString('fr-FR')}</strong> à <strong>{selectedTime}</strong>
                   </p>
                 </div>
               )}
@@ -1467,7 +1469,7 @@ function DashboardPrestataire() {
               </button>
               <button onClick={confirmScheduleMission}
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
-                 Confirmer
+                ✅ Confirmer
               </button>
             </div>
           </div>

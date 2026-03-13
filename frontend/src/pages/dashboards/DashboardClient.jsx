@@ -429,7 +429,7 @@ function DashboardClient() {
       <main className="flex-1 bg-slate-50 px-6 py-8 pt-32 pl-24 w-full">
 
         {/* Sidebar */}
-        <aside className="fixed top-0 left-0 h-full w-16 bg-white border-r border-gray-100 shadow-sm z-40 flex flex-col items-center pt-24 pb-6 gap-1">
+        <aside className="fixed top-0 left-0 h-full w-16 bg-white border-r border-gray-100 shadow-sm z-30 flex flex-col items-center pt-28 pb-6 gap-1">
 
           {NAV_SECTIONS.map(({ key, label }) => {
             const icons = {
