@@ -125,7 +125,7 @@ const MesMissions = () => {
                         <p className="text-sm text-gray-500 mt-1">Prix initial : {mission.base_price || mission.price} €</p>
                       </div>
                       <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-600 text-white">
-                        ❌ Annulée / Remboursée
+                         Annulée / Remboursée
                       </span>
                     </div>
 

@@ -56,7 +56,7 @@ function ResetPassword() {
         <div className="pt-24">
           <AuthLayout title="Mot de passe modifié !" subtitle="">
             <div className="text-center">
-              <div className="text-6xl mb-4">✅</div>
+              <div className="text-6xl mb-4"></div>
               <p className="text-gray-600 mb-6">
                 Votre mot de passe a été réinitialisé avec succès. Vous allez être redirigé vers la connexion...
               </p>

@@ -110,7 +110,7 @@ function OrderListPreview({ onReview }) {
                     </button>
                   ) : (
                     <div className="w-full bg-green-100 text-green-800 px-4 py-2 rounded-lg text-center font-medium text-sm">
-                      ✅ Évaluation envoyée
+                       Évaluation envoyée
                     </div>
                   )}
                 </div>

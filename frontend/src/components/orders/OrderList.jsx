@@ -119,7 +119,7 @@ function OrderList() {
                 {order.service_name}
               </h3>
               <p className="text-sm text-gray-600">
-                📍 {order.cemetery_name} - {order.cemetery_city}
+                 {order.cemetery_name} - {order.cemetery_city}
               </p>
               {order.cemetery_location && (
                 <p className="text-sm text-gray-500 mt-1">{order.cemetery_location}</p>
@@ -133,7 +133,7 @@ function OrderList() {
               {/* Badge "Payé" affiché uniquement si le paiement a été effectué */}
               {PAID_STATUSES.includes(order.status) && (
                 <span className="px-3 py-1 text-xs font-semibold rounded-full border bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300">
-                  ✓ Payé
+                   Payé
                 </span>
               )}
             </div>

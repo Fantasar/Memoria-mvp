@@ -82,7 +82,7 @@ function PhotoGallery() {
   if (orders.length === 0) {
     return (
       <div className="text-center py-12 bg-gray-50 rounded-lg">
-        <p className="text-xl mb-2">📷</p>
+        <p className="text-xl mb-2"></p>
         <p className="text-gray-600 font-medium">Aucune intervention terminée</p>
         <p className="text-sm text-gray-500 mt-2">
           Vos photos avant/après apparaîtront ici une fois les missions terminées
@@ -136,7 +136,7 @@ function PhotoGallery() {
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-end p-3">
                       <span className="bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm font-medium">
-                        📷 Avant
+                         Avant
                       </span>
                     </div>
                   </div>
@@ -154,7 +154,7 @@ function PhotoGallery() {
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-end p-3">
                       <span className="bg-green-600 bg-opacity-90 text-white px-3 py-1 rounded text-sm font-medium">
-                        ✨ Après
+                         Après
                       </span>
                     </div>
                   </div>
@@ -168,7 +168,7 @@ function PhotoGallery() {
                     onClick={() => openDisputeModal(order)}
                     className="flex-1 bg-orange-100 text-orange-700 px-4 py-2 rounded-lg hover:bg-orange-200 transition font-medium text-sm"
                   >
-                    🚨 Signaler un problème
+                     Signaler un problème
                   </button>
                 )}
 
@@ -184,7 +184,7 @@ function PhotoGallery() {
                   </button>
                 ) : (
                   <div className="flex-1 bg-green-100 text-green-800 px-4 py-2 rounded-lg text-center font-medium text-sm">
-                    ✅ Évalué
+                     Évalué
                   </div>
                 )}
               </div>
@@ -205,7 +205,7 @@ function PhotoGallery() {
               onClick={() => setSelectedPhoto(null)}
               className="absolute top-4 right-4 bg-white text-gray-900 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-200 transition z-10"
             >
-              ✕
+              
             </button>
             <img
               src={selectedPhoto.url}
@@ -214,7 +214,7 @@ function PhotoGallery() {
               onClick={(e) => e.stopPropagation()}
             />
             <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg">
-              {selectedPhoto.type === 'before' ? '📷 Photo avant intervention' : '✨ Photo après intervention'}
+              {selectedPhoto.type === 'before' ? ' Photo avant intervention' : ' Photo après intervention'}
             </div>
           </div>
         </div>
@@ -224,7 +224,7 @@ function PhotoGallery() {
       {showDisputeModal && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-lg w-full p-6">
-            <h3 className="text-xl font-bold mb-4">🚨 Signaler un problème</h3>
+            <h3 className="text-xl font-bold mb-4"> Signaler un problème</h3>
 
             <div className="bg-orange-50 rounded-lg p-4 mb-4">
               <p className="text-sm text-orange-800 mb-1">Intervention concernée</p>
@@ -262,7 +262,7 @@ function PhotoGallery() {
                 disabled={submitting || !disputeReason.trim()}
                 className="flex-1 bg-orange-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Envoi...' : '🚨 Signaler le problème'}
+                {submitting ? 'Envoi...' : ' Signaler le problème'}
               </button>
             </div>
           </div>

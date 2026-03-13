@@ -11,12 +11,12 @@ export default function TestBanner() {
           animation: 'scroll 40s linear infinite',
         }}
       >
-        ⚠️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
-        ⚠️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
-        ⚠️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
-        ⚠️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
-        ⚠️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
-        ⚠️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+        ️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+        ️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+        ️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+        ️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+        ️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+        ️ Site de démonstration — Les données et paiements sont fictifs &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
       </div>
       <style>{`
         @keyframes scroll {

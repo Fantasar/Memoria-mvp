@@ -159,7 +159,7 @@ function NewOrder() {
 
             {/* Carte interactive — clic sur marqueur = sélection du cimetière */}
             <div className="mb-4">
-              <p className="text-sm text-gray-500 mb-2">💡 Ou cliquez directement sur un cimetière sur la carte</p>
+              <p className="text-sm text-gray-500 mb-2"> Ou cliquez directement sur un cimetière sur la carte</p>
               <CemeteryMap
                 cemeteries={cemeteries}
                 selectedId={formData.cemetery_id}
@@ -194,7 +194,7 @@ function NewOrder() {
             {/* Groupe Entretien */}
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-lg">🪨</span>
+                <span className="text-lg"></span>
                 <h3 className="font-semibold text-gray-700">Entretien de votre pierre tombale</h3>
                 <div className="flex-1 h-px bg-gray-200" />
               </div>
@@ -233,7 +233,7 @@ function NewOrder() {
             {/* Groupe Fleurs */}
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-lg">💐</span>
+                <span className="text-lg"></span>
                 <h3 className="font-semibold text-gray-700">Service de livraison de fleurs</h3>
                 <div className="flex-1 h-px bg-gray-200" />
               </div>
@@ -315,7 +315,7 @@ function NewOrder() {
 
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            💡 <strong>Bon à savoir :</strong> Le paiement sera effectué de manière sécurisée via Stripe. Votre commande sera créée après confirmation du paiement.
+             <strong>Bon à savoir :</strong> Le paiement sera effectué de manière sécurisée via Stripe. Votre commande sera créée après confirmation du paiement.
           </p>
         </div>
 

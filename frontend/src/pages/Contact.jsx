@@ -29,7 +29,7 @@ function Stars({ colors, count, style = {} }) {
             ...style,
           }}
         >
-          ✦
+          
         </div>
       ))}
     </>

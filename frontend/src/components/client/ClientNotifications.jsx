@@ -8,16 +8,16 @@ import { useNavigate } from 'react-router-dom';
  * Utilisé pour personnaliser visuellement chaque carte de notification
  */
 const NOTIFICATION_STYLES = {
-  mission_accepted:    { icon: '✅', color: 'bg-green-50 border-green-200' },
-  photos_available:    { icon: '📷', color: 'bg-blue-50 border-blue-200' },
-  mission_completed:   { icon: '🎉', color: 'bg-purple-50 border-purple-200' },
-  dispute_resolved:    { icon: '✅', color: 'bg-green-50 border-green-200' },
-  refund_processed:    { icon: '💸', color: 'bg-orange-50 border-orange-200' },
-  correction_requested:{ icon: '🔄', color: 'bg-yellow-50 border-yellow-200' },
+  mission_accepted:    { icon: '', color: 'bg-green-50 border-green-200' },
+  photos_available:    { icon: '', color: 'bg-blue-50 border-blue-200' },
+  mission_completed:   { icon: '', color: 'bg-purple-50 border-purple-200' },
+  dispute_resolved:    { icon: '', color: 'bg-green-50 border-green-200' },
+  refund_processed:    { icon: '', color: 'bg-orange-50 border-orange-200' },
+  correction_requested:{ icon: '', color: 'bg-yellow-50 border-yellow-200' },
 };
 
 // Style par défaut si le type de notification n'est pas référencé dans NOTIFICATION_STYLES
-const DEFAULT_STYLE = { icon: '🔔', color: 'bg-gray-50 border-gray-200' };
+const DEFAULT_STYLE = { icon: '', color: 'bg-gray-50 border-gray-200' };
 
 /** Retourne le style associé à un type de notification, ou le style par défaut */
 const getStyle = (type) => NOTIFICATION_STYLES[type] ?? DEFAULT_STYLE;
@@ -126,7 +126,7 @@ function ClientNotifications({ onNotificationRead }) {
               onClick={markAllAsRead}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm"
             >
-              ✅ Tout marquer comme lu
+               Tout marquer comme lu
             </button>
           )}
         </div>
@@ -150,7 +150,7 @@ function ClientNotifications({ onNotificationRead }) {
       {/* Liste des notifications */}
       {filteredNotifications.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <p className="text-xl mb-2">🔔</p>
+          <p className="text-xl mb-2"></p>
           <p className="text-gray-600 font-medium">
             {filter === 'unread' ? 'Aucune notification non lue' : 'Aucune notification'}
           </p>

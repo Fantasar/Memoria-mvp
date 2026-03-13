@@ -46,7 +46,7 @@ function Stars({ colors, count, style = {} }) {
             ...style,
           }}
         >
-          ✦
+          
         </div>
       ))}
     </>
@@ -375,7 +375,7 @@ const Home = () => {
                       <ul className="space-y-2">
                         {step.items.map(item => (
                           <li key={item} className="flex items-start gap-2 text-gray-700">
-                            <span className={`${step.checkColor} mt-1`}>✓</span>
+                            <span className={`${step.checkColor} mt-1`}></span>
                             <span>{item}</span>
                           </li>
                         ))}

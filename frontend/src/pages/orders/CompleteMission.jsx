@@ -20,7 +20,7 @@ function PhotoSlot({ label, preview, onChange, onRemove }) {
           <div className="relative">
             <img src={preview} alt={label} className="w-full h-64 object-cover rounded-lg mb-2" />
             <button type="button" onClick={onRemove} className="text-red-600 text-sm hover:text-red-700">
-              ✗ Supprimer
+               Supprimer
             </button>
           </div>
         ) : (
@@ -215,13 +215,13 @@ function CompleteMission() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <PhotoSlot
-                label="📸 Photo AVANT"
+                label=" Photo AVANT"
                 preview={beforePreview}
                 onChange={handlePhotoChange(setBeforePhoto, setBeforePreview)}
                 onRemove={handleRemove(setBeforePhoto, setBeforePreview)}
               />
               <PhotoSlot
-                label="✨ Photo APRÈS"
+                label=" Photo APRÈS"
                 preview={afterPreview}
                 onChange={handlePhotoChange(setAfterPhoto, setAfterPreview)}
                 onRemove={handleRemove(setAfterPhoto, setAfterPreview)}
@@ -235,7 +235,7 @@ function CompleteMission() {
               </button>
               <button type="submit" disabled={uploading || !beforePhoto || !afterPhoto}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed">
-                {uploading ? 'Upload en cours...' : '✓ Terminer la mission'}
+                {uploading ? 'Upload en cours...' : ' Terminer la mission'}
               </button>
             </div>
           </form>

@@ -1,12 +1,12 @@
-# 🌿 Stratégie de Branching - Mémoria MVP
+#  Stratégie de Branching - Mémoria MVP
 
-## 📋 Vue d'ensemble
+##  Vue d'ensemble
 
 Ce document décrit la stratégie de gestion des branches Git utilisée pour le projet Mémoria. L'approche adoptée est **simplifiée** et adaptée au **développement solo**, tout en respectant les bonnes pratiques professionnelles.
 
 ---
 
-## 🌳 Structure des branches
+##  Structure des branches
 
 ### `main`
 **Branche de production**
@@ -39,7 +39,7 @@ feature/admin-dashboard
 
 ---
 
-## 🔄 Workflow de développement
+##  Workflow de développement
 
 ### 1️⃣ Créer une branche feature
 
@@ -83,10 +83,10 @@ git commit -m "fix: correction d'un bug"
 
 Avant de merger dans `main`, **valider** :
 
-✅ Le code fonctionne sans erreur  
-✅ Les tests manuels passent  
-✅ Pas de régression sur les fonctionnalités existantes  
-✅ Le code est commenté et documenté  
+ Le code fonctionne sans erreur  
+ Les tests manuels passent  
+ Pas de régression sur les fonctionnalités existantes  
+ Le code est commenté et documenté  
 
 ---
 
@@ -122,7 +122,7 @@ git push origin --delete feature/nom-fonctionnalite
 
 ---
 
-## 📝 Convention de nommage des commits
+##  Convention de nommage des commits
 
 ### Format standard
 ```
@@ -143,7 +143,7 @@ type: message court et clair
 
 ### Exemples de bons messages
 
-✅ **BONS exemples :**
+ **BONS exemples :**
 ```
 feat: add JWT authentication middleware
 fix: resolve database connection timeout
@@ -152,7 +152,7 @@ refactor: extract validation logic to utils
 chore: configure eslint rules
 ```
 
-❌ **MAUVAIS exemples :**
+ **MAUVAIS exemples :**
 ```
 update
 fixed bug
@@ -163,26 +163,26 @@ test
 
 ---
 
-## 🚫 Ce qu'il ne faut PAS faire
+##  Ce qu'il ne faut PAS faire
 
-❌ **Commiter directement sur `main`**  
+ **Commiter directement sur `main`**  
 → Toujours passer par une branche `feature/*`
 
-❌ **Pusher du code non testé**  
+ **Pusher du code non testé**  
 → Toujours valider avant de merger
 
-❌ **Commiter des fichiers sensibles**  
+ **Commiter des fichiers sensibles**  
 → Vérifier le `.gitignore` (`.env`, `node_modules`, etc.)
 
-❌ **Messages de commit vagues**  
+ **Messages de commit vagues**  
 → Utiliser la convention de nommage
 
-❌ **Garder des branches feature mortes**  
+ **Garder des branches feature mortes**  
 → Supprimer après merge
 
 ---
 
-## 🎯 Exemple pratique complet
+##  Exemple pratique complet
 
 Scénario : Développer l'authentification utilisateur
 ```bash
@@ -219,7 +219,7 @@ git branch -d feature/user-authentication
 
 ---
 
-## 📚 Résumé visuel
+##  Résumé visuel
 ```
 main (production)
   │
@@ -237,7 +237,7 @@ main (production)
 
 ---
 
-## ✅ Checklist avant chaque merge
+##  Checklist avant chaque merge
 
 Avant de merger une branche `feature/*` dans `main`, vérifier :
 
@@ -250,19 +250,19 @@ Avant de merger une branche `feature/*` dans `main`, vérifier :
 
 ---
 
-## 🎓 Pourquoi cette stratégie ?
+##  Pourquoi cette stratégie ?
 
 ### Avantages pour Mémoria 
 
-✅ **Simplicité** : Pas de branche `dev` ou `staging`
-✅ **Clarté** : Historique Git propre et lisible  
-✅ **Sécurité** : `main` toujours stable et déployable  
-✅ **Professionnalisme** : Bonnes pratiques applicables en entreprise  
-✅ **Flexibilité** : Possibilité de revenir en arrière facilement  
+ **Simplicité** : Pas de branche `dev` ou `staging`
+ **Clarté** : Historique Git propre et lisible  
+ **Sécurité** : `main` toujours stable et déployable  
+ **Professionnalisme** : Bonnes pratiques applicables en entreprise  
+ **Flexibilité** : Possibilité de revenir en arrière facilement  
 
 ---
 
-## 📞 Besoin d'aide ?
+##  Besoin d'aide ?
 
 En cas de doute sur la stratégie Git :
 1. Consulter ce document
