@@ -196,7 +196,7 @@ const updatePassword = async (userId, passwordHash) => {
 
 /**
  * Supprime définitivement un utilisateur par son ID
- * ⚠️ Suppression physique — en production, privilégier le soft delete via deleted_at
+ * ️ Suppression physique — en production, privilégier le soft delete via deleted_at
  * @param {string} userId
  * @returns {Object} - { id } de l'utilisateur supprimé
  */

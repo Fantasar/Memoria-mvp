@@ -8,7 +8,7 @@ const { authenticateToken, authenticateAdmin } = require('../middlewares/admin-a
  * Routes des prestataires
  * Base : /api/providers
  *
- * ⚠️ ORDRE CRITIQUE : /zone/stats doit être avant /zone
+ * ️ ORDRE CRITIQUE : /zone/stats doit être avant /zone
  * et toutes les routes statiques avant /:id
  */
 
@@ -21,7 +21,7 @@ router.get('/pending', authenticateToken, authenticateAdmin, providerController.
 router.get('/finances', authenticateToken, providerController.getProviderFinances);
 
 // GET   /api/providers/zone/stats   — Statistiques géographiques de la zone (prestataire)
-// ⚠️ Doit être avant /zone pour ne pas être intercepté comme un sous-paramètre
+// ️ Doit être avant /zone pour ne pas être intercepté comme un sous-paramètre
 router.get('/zone/stats', authenticateToken, providerController.getZoneStats);
 
 // PATCH /api/providers/zone         — Met à jour la zone d'intervention (prestataire)

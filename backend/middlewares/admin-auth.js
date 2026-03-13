@@ -78,7 +78,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    console.error('❌ Erreur middleware authenticateToken:', error);
+    console.error(' Erreur middleware authenticateToken:', error);
     return res.status(500).json({
       success: false,
       error: { code: 'SERVER_ERROR', message: 'Erreur lors de l\'authentification' }

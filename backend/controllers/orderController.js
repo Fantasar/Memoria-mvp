@@ -136,14 +136,14 @@ const acceptOrder = async (req, res) => {
       notificationService.createNotification({
         user_id:  req.user.userId,
         type:     'schedule_needed',
-        title:    '✅ Mission acceptée',
+        title:    ' Mission acceptée',
         message:  `Commande #${order.id.substring(0, 8)} — Vous avez accepté une mission au ${order.cemetery_name}. Intervention prévue le ${new Date(scheduled_date).toLocaleDateString('fr-FR')} à ${scheduled_time}.`,
         order_id: order.id
       }),
       notificationService.createNotification({
         user_id:  order.client_id,
         type:     'mission_accepted',
-        title:    '✅ Votre mission a été acceptée',
+        title:    ' Votre mission a été acceptée',
         message:  `Un prestataire a accepté votre mission au ${order.cemetery_name}. Intervention prévue le ${new Date(scheduled_date).toLocaleDateString('fr-FR')}.`,
         order_id: order.id
       })
@@ -172,7 +172,7 @@ const completeOrder = async (req, res) => {
     await notificationService.createNotification({
       user_id:  result.client_id,
       type:     'photos_available',
-      title:    '📷 Photos disponibles',
+      title:    ' Photos disponibles',
       message:  `Le prestataire a terminé l'intervention au ${result.cemetery_name}. Les photos avant/après sont disponibles.`,
       order_id: req.params.id
     });
@@ -255,14 +255,14 @@ const validateOrder = async (req, res) => {
       notificationService.createNotification({
         user_id:  order.prestataire_id,
         type:     'mission_validated',
-        title:    '✅ Mission validée — Paiement en cours',
+        title:    ' Mission validée — Paiement en cours',
         message:  `Votre mission au ${order.cemetery_name} a été validée. Le paiement de ${(parseFloat(order.price) * 0.8).toFixed(2)}€ vous sera versé sous 48h.`,
         order_id: order.id
       }),
       notificationService.createNotification({
         user_id:  order.client_id,
         type:     'mission_completed',
-        title:    '🎉 Mission validée',
+        title:    ' Mission validée',
         message:  `Votre mission au ${order.cemetery_name} a été validée. N'hésitez pas à évaluer le prestataire !`,
         order_id: order.id
       })
@@ -327,7 +327,7 @@ const markAsDisputed = async (req, res) => {
     await notificationService.createNotification({
       user_id:  order.prestataire_id,
       type:     'dispute',
-      title:    '🚨 Litige signalé sur votre mission',
+      title:    ' Litige signalé sur votre mission',
       message:  `Un problème a été signalé sur votre intervention au ${order.cemetery_name}. Motif : ${reason}. L'administrateur examine la situation.`,
       order_id: order.id
     });
@@ -372,14 +372,14 @@ const resolveDispute = async (req, res) => {
         {
           user_id:  order.prestataire_id,
           type:     'mission_validated',
-          title:    '✅ Litige résolu — Mission validée',
+          title:    ' Litige résolu — Mission validée',
           message:  `Le litige sur votre mission au ${order.cemetery_name} a été résolu en votre faveur. Paiement de ${(parseFloat(order.price) * 0.8).toFixed(2)}€ sous 48h.`,
           order_id: order.id
         },
         {
           user_id:  order.client_id,
           type:     'dispute_resolved',
-          title:    '✅ Litige résolu',
+          title:    ' Litige résolu',
           message:  `Votre litige concernant la mission au ${order.cemetery_name} a été examiné. L'intervention a été validée.`,
           order_id: order.id
         }
@@ -388,14 +388,14 @@ const resolveDispute = async (req, res) => {
         {
           user_id:  order.prestataire_id,
           type:     'dispute',
-          title:    '💸 Litige résolu — Remboursement client',
+          title:    ' Litige résolu — Remboursement client',
           message:  `Le litige sur votre mission au ${order.cemetery_name} a été résolu en faveur du client. Vous ne serez pas rémunéré pour cette intervention.`,
           order_id: order.id
         },
         {
           user_id:  order.client_id,
           type:     'refund_processed',
-          title:    '💸 Remboursement effectué',
+          title:    ' Remboursement effectué',
           message:  `Suite à votre signalement, vous avez été remboursé de ${order.price}€ pour la mission au ${order.cemetery_name}.`,
           order_id: order.id
         }
@@ -404,14 +404,14 @@ const resolveDispute = async (req, res) => {
         {
           user_id:  order.prestataire_id,
           type:     'dispute',
-          title:    '🔄 Correction demandée',
+          title:    ' Correction demandée',
           message:  `L'administrateur demande une correction sur votre mission au ${order.cemetery_name}. Merci de retourner sur place effectuer les ajustements nécessaires.`,
           order_id: order.id
         },
         {
           user_id:  order.client_id,
           type:     'correction_requested',
-          title:    '🔄 Correction en cours',
+          title:    ' Correction en cours',
           message:  `Suite à votre signalement, une correction a été demandée au prestataire pour la mission au ${order.cemetery_name}.`,
           order_id: order.id
         }

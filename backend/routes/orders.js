@@ -8,7 +8,7 @@ const { authenticateToken, authenticateAdmin } = require('../middlewares/admin-a
  * Routes des commandes
  * Base : /api/orders
  *
- * ⚠️ ORDRE CRITIQUE : les routes statiques DOIVENT être déclarées
+ * ️ ORDRE CRITIQUE : les routes statiques DOIVENT être déclarées
  * avant les routes dynamiques (:id) pour éviter les conflits Express.
  * Ex: /available doit être avant /:id, sinon "available" est lu comme un ID.
  */
