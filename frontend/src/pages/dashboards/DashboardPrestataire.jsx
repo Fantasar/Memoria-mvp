@@ -17,17 +17,17 @@ const authHeaders = () => ({
 
 // Sections de la navbar — extraites pour éviter de les redéclarer à chaque render
 const NAV_TABS = [
-  { key: 'overview', label: '📊 Aperçu' },
-  { key: 'available', label: '📋 Missions disponibles' },
-  { key: 'missions', label: '💼 Mes missions' },
-  { key: 'calendar', label: '📅 Calendrier' },
-  { key: 'finances', label: '💰 Finances' },
-  { key: 'alerts', label: '🔔 Alertes' },
-  { key: 'zone', label: "📍 Zone d'intervention" },
-  { key: 'evaluations', label: '⭐ Évaluations' },
-  { key: 'history', label: '📜 Historique' },
-  { key: 'documents', label: '📁 Documents' },
-  { key: 'profile', label: '👤 Profil' },
+  { key: 'overview', label: ' Aperçu' },
+  { key: 'available', label: ' Missions disponibles' },
+  { key: 'missions', label: ' Mes missions' },
+  { key: 'calendar', label: ' Calendrier' },
+  { key: 'finances', label: ' Finances' },
+  { key: 'alerts', label: ' Alertes' },
+  { key: 'zone', label: " Zone d'intervention" },
+  { key: 'evaluations', label: ' Évaluations' },
+  { key: 'history', label: ' Historique' },
+  { key: 'documents', label: ' Documents' },
+  { key: 'profile', label: ' Profil' },
 ];
 
 function DashboardPrestataire() {

@@ -13,15 +13,15 @@ const authHeaders = () => ({
 
 const STATUS_CONFIG = {
   pending: { label: '⏳ En attente', color: 'bg-yellow-100 text-yellow-800' },
-  paid: { label: ' Payée', color: 'bg-blue-100 text-blue-800' },
-  accepted: { label: ' Acceptée', color: 'bg-green-100 text-green-800' },
-  in_progress: { label: ' En cours', color: 'bg-purple-100 text-purple-800' },
+  paid: { label: '💳 Payée', color: 'bg-blue-100 text-blue-800' },
+  accepted: { label: '🔄 Acceptée', color: 'bg-green-100 text-green-800' },
+  in_progress: { label: '🔄 En cours', color: 'bg-purple-100 text-purple-800' },
   correction_requested: { label: 'En correcion', color: 'bg-purple-100 text-orange-800' },
   awaiting_validation: { label: '⏰ À valider', color: 'bg-orange-100 text-orange-800' },
-  completed: { label: ' Terminée', color: 'bg-green-200 text-green-900' },
-  disputed: { label: ' Litige', color: 'bg-red-100 text-red-800' },
-  cancelled: { label: ' Annulée', color: 'bg-gray-100 text-gray-800' },
-  refunded: { label: ' Remboursée', color: 'bg-indigo-100 text-indigo-800' },
+  completed: { label: '✅ Terminée', color: 'bg-green-200 text-green-900' },
+  disputed: { label: '🚨 Litige', color: 'bg-red-100 text-red-800' },
+  cancelled: { label: '❌ Annulée', color: 'bg-gray-100 text-gray-800' },
+  refunded: { label: '💸 Remboursée', color: 'bg-indigo-100 text-indigo-800' },
 };
 
 const STATUS_LABELS = {
@@ -151,18 +151,18 @@ function DashboardAdmin() {
 
 
   const NAV_SECTIONS = [
-    { key: 'overview',      label: ` Aperçu` },
-    { key: 'messages',      label: ` Messages${(unreadMessages + unreadContactNotifs) > 0 ? ` (${unreadMessages + unreadContactNotifs})` : ''}` },
-    { key: 'disputes',      label: ` Litiges` },
+    { key: 'overview', label: ` Aperçu` },
+    { key: 'messages', label: ` Messages${(unreadMessages + unreadContactNotifs) > 0 ? ` (${unreadMessages + unreadContactNotifs})` : ''}` },
+    { key: 'disputes', label: ` Litiges` },
     { key: 'interventions', label: ` Interventions` },
-    { key: 'providers',     label: `‍ Prestataires` },
-    { key: 'users',         label: ` Utilisateurs` },
-    { key: 'gallery',       label: ` Galerie photos` },
-    { key: 'finances',      label: ` Finances` },
-    { key: 'cemeteries',    label: ` Cimetières` },
-    { key: 'services',      label: ` Services` },
-    { key: 'documents',     label: ` Documents${unreadDocs > 0 ? ` (${unreadDocs})` : ''}` },
-    { key: 'history',       label: ` Historique` },
+    { key: 'providers', label: ` Prestataires` },
+    { key: 'users', label: ` Utilisateurs` },
+    { key: 'gallery', label: ` Galerie photos` },
+    { key: 'finances', label: ` Finances` },
+    { key: 'cemeteries', label: ` Cimetières` },
+    { key: 'services', label: ` Services` },
+    { key: 'documents', label: ` Documents${unreadDocs > 0 ? ` (${unreadDocs})` : ''}` },
+    { key: 'history', label: ` Historique` },
   ];
 
   useEffect(() => {
@@ -567,12 +567,12 @@ function DashboardAdmin() {
 
               {stats.top_providers?.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4"> Top 5 Prestataires</h3>
+                  <h3 className="text-lg font-semibold mb-4">🏆 Top 5 Prestataires</h3>
                   <div className="space-y-3">
                     {stats.top_providers.map((provider, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{i === 0 ? '' : i === 1 ? '' : i === 2 ? '' : `${i + 1}.`}</span>
+                          <span className="text-2xl">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
                           <div>
                             <p className="font-semibold">{provider.name}</p>
                             <p className="text-sm text-gray-500">{provider.missions_completed} missions</p>
@@ -604,7 +604,7 @@ function DashboardAdmin() {
                       fetchCrispMessages();
                     }}
                     className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium">
-                     Tout marquer comme lu ({unreadMessages})
+                    ✅ Tout marquer comme lu ({unreadMessages})
                   </button>
                 )}
                 {crispMessages.length > 0 && (
@@ -615,18 +615,18 @@ function DashboardAdmin() {
                       fetchCrispMessages();
                     }}
                     className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium">
-                    ️ Tout supprimer
+                    🗑️ Tout supprimer
                   </button>
                 )}
                 <a href="https://app.crisp.chat" target="_blank" rel="noopener noreferrer"
                   className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center gap-2">
-                   Ouvrir Crisp
+                  💬 Ouvrir Crisp
                 </a>
               </div>
             </div>
 
             {/* ── Messages Crisp ─────────────────────────────────── */}
-            <h3 className="text-lg font-semibold mb-3 text-purple-700"> Messages Chat</h3>
+            <h3 className="text-lg font-semibold mb-3 text-purple-700">💬 Messages Chat</h3>
             {loadingMessages ? (
               <p className="text-gray-500 mb-6">Chargement...</p>
             ) : crispMessages.length === 0 ? (
@@ -676,7 +676,7 @@ function DashboardAdmin() {
 
             {/* ── Formulaire de contact ───────────────────────── */}
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold text-blue-700"> Messages formulaire contact</h3>
+              <h3 className="text-lg font-semibold text-blue-700">📩 Messages formulaire contact</h3>
               <div className="flex gap-3">
                 {contactNotifications.some(n => !n.is_read) && (
                   <button
@@ -685,7 +685,7 @@ function DashboardAdmin() {
                       fetchContactNotifications();
                     }}
                     className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium text-sm">
-                     Tout marquer comme lu
+                    ✅ Tout marquer comme lu
                   </button>
                 )}
                 {contactNotifications.length > 0 && (
@@ -700,7 +700,7 @@ function DashboardAdmin() {
                       fetchContactNotifications();
                     }}
                     className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium text-sm">
-                    ️ Tout supprimer
+                    🗑️ Tout supprimer
                   </button>
                 )}
               </div>
@@ -749,7 +749,7 @@ function DashboardAdmin() {
                           fetchContactNotifications();
                         }}
                         className="text-xs px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg">
-                        ️ Supprimer
+                        🗑️ Supprimer
                       </button>
                     </div>
                   </div>
@@ -819,13 +819,13 @@ function DashboardAdmin() {
               placeholder="Rechercher par n° commande, client, prestataire, cimetière..."
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
             {searchPhotos && (
-              <button onClick={() => setSearchPhotos('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"></button>
+              <button onClick={() => setSearchPhotos('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>
             )}
           </div>
 
           {/* Filtres type */}
           <div className="flex gap-3 mb-6">
-            {[['all', '️ Toutes'], ['before', ' Avant'], ['after', ' Après']].map(([type, label]) => (
+            {[['all', '🖼️ Toutes'], ['before', '📸 Avant'], ['after', '✨ Après']].map(([type, label]) => (
               <button key={type} onClick={() => setPhotoFilter(type)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition ${photoFilter === type ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                 {label}
@@ -862,7 +862,7 @@ function DashboardAdmin() {
                       className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
                     <div className="absolute top-2 left-2">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${(photo.photo_type || photo.type) === 'before' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'}`}>
-                        {photo.photo_type === 'before' ? ' Avant' : ' Après'}
+                        {photo.photo_type === 'before' ? '📸 Avant' : '✨ Après'}
                       </span>
                     </div>
                     {/* Infos au survol */}
@@ -886,11 +886,11 @@ function DashboardAdmin() {
                 <div className="flex items-center justify-between p-4 border-b">
                   <div className="flex items-center gap-3">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${selectedPhoto.photo_type === 'before' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                      {selectedPhoto.photo_type === 'before' ? ' Avant' : ' Après'}
+                      {selectedPhoto.photo_type === 'before' ? '📸 Avant' : '✨ Après'}
                     </span>
                     <h3 className="font-semibold">{selectedPhoto.cemetery_name}</h3>
                   </div>
-                  <button onClick={() => setSelectedPhoto(null)} className="text-gray-500 hover:text-gray-700 text-2xl font-bold"></button>
+                  <button onClick={() => setSelectedPhoto(null)} className="text-gray-500 hover:text-gray-700 text-2xl font-bold">✕</button>
                 </div>
 
                 <div className="p-4">
@@ -936,9 +936,9 @@ function DashboardAdmin() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {[
-                  { label: ' CA Total plateforme', value: `${finances.revenue.total.toFixed(2)}€`, sub: `${finances.revenue.paid_orders} commandes payées`, from: 'from-green-500', to: 'to-green-600' },
-                  { label: ' Commission Mémoria (20%)', value: `${(finances.revenue.total * 0.20).toFixed(2)}€`, sub: 'Revenus de la plateforme', from: 'from-purple-500', to: 'to-purple-600' },
-                  { label: ' Reversé prestataires (80%)', value: `${(finances.revenue.total * 0.80).toFixed(2)}€`, sub: 'Total reversé', from: 'from-blue-500', to: 'to-blue-600' },
+                  { label: '💰 CA Total plateforme', value: `${finances.revenue.total.toFixed(2)}€`, sub: `${finances.revenue.paid_orders} commandes payées`, from: 'from-green-500', to: 'to-green-600' },
+                  { label: '🏦 Commission Mémoria (20%)', value: `${(finances.revenue.total * 0.20).toFixed(2)}€`, sub: 'Revenus de la plateforme', from: 'from-purple-500', to: 'to-purple-600' },
+                  { label: '👷 Reversé prestataires (80%)', value: `${(finances.revenue.total * 0.80).toFixed(2)}€`, sub: 'Total reversé', from: 'from-blue-500', to: 'to-blue-600' },
                 ].map(kpi => (
                   <div key={kpi.label} className={`bg-gradient-to-br ${kpi.from} ${kpi.to} rounded-lg p-6 text-white shadow-lg`}>
                     <h3 className="text-sm font-medium opacity-90 mb-2">{kpi.label}</h3>
@@ -952,10 +952,10 @@ function DashboardAdmin() {
                 <h3 className="text-lg font-semibold mb-4">Répartition financière par statut</h3>
                 <div className="space-y-3">
                   {[
-                    { label: ' Commandes terminées', status: 'completed', color: 'bg-green-500' },
-                    { label: ' Commandes payées', status: 'paid', color: 'bg-blue-500' },
-                    { label: ' Commandes remboursées', status: 'refunded', color: 'bg-red-500' },
-                    { label: ' Commandes en litige', status: 'disputed', color: 'bg-orange-500' },
+                    { label: '✅ Commandes terminées', status: 'completed', color: 'bg-green-500' },
+                    { label: '💳 Commandes payées', status: 'paid', color: 'bg-blue-500' },
+                    { label: '💸 Commandes remboursées', status: 'refunded', color: 'bg-red-500' },
+                    { label: '🚨 Commandes en litige', status: 'disputed', color: 'bg-orange-500' },
                   ].map(item => {
                     const count = finances.orders.by_status[item.status] || 0;
                     const percentage = Math.round((count / (finances.orders.total || 1)) * 100);
@@ -976,7 +976,7 @@ function DashboardAdmin() {
 
               {finances.monthly_orders?.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4"> Évolution mensuelle</h3>
+                  <h3 className="text-lg font-semibold mb-4">📈 Évolution mensuelle</h3>
                   <div className="grid grid-cols-3 gap-4">
                     {finances.monthly_orders.map((month, i) => (
                       <div key={i} className="border border-gray-200 rounded-lg p-4 text-center">
@@ -1015,7 +1015,7 @@ function DashboardAdmin() {
               placeholder="Rechercher par nom, ville, département..."
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
             {searchCemeteries && (
-              <button onClick={() => setSearchCemeteries('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"></button>
+              <button onClick={() => setSearchCemeteries('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>
             )}
           </div>
 
@@ -1030,10 +1030,10 @@ function DashboardAdmin() {
                   className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-purple-300 transition cursor-pointer">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl"></div>
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl">⛪</div>
                       <div>
                         <p className="font-semibold">{cemetery.name}</p>
-                        <p className="text-sm text-gray-500"> {cemetery.city}{cemetery.postal_code ? ` — ${cemetery.postal_code}` : ''}{cemetery.department ? ` (${cemetery.department})` : ''}</p>
+                        <p className="text-sm text-gray-500">📍 {cemetery.city}{cemetery.postal_code ? ` — ${cemetery.postal_code}` : ''}{cemetery.department ? ` (${cemetery.department})` : ''}</p>
                       </div>
                     </div>
                     <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1051,7 +1051,7 @@ function DashboardAdmin() {
               <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-6 border-b">
                   <h3 className="text-xl font-bold">{selectedCemetery.name}</h3>
-                  <button onClick={() => setSelectedCemetery(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold"></button>
+                  <button onClick={() => setSelectedCemetery(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
                 </div>
                 <div className="p-6 space-y-2 text-sm">
                   {[
@@ -1080,7 +1080,7 @@ function DashboardAdmin() {
               <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-6 border-b">
                   <h3 className="text-xl font-bold">Ajouter un cimetière</h3>
-                  <button onClick={() => setShowAddCemetery(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold"></button>
+                  <button onClick={() => setShowAddCemetery(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
                 </div>
                 <form onSubmit={handleAddCemetery} className="p-6 space-y-4">
                   {cemeteryError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{cemeteryError}</p></div>}
@@ -1147,14 +1147,14 @@ function DashboardAdmin() {
                 <div key={service.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-2xl"></div>
+                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-2xl">🌿</div>
                       <div>
                         <p className="font-semibold">{service.name}</p>
                         {service.description && <p className="text-sm text-gray-500 mt-1">{service.description}</p>}
                       </div>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${service.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {service.is_active ? ' Actif' : ' Inactif'}
+                      {service.is_active ? '✅ Actif' : '❌ Inactif'}
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-3 text-sm border-t border-gray-100 pt-4">
@@ -1180,7 +1180,7 @@ function DashboardAdmin() {
               <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-6 border-b">
                   <h3 className="text-xl font-bold">Ajouter un service</h3>
-                  <button onClick={() => setShowAddService(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold"></button>
+                  <button onClick={() => setShowAddService(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
                 </div>
                 <form onSubmit={handleAddService} className="p-6 space-y-4">
                   {serviceError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{serviceError}</p></div>}
@@ -1237,12 +1237,12 @@ function DashboardAdmin() {
               placeholder="Rechercher par nom, email, SIRET, zone..."
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
             {searchUsers && (
-              <button onClick={() => setSearchUsers('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"></button>
+              <button onClick={() => setSearchUsers('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>
             )}
           </div>
 
           <div className="flex gap-2 mb-6 border-b border-gray-200">
-            {[['clients', ' Clients', filteredClients.length], ['providers', ' Prestataires', filteredProviders.length]].map(([tab, label, count]) => (
+            {[['clients', '👥 Clients', filteredClients.length], ['providers', '🔧 Prestataires', filteredProviders.length]].map(([tab, label, count]) => (
               <button key={tab} onClick={() => setUsersTab(tab)}
                 className={`px-6 py-3 font-medium text-sm transition border-b-2 -mb-px ${usersTab === tab ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                 {label} ({count})
@@ -1315,7 +1315,7 @@ function DashboardAdmin() {
                             <div className="text-right"><p className="text-gray-500">SIRET</p><p className="font-medium">{provider.siret || '-'}</p></div>
                             <div className="text-right"><p className="text-gray-500">Zone</p><p className="font-medium">{provider.zone_intervention || '-'}</p></div>
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${provider.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                              {provider.is_verified ? ' Vérifié' : '⏳ En attente'}
+                              {provider.is_verified ? '✅ Vérifié' : '⏳ En attente'}
                             </span>
                           </div>
                         </div>
@@ -1340,11 +1340,11 @@ function DashboardAdmin() {
                         <div>
                           <h3 className="text-xl font-bold">{selectedUser.prenom} {selectedUser.nom}</h3>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedUser.role === 'client' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                            {selectedUser.role === 'client' ? ' Client' : ' Prestataire'}
+                            {selectedUser.role === 'client' ? '👥 Client' : '🔧 Prestataire'}
                           </span>
                         </div>
                       </div>
-                      <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold"></button>
+                      <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
                     </div>
 
                     {/* Informations */}
@@ -1385,7 +1385,7 @@ function DashboardAdmin() {
                           <div className="flex justify-between">
                             <span className="text-gray-500">Statut</span>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedUser.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                              {selectedUser.is_verified ? ' Vérifié' : '⏳ En attente'}
+                              {selectedUser.is_verified ? '✅ Vérifié' : '⏳ En attente'}
                             </span>
                           </div>
                           {selectedUser.rating && (
@@ -1422,7 +1422,7 @@ function DashboardAdmin() {
                           }
                         }}
                         className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition">
-                        {selectedUser.is_blocked ? ' Débloquer' : ' Bloquer'}
+                        {selectedUser.is_blocked ? '🔓 Débloquer' : '🔒 Bloquer'}
                       </button>
                       <button
                         onClick={async () => {
@@ -1436,7 +1436,7 @@ function DashboardAdmin() {
                           }
                         }}
                         className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition">
-                        ️ Supprimer
+                        🗑️ Supprimer
                       </button>
                       <button onClick={() => setSelectedUser(null)}
                         className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition">
@@ -1455,7 +1455,7 @@ function DashboardAdmin() {
                   <div className="bg-white rounded-xl max-w-2xl w-full max-h-screen overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
                       <h3 className="text-lg font-bold">Commandes de {selectedClientOrders.prenom} {selectedClientOrders.nom}</h3>
-                      <button onClick={() => setSelectedClientOrders(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold"></button>
+                      <button onClick={() => setSelectedClientOrders(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
                     </div>
                     <div className="p-6">
                       {clientOrdersData.length === 0 ? (
@@ -1470,8 +1470,8 @@ function DashboardAdmin() {
                                   {STATUS_LABELS[order.status] || order.status}
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-600"> {order.cemetery_name}</p>
-                              <p className="text-sm text-gray-600"> {new Date(order.created_at).toLocaleDateString('fr-FR')}</p>
+                              <p className="text-sm text-gray-600">📍 {order.cemetery_name}</p>
+                              <p className="text-sm text-gray-600">📅 {new Date(order.created_at).toLocaleDateString('fr-FR')}</p>
                               <p className="text-sm font-bold text-purple-600 mt-1">{parseFloat(order.price).toFixed(2)}€</p>
                             </div>
                           ))}
@@ -1509,8 +1509,8 @@ function DashboardAdmin() {
           {/* Onglets */}
           <div className="flex gap-2 mb-6 border-b border-gray-200">
             {[
-              ['disputes', ' Litiges', disputedOrders.length],
-              ['correction', ' Missions en correction', allOrders.filter(o => o.status === 'correction_requested').length]
+              ['disputes', '🚨 Litiges', disputedOrders.length],
+              ['correction', '🔄 Missions en correction', allOrders.filter(o => o.status === 'correction_requested').length]
             ].map(([tab, label, count]) => (
               <button key={tab} onClick={() => setDisputesTab(tab)}
                 className={`px-6 py-3 font-medium text-sm transition border-b-2 -mb-px ${disputesTab === tab
@@ -1538,7 +1538,7 @@ function DashboardAdmin() {
                     <div key={order.id} className="border-2 border-red-200 rounded-lg p-6 bg-red-50">
                       <div className="flex items-center gap-3 mb-4">
                         <h3 className="text-lg font-semibold">{order.cemetery_name}</h3>
-                        <span className="px-2 py-1 rounded text-xs font-medium bg-red-600 text-white"> Litige</span>
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">🚨 Litige</span>
                       </div>
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div><p className="text-sm text-gray-500">Client</p><p className="font-medium">{order.client_prenom} {order.client_nom}</p></div>
@@ -1550,8 +1550,8 @@ function DashboardAdmin() {
                       </div>
                       {(beforePhoto || afterPhoto) && (
                         <div className="grid grid-cols-2 gap-4 mb-4">
-                          {beforePhoto && <div><p className="text-sm font-medium mb-2"> Avant</p><img src={beforePhoto.url} alt="Avant" className="w-full h-48 object-cover rounded-lg" /></div>}
-                          {afterPhoto && <div><p className="text-sm font-medium mb-2"> Après</p><img src={afterPhoto.url} alt="Après" className="w-full h-48 object-cover rounded-lg" /></div>}
+                          {beforePhoto && <div><p className="text-sm font-medium mb-2">📸 Avant</p><img src={beforePhoto.url} alt="Avant" className="w-full h-48 object-cover rounded-lg" /></div>}
+                          {afterPhoto && <div><p className="text-sm font-medium mb-2">✨ Après</p><img src={afterPhoto.url} alt="Après" className="w-full h-48 object-cover rounded-lg" /></div>}
                         </div>
                       )}
                       {resolveError[order.id] && (
@@ -1560,9 +1560,9 @@ function DashboardAdmin() {
                         </div>
                       )}
                       <div className="grid grid-cols-3 gap-3">
-                        <button onClick={() => handleResolveDispute(order.id, 'validate')} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm"> Valider</button>
-                        <button onClick={() => handleResolveDispute(order.id, 'request_correction')} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm"> Correction</button>
-                        <button onClick={() => handleResolveDispute(order.id, 'refund')} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm"> Rembourser</button>
+                        <button onClick={() => handleResolveDispute(order.id, 'validate')} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">✓ Valider</button>
+                        <button onClick={() => handleResolveDispute(order.id, 'request_correction')} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">🔄 Correction</button>
+                        <button onClick={() => handleResolveDispute(order.id, 'refund')} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">💸 Rembourser</button>
                       </div>
                     </div>
                   );
@@ -1590,7 +1590,7 @@ function DashboardAdmin() {
                         ? 'bg-blue-600 text-white'
                         : 'bg-orange-600 text-white'
                         }`}>
-                        {order.status === 'correction_submitted' ? ' Correction soumise' : '️ Correction demandée'}
+                        {order.status === 'correction_submitted' ? '📋 Correction soumise' : '⚠️ Correction demandée'}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-4 mb-4">
@@ -1613,11 +1613,11 @@ function DashboardAdmin() {
                       <div className="grid grid-cols-2 gap-3 mt-4">
                         <button onClick={() => handleResolveDispute(order.id, 'validate')}
                           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
-                           Valider la correction
+                          ✓ Valider la correction
                         </button>
                         <button onClick={() => handleResolveDispute(order.id, 'request_correction')}
                           className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
-                           Nouvelle correction
+                          🔄 Nouvelle correction
                         </button>
                       </div>
                     )}
@@ -1678,10 +1678,10 @@ function DashboardAdmin() {
                     {selectedOrder === order.id && (
                       <div className="grid grid-cols-2 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                         {beforePhoto
-                          ? <div><p className="text-sm font-medium mb-2"> Avant</p><img src={beforePhoto.url} alt="Avant" className="w-full h-64 object-cover rounded-lg" /></div>
+                          ? <div><p className="text-sm font-medium mb-2">📸 Avant</p><img src={beforePhoto.url} alt="Avant" className="w-full h-64 object-cover rounded-lg" /></div>
                           : <div className="flex items-center justify-center h-64 bg-gray-200 rounded-lg"><p className="text-gray-500">Photo avant manquante</p></div>}
                         {afterPhoto
-                          ? <div><p className="text-sm font-medium mb-2"> Après</p><img src={afterPhoto.url} alt="Après" className="w-full h-64 object-cover rounded-lg" /></div>
+                          ? <div><p className="text-sm font-medium mb-2">✨ Après</p><img src={afterPhoto.url} alt="Après" className="w-full h-64 object-cover rounded-lg" /></div>
                           : <div className="flex items-center justify-center h-64 bg-gray-200 rounded-lg"><p className="text-gray-500">Photo après manquante</p></div>}
                       </div>
                     )}
@@ -1690,11 +1690,11 @@ function DashboardAdmin() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <button onClick={() => handleValidateOrder(order.id)} className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition">
-                         Valider ({(parseFloat(order.price) * 0.80).toFixed(2)}€ → prestataire)
+                        ✓ Valider ({(parseFloat(order.price) * 0.80).toFixed(2)}€ → prestataire)
                       </button>
                       <button onClick={() => { setShowDisputeModal(order.id); setDisputeError(null); }}
                         className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition">
-                         Marquer comme litigieux
+                        🚨 Marquer comme litigieux
                       </button>
                     </div>
 
@@ -1737,7 +1737,7 @@ function DashboardAdmin() {
                     fetchAllProviderDocs();
                   }}
                   className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium">
-                   Tout marquer comme lu ({unreadDocs})
+                  ✅ Tout marquer comme lu ({unreadDocs})
                 </button>
               )}
               <span className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
@@ -1777,7 +1777,7 @@ function DashboardAdmin() {
 
             if (filtered.length === 0) return (
               <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <p className="text-4xl mb-2"></p>
+                <p className="text-4xl mb-2">📄</p>
                 <p className="text-gray-600">Aucun document trouvé</p>
               </div>
             );
@@ -1809,7 +1809,7 @@ function DashboardAdmin() {
                         <div key={doc.id}
                           className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
                           <div className="flex items-center gap-3">
-                            <span className="text-xl"></span>
+                            <span className="text-xl">📄</span>
                             <div>
                               <p className="font-medium text-sm text-gray-900">
                                 {doc.type === 'rib' ? 'RIB' :
@@ -1829,7 +1829,7 @@ function DashboardAdmin() {
                           <div className="flex gap-2">
                             <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
                               className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium">
-                              ️ Consulter
+                              👁️ Consulter
                             </a>
                             <button
                               onClick={async () => {
@@ -1839,7 +1839,7 @@ function DashboardAdmin() {
                                 fetchUnreadDocs();
                               }}
                               className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium">
-                              ️
+                              🗑️
                             </button>
                           </div>
                         </div>
@@ -1890,14 +1890,14 @@ function DashboardAdmin() {
                       disabled={loadingProviderDocs[provider.id]}
                       className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition disabled:opacity-50">
                       {loadingProviderDocs[provider.id] ? '⏳ Chargement...' :
-                        expandedProviderDocs[provider.id] ? ' Masquer les documents' : ' Voir les documents'}
+                        expandedProviderDocs[provider.id] ? '🔼 Masquer les documents' : '📄 Voir les documents'}
                     </button>
 
                     {expandedProviderDocs[provider.id] && (
                       <div className="mt-3">
                         {!providerDocuments[provider.id] || providerDocuments[provider.id].length === 0 ? (
                           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                            <p className="text-yellow-800 text-sm">️ Aucun document fourni par ce prestataire</p>
+                            <p className="text-yellow-800 text-sm">⚠️ Aucun document fourni par ce prestataire</p>
                           </div>
                         ) : (
                           <div className="space-y-2">
@@ -1905,7 +1905,7 @@ function DashboardAdmin() {
                               <div key={doc.id}
                                 className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
                                 <div className="flex items-center gap-3">
-                                  <span className="text-xl"></span>
+                                  <span className="text-xl">📄</span>
                                   <div>
                                     <p className="font-medium text-sm text-gray-900">
                                       {doc.type === 'rib' ? 'RIB' :
@@ -1924,7 +1924,7 @@ function DashboardAdmin() {
                                 </div>
                                 <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
                                   className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium">
-                                  ️ Consulter
+                                  👁️ Consulter
                                 </a>
                               </div>
                             ))}
@@ -1943,11 +1943,11 @@ function DashboardAdmin() {
                   <div className="flex gap-3">
                     <button onClick={() => handleApproveProvider(provider.id)}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition">
-                       Valider
+                      ✓ Valider
                     </button>
                     <button onClick={() => { setShowRejectModal(provider.id); setRejectError(null); }}
                       className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition">
-                       Rejeter
+                      ✗ Rejeter
                     </button>
                   </div>
 
@@ -1989,36 +1989,69 @@ function DashboardAdmin() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <Navbar />
-      <main className="flex-1 flex bg-purple-50 gap-6 px-6 py-8 pt-32 w-full">
+      <main className="flex-1 bg-purple-50 px-6 py-8 pt-32 pl-24 w-full">
 
-        {/* Sidebar */}
-        <aside className="w-1/3 bg-white border-l-4 border-purple-600 rounded-lg p-6 space-y-2 shadow h-fit">
-          <p className="text-gray-500 uppercase font-semibold text-sm mb-4">Sections</p>
-          {NAV_SECTIONS.map(({ key, label }) => (
-            <button key={key} onClick={() => setActiveSection(key)}
-              className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === key ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'}`}>
-              <div className="flex items-center justify-between">
-                <span>
-                  {key === 'disputes' ? `${label} (${disputedOrders.length})` :
-                    key === 'interventions' ? `${label} (${pendingOrders.length})` :
-                      key === 'providers' ? `${label} (${pendingProviders.length})` :
-                        key === 'users' ? `${label} (${clients.length + providers.length})` :
-                          key === 'gallery' ? `${label} (${allPhotos.length})` :
-                            key === 'cemeteries' ? `${label} (${cemeteries.length})` :
-                              key === 'services' ? `${label} (${services.length})` :
-                                key === 'history' ? `${label} (${allOrders.length})` :
-                                  label}
-                </span>
-                {key === 'disputes' && disputedOrders.length > 0 && (
-                  <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">{disputedOrders.length}</span>
-                )}
+        {/* Sidebar iconique fixe */}
+        <aside className="fixed top-0 left-0 h-full w-16 bg-white border-r border-gray-100 shadow-sm z-30 flex flex-col items-center pt-28 pb-6 gap-1">
+          {NAV_SECTIONS.map(({ key, label }) => {
+            const icons = {
+              overview: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+              messages: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
+              disputes: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+              interventions: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+              providers: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+              users: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+              gallery: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+              finances: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+              cemeteries: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+              services: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
+              documents: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+              history: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+            };
+
+            const badge =
+              key === 'disputes' && disputedOrders.length > 0 ? disputedOrders.length :
+                key === 'interventions' && pendingOrders.length > 0 ? pendingOrders.length :
+                  key === 'providers' && pendingProviders.length > 0 ? pendingProviders.length :
+                    key === 'messages' && (unreadMessages + unreadContactNotifs) > 0 ? (unreadMessages + unreadContactNotifs) :
+                      key === 'documents' && unreadDocs > 0 ? unreadDocs :
+                        null;
+
+            return (
+              <div key={key} className="relative group w-full flex justify-center">
+                <button
+                  onClick={() => setActiveSection(key)}
+                  className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all ${activeSection === key
+                      ? 'bg-purple-700 text-white shadow-md'
+                      : 'text-gray-400 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                >
+                  {icons[key]}
+                  {badge && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                      {badge}
+                    </span>
+                  )}
+                </button>
+
+                {/* Tooltip */}
+                <div className="absolute left-14 top-1/2 -translate-y-1/2 px-3 py-1.5
+                bg-slate-800 text-white text-xs font-medium rounded-lg shadow-lg
+                whitespace-nowrap pointer-events-none
+                opacity-0 group-hover:opacity-100
+                translate-x-1 group-hover:translate-x-0
+                transition-all duration-200 z-50">
+                  {label}
+                  <div className="absolute right-full top-1/2 -translate-y-1/2
+                  border-4 border-transparent border-r-slate-800" />
+                </div>
               </div>
-            </button>
-          ))}
+            );
+          })}
         </aside>
 
         {/* Contenu */}
-        <section className="flex-1 bg-white border-r-4 border-purple-600 rounded-lg p-6 shadow">
+        <section className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
           <div className="mb-6 pb-6 border-b border-gray-200">
             <h1 className="text-2xl font-bold mb-2">Dashboard Administrateur</h1>
             {user && <p className="text-gray-700">Bienvenue <span className="font-semibold">{user.prenom} {user.nom}</span></p>}
@@ -2042,7 +2075,7 @@ function DashboardAdmin() {
                   <p className="text-sm text-gray-500">{selectedProviderInfo.email}</p>
                 </div>
               </div>
-              <button onClick={closeProviderCalendar} className="text-gray-400 hover:text-gray-600 text-2xl font-bold"></button>
+              <button onClick={closeProviderCalendar} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
             </div>
 
             <div className="p-6">
@@ -2083,9 +2116,9 @@ function DashboardAdmin() {
                               </div>
                               <div className="flex-1">
                                 <h4 className="font-semibold">{mission.cemetery_name}</h4>
-                                <p className="text-sm text-gray-600"> {mission.cemetery_city}</p>
-                                <p className="text-sm text-gray-600"> {mission.service_name}</p>
-                                <p className="text-sm text-gray-600"> {mission.client_prenom} {mission.client_nom}</p>
+                                <p className="text-sm text-gray-600">📍 {mission.cemetery_city}</p>
+                                <p className="text-sm text-gray-600">🔧 {mission.service_name}</p>
+                                <p className="text-sm text-gray-600">👤 {mission.client_prenom} {mission.client_nom}</p>
                               </div>
                               <div className="text-right">
                                 <p className="text-lg font-bold text-purple-600">{parseFloat(mission.price).toFixed(2)}€</p>
@@ -2107,7 +2140,7 @@ function DashboardAdmin() {
                 <div className="bg-white rounded-xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-between p-6 border-b">
                     <h3 className="text-lg font-bold">Détail de la mission</h3>
-                    <button onClick={() => setSelectedMission(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold"></button>
+                    <button onClick={() => setSelectedMission(null)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
                   </div>
                   <div className="p-6 space-y-3 text-sm">
                     <div className="flex justify-between"><span className="text-gray-500">Service</span><span className="font-medium">{selectedMission.service_name}</span></div>
