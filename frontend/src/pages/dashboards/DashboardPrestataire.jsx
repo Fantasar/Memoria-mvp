@@ -17,17 +17,17 @@ const authHeaders = () => ({
 
 // Sections de la navbar — extraites pour éviter de les redéclarer à chaque render
 const NAV_TABS = [
-  { key: 'overview',    label: '📊 Aperçu' },
-  { key: 'available',   label: '📋 Missions disponibles' },
-  { key: 'missions',    label: '💼 Mes missions' },
-  { key: 'calendar',    label: '📅 Calendrier' },
-  { key: 'finances',    label: '💰 Finances' },
-  { key: 'alerts',      label: '🔔 Alertes' },
-  { key: 'zone',        label: "📍 Zone d'intervention" },
+  { key: 'overview', label: '📊 Aperçu' },
+  { key: 'available', label: '📋 Missions disponibles' },
+  { key: 'missions', label: '💼 Mes missions' },
+  { key: 'calendar', label: '📅 Calendrier' },
+  { key: 'finances', label: '💰 Finances' },
+  { key: 'alerts', label: '🔔 Alertes' },
+  { key: 'zone', label: "📍 Zone d'intervention" },
   { key: 'evaluations', label: '⭐ Évaluations' },
-  { key: 'history',     label: '📜 Historique' },
-  { key: 'documents',   label: '📁 Documents' },
-  { key: 'profile',     label: '👤 Profil' },
+  { key: 'history', label: '📜 Historique' },
+  { key: 'documents', label: '📁 Documents' },
+  { key: 'profile', label: '👤 Profil' },
 ];
 
 function DashboardPrestataire() {
@@ -1369,38 +1369,67 @@ function DashboardPrestataire() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <Navbar />
-      <main className="flex-1 flex bg-green-50 gap-6 px-6 py-8 pt-32 w-full">
+      <main className="flex-1 bg-green-50 px-6 py-8 pt-32 pl-24 w-full">
 
-        {/* Sidebar */}
-        <aside className="w-1/3 bg-white border-l-4 border-green-600 rounded-lg p-6 space-y-2 shadow h-fit">
-          <p className="text-gray-500 uppercase font-semibold text-sm mb-4">Sections</p>
-          {NAV_TABS.map(({ key, label }) => (
-            <button key={key} onClick={() => setActiveTab(key)}
-              className={`w-full text-left px-4 py-2 rounded-lg transition ${activeTab === key ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'
-                }`}>
-              <div className="flex items-center justify-between">
-                <span>
-                  {key === 'available' ? `${label} (${availableMissions.length})` :
-                    key === 'missions' ? `${label} (${myMissions.length})` :
-                      key === 'calendar' ? `${label} (${calendar.length})` :
-                        key === 'history' ? `${label} (${history.length})` :
-                          label}
-                </span>
-                {key === 'alerts' && unreadCount > 0 && (
-                  <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">{unreadCount}</span>
-                )}
-                {key === 'evaluations' && reviewsStats.total_reviews > 0 && (
-                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
-                    {reviewsStats.average_rating.toFixed(1)}★
-                  </span>
-                )}
+        {/* Sidebar iconique fixe */}
+        <aside className="fixed top-0 left-0 h-full w-16 bg-white border-r border-gray-100 shadow-sm z-30 flex flex-col items-center pt-28 pb-6 gap-1">
+
+          {NAV_TABS.map(({ key, label }) => {
+            const icons = {
+              overview: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+              available: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
+              missions: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+              calendar: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+              finances: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+              alerts: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>,
+              zone: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+              evaluations: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>,
+              history: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+              documents: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+              profile: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
+            };
+
+            const badge =
+              key === 'alerts' && unreadCount > 0 ? unreadCount :
+                key === 'available' && availableMissions.length > 0 ? availableMissions.length :
+                  key === 'missions' && myMissions.length > 0 ? myMissions.length :
+                    null;
+
+            return (
+              <div key={key} className="relative group w-full flex justify-center">
+                <button
+                  onClick={() => setActiveTab(key)}
+                  className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all ${activeTab === key
+                      ? 'bg-green-700 text-white shadow-md'
+                      : 'text-gray-400 hover:bg-green-50 hover:text-green-700'
+                    }`}
+                >
+                  {icons[key]}
+                  {badge && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                      {badge}
+                    </span>
+                  )}
+                </button>
+
+                {/* Tooltip */}
+                <div className="absolute left-14 top-1/2 -translate-y-1/2 px-3 py-1.5
+            bg-slate-800 text-white text-xs font-medium rounded-lg shadow-lg
+            whitespace-nowrap pointer-events-none
+            opacity-0 group-hover:opacity-100
+            translate-x-1 group-hover:translate-x-0
+            transition-all duration-200 z-50">
+                  {label}
+                  <div className="absolute right-full top-1/2 -translate-y-1/2
+              border-4 border-transparent border-r-slate-800" />
+                </div>
               </div>
-            </button>
-          ))}
+            );
+          })}
         </aside>
 
         {/* Contenu */}
-        <section className="flex-1 bg-white border-r-4 border-green-600 rounded-lg p-6 shadow">
+        <section className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
           <div className="mb-6 pb-6 border-b border-gray-200">
             <h1 className="text-2xl font-bold mb-2">Dashboard Prestataire</h1>
             {user && <p className="text-gray-700">Bienvenue <span className="font-semibold">{user.prenom} {user.nom}</span></p>}
