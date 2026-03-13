@@ -98,7 +98,7 @@ const createOrder = async (clientId, orderData) => {
     await notificationRepository.create({
       user_id: clientId,
       type: 'order_created',
-      title: 'Commande créée ✅',
+      title: 'Commande créée ',
       message: `Votre commande pour le service "${service.name}" a bien été créée. Un prestataire va prendre en charge votre mission prochainement.`,
       order_id: newOrder.id
     });

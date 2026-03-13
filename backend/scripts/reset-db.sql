@@ -2,7 +2,7 @@
 -- Script de reset — Mémoria MVP
 -- Vide les données de test et supprime les tables inutiles
 -- Conserve : roles, service_categories (actifs), cemeteries
--- ⚠️  À exécuter UNIQUEMENT en local avant déploiement
+-- ️  À exécuter UNIQUEMENT en local avant déploiement
 -- ============================================================
 
 -- Désactive les contraintes FK le temps du nettoyage

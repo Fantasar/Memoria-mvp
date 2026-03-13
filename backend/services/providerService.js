@@ -79,7 +79,7 @@ const approveProvider = async (providerId, adminId) => {
     await notificationRepository.create({
       user_id: providerId,
       type:    'account_validated',
-      title:   'Compte validé ✅',
+      title:   'Compte validé ',
       message: 'Votre compte a été validé par un administrateur. Vous pouvez maintenant accepter des missions !',
     });
 
@@ -116,7 +116,7 @@ const rejectProvider = async (providerId, adminId, reason) => {
     await notificationRepository.create({
       user_id: providerId,
       type:    'account_rejected',
-      title:   'Compte non validé ❌',
+      title:   'Compte non validé ',
       message: `Votre demande d'inscription a été refusée. Motif : ${reason}`,
     });
 

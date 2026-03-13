@@ -49,7 +49,7 @@ const sendContactMessage = async ({ name, email, subject, message }) => {
     await notificationRepository.create({
       user_id: admins[0].id,
       type:    'contact_message',
-      title:   '📩 Nouveau message de contact',
+      title:   ' Nouveau message de contact',
       message: `${name} (${email}) : ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`,
     });
   }

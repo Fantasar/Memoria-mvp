@@ -14,7 +14,7 @@ const { authenticateToken }    = require('../middlewares/admin-auth');
 router.get('/',             authenticateToken, notificationController.getUserNotifications);
 
 // PATCH  /api/notifications/read-all    — Marque toutes les notifications comme lues
-// ⚠️ Doit être avant /:id pour ne pas être intercepté comme un paramètre
+// ️ Doit être avant /:id pour ne pas être intercepté comme un paramètre
 router.patch('/read-all',   authenticateToken, notificationController.markAllAsRead);
 
 // PATCH  /api/notifications/:id/read   — Marque une notification spécifique comme lue

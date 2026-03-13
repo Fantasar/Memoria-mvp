@@ -17,7 +17,7 @@ router.get('/',        authenticateToken, authenticateAdmin, getMessages);
 router.patch('/:id',   authenticateToken, authenticateAdmin, markAsRead);
 
 // PATCH  /api/admin/messages       — Marque tous les messages comme lus
-// ⚠️ Doit être après /:id pour ne pas être intercepté comme un paramètre
+// ️ Doit être après /:id pour ne pas être intercepté comme un paramètre
 router.patch('/',      authenticateToken, authenticateAdmin, markAllAsRead);
 
 // DELETE /api/admin/messages/:id   — Supprime un message spécifique

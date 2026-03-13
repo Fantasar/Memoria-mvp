@@ -24,11 +24,11 @@ const pool = new Pool(
 // Vérifie la connexion au démarrage et libère immédiatement le client
 pool.connect((err, client, release) => {
   if (err) {
-    console.error('❌ Erreur connexion PostgreSQL:', err.stack);
+    console.error(' Erreur connexion PostgreSQL:', err.stack);
     return;
   }
   release();
-  console.log('✅ Pool PostgreSQL initialisé');
+  console.log(' Pool PostgreSQL initialisé');
 });
 
 module.exports = pool;

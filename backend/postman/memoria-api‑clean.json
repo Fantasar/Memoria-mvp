@@ -12,7 +12,7 @@
       "name": "Utilisateur - Cas Erreur",
       "item": [
         {
-          "name": "❌ Inscription Email déja existant",
+          "name": " Inscription Email déja existant",
           "request": {
             "auth": {
               "type": "bearer",
@@ -52,7 +52,7 @@
           "response": []
         },
         {
-          "name": "❌ Inscription Sans email",
+          "name": " Inscription Sans email",
           "request": {
             "auth": {
               "type": "bearer",
@@ -92,7 +92,7 @@
           "response": []
         },
         {
-          "name": "❌ Inscription sans mdp",
+          "name": " Inscription sans mdp",
           "request": {
             "auth": {
               "type": "bearer",
@@ -132,7 +132,7 @@
           "response": []
         },
         {
-          "name": "❌ Inscription mdp trop court",
+          "name": " Inscription mdp trop court",
           "request": {
             "auth": {
               "type": "bearer",
@@ -172,7 +172,7 @@
           "response": []
         },
         {
-          "name": "❌ Inscription email invalide",
+          "name": " Inscription email invalide",
           "request": {
             "auth": {
               "type": "bearer",
@@ -217,7 +217,7 @@
       "name": "Admin - Cas Erreur",
       "item": [
         {
-          "name": "❌ Admin sans token",
+          "name": " Admin sans token",
           "request": {
             "auth": {
               "type": "bearer",
@@ -256,7 +256,7 @@
           "response": []
         },
         {
-          "name": "❌ Admin avec token en tant que client",
+          "name": " Admin avec token en tant que client",
           "request": {
             "auth": {
               "type": "bearer",
@@ -295,7 +295,7 @@
           "response": []
         },
         {
-          "name": "❌ Créer admin sur mauvaise route",
+          "name": " Créer admin sur mauvaise route",
           "request": {
             "auth": {
               "type": "bearer",
@@ -335,7 +335,7 @@
           "response": []
         },
         {
-          "name": "❌ Créer admin sans token",
+          "name": " Créer admin sans token",
           "request": {
             "auth": {
               "type": "bearer",
@@ -374,7 +374,7 @@
           "response": []
         },
         {
-          "name": "❌ Créer admin avec token Client",
+          "name": " Créer admin avec token Client",
           "request": {
             "auth": {
               "type": "bearer",
@@ -413,7 +413,7 @@
           "response": []
         },
         {
-          "name": "❌ Créer admin avec token Prestataire",
+          "name": " Créer admin avec token Prestataire",
           "request": {
             "auth": {
               "type": "bearer",
@@ -452,7 +452,7 @@
           "response": []
         },
         {
-          "name": "❌ Créer admin email existant",
+          "name": " Créer admin email existant",
           "request": {
             "auth": {
               "type": "bearer",
@@ -491,7 +491,7 @@
           "response": []
         },
         {
-          "name": "❌ Créer admin mdp trop court",
+          "name": " Créer admin mdp trop court",
           "request": {
             "auth": {
               "type": "bearer",
@@ -530,7 +530,7 @@
           "response": []
         },
         {
-          "name": "❌ Créer admin sans mdp",
+          "name": " Créer admin sans mdp",
           "request": {
             "auth": {
               "type": "bearer",
@@ -569,7 +569,7 @@
           "response": []
         },
         {
-          "name": "❌ Créer admin email invalide",
+          "name": " Créer admin email invalide",
           "request": {
             "auth": {
               "type": "bearer",
@@ -608,7 +608,7 @@
           "response": []
         },
         {
-          "name": "❌ Créer admin sans email",
+          "name": " Créer admin sans email",
           "request": {
             "auth": {
               "type": "bearer",
@@ -652,7 +652,7 @@
       "name": "Prestataire - Cas Erreur",
       "item": [
         {
-          "name": "❌ Inscription prestataire sans zone_intervention",
+          "name": " Inscription prestataire sans zone_intervention",
           "request": {
             "auth": {
               "type": "bearer",
@@ -692,7 +692,7 @@
           "response": []
         },
         {
-          "name": "❌ Inscription prestataire sans SIRET",
+          "name": " Inscription prestataire sans SIRET",
           "request": {
             "auth": {
               "type": "bearer",
@@ -732,7 +732,7 @@
           "response": []
         },
         {
-          "name": "❌ Inscription prestataire SIRET trop court",
+          "name": " Inscription prestataire SIRET trop court",
           "request": {
             "auth": {
               "type": "bearer",
@@ -772,7 +772,7 @@
           "response": []
         },
         {
-          "name": "❌ Inscription prestataire SIRET avec lettres",
+          "name": " Inscription prestataire SIRET avec lettres",
           "request": {
             "auth": {
               "type": "bearer",
@@ -817,7 +817,7 @@
       "name": "Connexion",
       "item": [
         {
-          "name": "✅ Connexion Prestataire valide",
+          "name": " Connexion Prestataire valide",
           "request": {
             "auth": {
               "type": "bearer",
@@ -857,7 +857,7 @@
           "response": []
         },
         {
-          "name": "✅ Connexion Admin valide",
+          "name": " Connexion Admin valide",
           "request": {
             "auth": {
               "type": "bearer",
@@ -897,7 +897,7 @@
           "response": []
         },
         {
-          "name": "✅ Connexion Client valide",
+          "name": " Connexion Client valide",
           "request": {
             "auth": {
               "type": "bearer",
@@ -937,7 +937,7 @@
           "response": []
         },
         {
-          "name": "❌ Connexion sans email",
+          "name": " Connexion sans email",
           "request": {
             "auth": {
               "type": "bearer",
@@ -977,7 +977,7 @@
           "response": []
         },
         {
-          "name": "❌ Connexion mauvais mdp",
+          "name": " Connexion mauvais mdp",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1017,7 +1017,7 @@
           "response": []
         },
         {
-          "name": "❌ Connexion email inexistant",
+          "name": " Connexion email inexistant",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1057,7 +1057,7 @@
           "response": []
         },
         {
-          "name": "❌ Connexion sans mdp",
+          "name": " Connexion sans mdp",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1097,7 +1097,7 @@
           "response": []
         },
         {
-          "name": "❌ Connexion email invalide",
+          "name": " Connexion email invalide",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1142,7 +1142,7 @@
       "name": "Inscription",
       "item": [
         {
-          "name": "✅ Inscription Client valide",
+          "name": " Inscription Client valide",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1182,7 +1182,7 @@
           "response": []
         },
         {
-          "name": "✅ Inscription Admin Valide",
+          "name": " Inscription Admin Valide",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1222,7 +1222,7 @@
           "response": []
         },
         {
-          "name": "✅ Créer un nouvelle Admin Valide",
+          "name": " Créer un nouvelle Admin Valide",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1261,7 +1261,7 @@
           "response": []
         },
         {
-          "name": "✅ Inscription Prestataire Valide",
+          "name": " Inscription Prestataire Valide",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1301,7 +1301,7 @@
           "response": []
         },
         {
-          "name": "❌ Inscription sans rôle",
+          "name": " Inscription sans rôle",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1341,7 +1341,7 @@
           "response": []
         },
         {
-          "name": "❌ Inscription rôle invalide",
+          "name": " Inscription rôle invalide",
           "request": {
             "auth": {
               "type": "bearer",

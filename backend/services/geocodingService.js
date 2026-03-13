@@ -45,7 +45,7 @@ const geocodeAddress = async (address, city, postalCode) => {
 
   } catch (error) {
     // Echec réseau ou clé API invalide — on ne bloque pas la création du cimetière
-    console.error('❌ Geocoding indisponible:', error.message);
+    console.error(' Geocoding indisponible:', error.message);
     return null;
   }
 };

@@ -121,6 +121,6 @@ app.use((req, res) => {
 // DÉMARRAGE DU SERVEUR
 // ============================================
 app.listen(PORT, () => {
-  console.log(`✅ Serveur Mémoria démarré sur le port ${PORT}`);
-  console.log(`🌐 http://localhost:${PORT}`);
+  console.log(` Serveur Mémoria démarré sur le port ${PORT}`);
+  console.log(` http://localhost:${PORT}`);
 });

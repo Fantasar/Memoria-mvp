@@ -46,7 +46,7 @@ const users = [
 ];
 
 const run = async () => {
-  console.log('🌱 Démarrage du seed utilisateurs...\n');
+  console.log(' Démarrage du seed utilisateurs...\n');
 
   // Vérifie que toutes les variables d'environnement sont définies
   const requiredEnvVars = [
@@ -57,7 +57,7 @@ const run = async () => {
 
   const missing = requiredEnvVars.filter(v => !process.env[v]);
   if (missing.length > 0) {
-    console.error('❌ Variables manquantes dans le .env :', missing.join(', '));
+    console.error(' Variables manquantes dans le .env :', missing.join(', '));
     process.exit(1);
   }
 
@@ -83,14 +83,14 @@ const run = async () => {
     );
 
     const roleLabel = { 1: 'client', 2: 'prestataire', 3: 'admin' }[user.role_id];
-    console.log(`✅ ${roleLabel.padEnd(12)} — ${user.email}`);
+    console.log(` ${roleLabel.padEnd(12)} — ${user.email}`);
   }
 
-  console.log('\n✅ Seed terminé.');
+  console.log('\n Seed terminé.');
   await pool.end();
 };
 
 run().catch(err => {
-  console.error('❌ Erreur seed :', err.message);
+  console.error(' Erreur seed :', err.message);
   process.exit(1);
 });
