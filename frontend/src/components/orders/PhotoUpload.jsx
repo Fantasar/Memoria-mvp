@@ -33,7 +33,7 @@ const PhotoDropZone = ({ label, preview, onChange, onClear }) => (
             onClick={onClear}
             className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 hover:bg-red-700"
           >
-            ✕
+            
           </button>
         </div>
       ) : (
@@ -140,7 +140,7 @@ const PhotoUpload = ({ orderId, onUploadSuccess }) => {
       {/* Message de succès */}
       {success && (
         <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-green-800 text-sm">✅ Photos uploadées avec succès !</p>
+          <p className="text-green-800 text-sm"> Photos uploadées avec succès !</p>
         </div>
       )}
 

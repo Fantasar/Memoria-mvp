@@ -25,12 +25,12 @@ const authHeaders = () => ({
 
 // Sections de la sidebar — extraites pour éviter de les redéclarer à chaque render
 const NAV_SECTIONS = [
-  { key: 'overview',       icon: '📊', label: 'Aperçu' },
-  { key: 'currentMission', icon: '🔄', label: 'Mission en cours' },
-  { key: 'orders',         icon: '📋', label: 'Historique des commandes' },
-  { key: 'gallery',        icon: '📷', label: 'Galerie photos' },
-  { key: 'notifications',  icon: '🔔', label: 'Notifications' },
-  { key: 'profile',        icon: '👤', label: 'Profil' },
+  { key: 'overview',       icon: '', label: 'Aperçu' },
+  { key: 'currentMission', icon: '', label: 'Mission en cours' },
+  { key: 'orders',         icon: '', label: 'Historique des commandes' },
+  { key: 'gallery',        icon: '', label: 'Galerie photos' },
+  { key: 'notifications',  icon: '', label: 'Notifications' },
+  { key: 'profile',        icon: '', label: 'Profil' },
 ];
 
 /**
@@ -467,7 +467,7 @@ function DashboardClient() {
 
           {successMessage && (
             <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-green-800">✅ {successMessage}</p>
+              <p className="text-green-800"> {successMessage}</p>
             </div>
           )}
 
@@ -516,12 +516,12 @@ function DashboardClient() {
                     onClick={() => setReviewRating(star)}
                     className="text-5xl transition-transform hover:scale-110 focus:outline-none"
                   >
-                    {star <= reviewRating ? '⭐' : '☆'}
+                    {star <= reviewRating ? '⭐' : ''}
                   </button>
                 ))}
               </div>
               <p className="text-center text-sm text-gray-600 mt-2">
-                {['', '😞 Décevant', '😐 Moyen', '🙂 Bien', '😊 Très bien', '⭐ Excellent'][reviewRating]}
+                {['', ' Décevant', ' Moyen', ' Bien', ' Très bien', '⭐ Excellent'][reviewRating]}
               </p>
             </div>
 
@@ -556,7 +556,7 @@ function DashboardClient() {
                 disabled={submittingReview || !reviewRating}
                 className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submittingReview ? 'Envoi...' : "✅ Envoyer l'évaluation"}
+                {submittingReview ? 'Envoi...' : " Envoyer l'évaluation"}
               </button>
             </div>
           </div>

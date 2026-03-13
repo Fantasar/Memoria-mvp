@@ -31,7 +31,7 @@ const Services = () => {
           {/* Nettoyage */}
           <div className="mb-16">
             <h3 className="text-2xl font-bold text-gray-900 mb-6 border-b-2 border-green-200 pb-2 inline-block">
-              🌿 Nettoyage des pierres tombales
+               Nettoyage des pierres tombales
             </h3>
             <p className="text-gray-600 mb-8">
               Nettoyage complet de la pierre tombale avec produits adaptés, disponible en prestation unique ou en formule d'entretien régulier.
@@ -79,7 +79,7 @@ const Services = () => {
           {/* Livraison de fleurs */}
           <div>
             <h3 className="text-2xl font-bold text-gray-900 mb-6 border-b-2 border-green-200 pb-2 inline-block">
-              🌿 Livraison de fleurs
+               Livraison de fleurs
             </h3>
             <p className="text-gray-600 mb-8">
               Fleurissement saisonnier avec des fleurs fraîches ou artificielles, livrées et installées par nos prestataires.

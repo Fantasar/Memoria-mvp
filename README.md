@@ -8,7 +8,7 @@ Soutenance : 21 mars 2026
 
 ---
 
-## 📖 Description
+##  Description
 
 Mémoria est une marketplace web qui met en relation des familles éloignées 
 géographiquement de leurs proches disparus avec des prestataires locaux certifiés 
@@ -35,52 +35,52 @@ Une plateforme web permettant de :
 
 ---
 
-## 🎯 Fonctionnalités principales (MVP)
+##  Fonctionnalités principales (MVP)
 
 ### Pour les Clients
-- ✅ Créer un compte et gérer son profil
-- ✅ Commander un service d'entretien via carte Google Maps
-- ✅ Payer en ligne (Stripe mode test)
-- ✅ Consulter le statut des commandes en temps réel
-- ✅ Voir l'historique complet des prestations
-- ✅ Accéder à la galerie photos avant/après de ses interventions
-- ✅ Laisser un avis et une note sur le prestataire
-- ✅ Annuler une commande
-- ✅ Récupérer son mot de passe par SMS (Brevo)
-- ✅ Contacter le support via formulaire de contact ou messagerie Crisp
-- ✅ Exporter une facture PDF
+-  Créer un compte et gérer son profil
+-  Commander un service d'entretien via carte Google Maps
+-  Payer en ligne (Stripe mode test)
+-  Consulter le statut des commandes en temps réel
+-  Voir l'historique complet des prestations
+-  Accéder à la galerie photos avant/après de ses interventions
+-  Laisser un avis et une note sur le prestataire
+-  Annuler une commande
+-  Récupérer son mot de passe par SMS (Brevo)
+-  Contacter le support via formulaire de contact ou messagerie Crisp
+-  Exporter une facture PDF
 
 ### Pour les Prestataires
-- ✅ Créer un compte professionnel (SIRET)
-- ✅ Gérer ses documents d'inscription via Cloudinary
-- ✅ Consulter les missions disponibles sur carte géolocalisée
-- ✅ Modifier sa zone d'intervention
-- ✅ Accepter une mission
-- ✅ Uploader les photos avant/après (Cloudinary)
-- ✅ Suivre un calendrier de missions avec limite journalière
-- ✅ Consulter ses finances et exporter un PDF
-- ✅ Voir l'historique complet de ses prestations
-- ✅ Recevoir des notifications (missions, paiements, litiges)
-- ✅ Consulter les avis et notes le concernant
-- ✅ Récupérer son mot de passe par SMS (Brevo)
-- ✅ Contacter le support via messagerie Crisp
+-  Créer un compte professionnel (SIRET)
+-  Gérer ses documents d'inscription via Cloudinary
+-  Consulter les missions disponibles sur carte géolocalisée
+-  Modifier sa zone d'intervention
+-  Accepter une mission
+-  Uploader les photos avant/après (Cloudinary)
+-  Suivre un calendrier de missions avec limite journalière
+-  Consulter ses finances et exporter un PDF
+-  Voir l'historique complet de ses prestations
+-  Recevoir des notifications (missions, paiements, litiges)
+-  Consulter les avis et notes le concernant
+-  Récupérer son mot de passe par SMS (Brevo)
+-  Contacter le support via messagerie Crisp
 
 ### Pour les Administrateurs
-- ✅ Valider ou rejeter les comptes prestataires
-- ✅ Valider les interventions terminées et déclencher les paiements
-- ✅ Gérer les litiges (validation / remboursement / correction)
-- ✅ Consulter les statistiques plateforme
-- ✅ Gérer le glossaire des utilisateurs et prestataires
-- ✅ Gérer les cimetières (consultation + ajout)
-- ✅ Gérer les services disponibles (consultation + ajout)
-- ✅ Consulter les finances de la plateforme
-- ✅ Accéder à la galerie photos de toutes les interventions
-- ✅ Consulter l'historique complet des prestations
-- ✅ Gérer les messages (Crisp + formulaire de contact)
+-  Valider ou rejeter les comptes prestataires
+-  Valider les interventions terminées et déclencher les paiements
+-  Gérer les litiges (validation / remboursement / correction)
+-  Consulter les statistiques plateforme
+-  Gérer le glossaire des utilisateurs et prestataires
+-  Gérer les cimetières (consultation + ajout)
+-  Gérer les services disponibles (consultation + ajout)
+-  Consulter les finances de la plateforme
+-  Accéder à la galerie photos de toutes les interventions
+-  Consulter l'historique complet des prestations
+-  Gérer les messages (Crisp + formulaire de contact)
 
 ---
 
-## 🛠️ Stack technique
+## ️ Stack technique
 
 ### Frontend
 - React.js 18.x
@@ -119,7 +119,7 @@ Une plateforme web permettant de :
 
 ---
 
-## 📂 Architecture du projet
+##  Architecture du projet
 ```
 memoria-mvp/
 ├─ backend/
@@ -157,7 +157,7 @@ memoria-mvp/
 
 ---
 
-## 🚀 Installation
+##  Installation
 
 ### Prérequis
 - Node.js 20.x LTS
@@ -226,12 +226,12 @@ sudo -u postgres psql memoria_db -f 02_seed_service_categories.sql
 sudo -u postgres psql memoria_db -f 03_seed_cemeteries.sql
 ```
 
-> ⚠️ Les migrations doivent impérativement être exécutées dans l'ordre numérique.
+> ️ Les migrations doivent impérativement être exécutées dans l'ordre numérique.
 > Le README détaillé dans `/database/README.md` explique chaque fichier et ses dépendances.
 
 ---
 
-## 🔑 Variables d'environnement
+##  Variables d'environnement
 
 ### Backend — fichier `backend/.env`
 ```env
@@ -279,7 +279,7 @@ VITE_CRISP_WEBSITE_ID=votre_crisp_website_id
 
 ---
 
-## 🧪 Tests
+##  Tests
 
 ### Tests API — Postman
 
@@ -319,7 +319,7 @@ Validation prestataire → Validation intervention → Gestion litige → Statis
 
 ---
 
-## 🌐 Déploiement
+##  Déploiement
 
 ### URLs de production
 - **Frontend :** https://memoria-mvp-rust.vercel.app/
@@ -337,7 +337,7 @@ psql $DATABASE_URL -f database/migrations/01_extensions_enums.sql
 
 ---
 
-## 🗓️ Planning du projet
+## ️ Planning du projet
 
 | Sprint | Période | Focus |
 |---|---|---|
@@ -357,7 +357,7 @@ Soutenance finale : 21 mars 2026
 
 ---
 
-## 👤 Auteur
+##  Auteur
 
 Philippe Lapique
 Étudiant Développeur Web — Holberton School Bordeaux
@@ -365,7 +365,7 @@ Promotion C27 — 2026
 
 ---
 
-## 📄 Licence
+##  Licence
 
 Ce projet est réalisé dans le cadre d'un projet pédagogique.
 Tous droits réservés © 2026 Philippe Lapique

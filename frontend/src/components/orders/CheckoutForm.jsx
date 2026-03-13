@@ -69,7 +69,7 @@ function CheckoutForm({ paymentIntentId, orderData }) {
 
       if (response.data.success) {
         navigate('/dashboard/client', {
-          state: { message: '✅ Commande créée et paiement confirmé avec succès !' }
+          state: { message: ' Commande créée et paiement confirmé avec succès !' }
         });
       }
     } catch (err) {
@@ -114,7 +114,7 @@ function CheckoutForm({ paymentIntentId, orderData }) {
       </button>
 
       <div className="mt-4 text-center text-xs text-gray-500">
-        🔒 Paiement sécurisé par Stripe
+         Paiement sécurisé par Stripe
       </div>
     </form>
   );

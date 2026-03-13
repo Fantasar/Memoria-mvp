@@ -23,7 +23,7 @@ const buildTimelineSteps = (order) => {
   // 1. Commande créée — toujours présent
   steps.push({
     status:      'completed',
-    icon:        '✅',
+    icon:        '',
     title:       'Commande créée',
     date:        order.created_at,
     description: 'Votre demande a été enregistrée'
@@ -33,7 +33,7 @@ const buildTimelineSteps = (order) => {
   if (order.status !== 'pending') {
     steps.push({
       status:      'completed',
-      icon:        '💳',
+      icon:        '',
       title:       'Paiement effectué',
       date:        order.created_at,
       description: `${order.price}€ payés`
@@ -44,7 +44,7 @@ const buildTimelineSteps = (order) => {
   if (order.prestataire_id) {
     steps.push({
       status:      'completed',
-      icon:        '👤',
+      icon:        '',
       title:       'Prestataire assigné',
       date:        order.accepted_at || order.updated_at,
       description: 'Intervention confiée à un professionnel'
@@ -55,7 +55,7 @@ const buildTimelineSteps = (order) => {
   if (order.scheduled_date && order.status === 'accepted') {
     steps.push({
       status:      'current',
-      icon:        '📅',
+      icon:        '',
       title:       'Intervention prévue',
       date:        order.scheduled_date,
       description: `Intervention le ${new Date(order.scheduled_date).toLocaleDateString('fr-FR', {
@@ -68,7 +68,7 @@ const buildTimelineSteps = (order) => {
   if (['awaiting_validation', 'completed', 'disputed'].includes(order.status)) {
     steps.push({
       status:      'completed',
-      icon:        '✨',
+      icon:        '',
       title:       'Intervention effectuée',
       date:        order.completed_at || order.updated_at,
       description: 'Photos avant/après disponibles'
@@ -90,7 +90,7 @@ const buildTimelineSteps = (order) => {
   if (order.status === 'disputed') {
     steps.push({
       status:      'warning',
-      icon:        '🚨',
+      icon:        '',
       title:       'Litige en cours',
       date:        order.disputed_at,
       description: order.dispute_reason || 'Problème signalé — Examen en cours'
@@ -101,7 +101,7 @@ const buildTimelineSteps = (order) => {
   if (order.status === 'completed') {
     steps.push({
       status:      'completed',
-      icon:        '🎉',
+      icon:        '',
       title:       'Mission terminée',
       date:        order.validated_at || order.updated_at,
       description: 'Mission validée avec succès'
@@ -112,7 +112,7 @@ const buildTimelineSteps = (order) => {
   if (order.status === 'cancelled') {
     steps.push({
       status:      'cancelled',
-      icon:        '❌',
+      icon:        '',
       title:       'Mission annulée',
       date:        order.cancelled_at || order.updated_at,
       description: order.cancellation_reason || 'Mission annulée'
@@ -123,7 +123,7 @@ const buildTimelineSteps = (order) => {
   if (order.status === 'refunded') {
     steps.push({
       status:      'completed',
-      icon:        '💸',
+      icon:        '',
       title:       'Remboursement effectué',
       date:        order.refunded_at || order.updated_at,
       description: `${order.price}€ remboursés`
@@ -144,7 +144,7 @@ function OrderTimeline({ order }) {
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
-      <h3 className="text-lg font-semibold mb-6">📊 Suivi de votre mission</h3>
+      <h3 className="text-lg font-semibold mb-6"> Suivi de votre mission</h3>
 
       <div className="space-y-6">
         {steps.map((step, index) => {

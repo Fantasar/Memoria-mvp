@@ -82,7 +82,7 @@ function CurrentMission() {
       <div>
         <SectionHeader />
         <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <p className="text-xl mb-2">🔍</p>
+          <p className="text-xl mb-2"></p>
           <p className="text-gray-600 font-medium">Aucune mission en cours</p>
           <p className="text-sm text-gray-500 mt-2">
             Toutes vos missions sont terminées ou en attente d'attribution
@@ -99,7 +99,7 @@ function CurrentMission() {
       {currentOrders.length > 1 && (
         <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
           <p className="text-blue-800 text-sm font-medium">
-            📋 {currentOrders.length} missions en cours
+             {currentOrders.length} missions en cours
           </p>
         </div>
       )}
@@ -118,7 +118,7 @@ function CurrentMission() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="text-2xl font-bold mb-2">{order.service_name}</h3>
-                    <p className="text-blue-100 mb-1">📍 {order.cemetery_name}</p>
+                    <p className="text-blue-100 mb-1"> {order.cemetery_name}</p>
                     <p className="text-blue-100 text-sm">{order.cemetery_city}</p>
 
                     {order.scheduled_date && (
@@ -148,7 +148,7 @@ function CurrentMission() {
               {/* Photos */}
               {photos.length > 0 && (
                 <div className="p-6 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold mb-4">📷 Photos de l'intervention</h3>
+                  <h3 className="text-lg font-semibold mb-4"> Photos de l'intervention</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {beforePhoto && (
                       <div className="relative group">
@@ -156,7 +156,7 @@ function CurrentMission() {
                           className="w-full h-64 object-cover rounded-lg border-2 border-gray-200" />
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition rounded-lg flex items-end p-4">
                           <span className="bg-black bg-opacity-70 text-white px-3 py-2 rounded text-sm font-medium">
-                            📷 Avant intervention
+                             Avant intervention
                           </span>
                         </div>
                       </div>
@@ -167,7 +167,7 @@ function CurrentMission() {
                           className="w-full h-64 object-cover rounded-lg border-2 border-green-200" />
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition rounded-lg flex items-end p-4">
                           <span className="bg-green-600 bg-opacity-90 text-white px-3 py-2 rounded text-sm font-medium">
-                            ✨ Après intervention
+                             Après intervention
                           </span>
                         </div>
                       </div>
@@ -185,7 +185,7 @@ function CurrentMission() {
 
                   {order.status === 'disputed' && (
                     <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
-                      <p className="text-red-800 font-medium">🚨 Litige en cours d'examen</p>
+                      <p className="text-red-800 font-medium"> Litige en cours d'examen</p>
                       <p className="text-sm text-red-700 mt-1">
                         {order.dispute_reason || 'Votre signalement est en cours de traitement.'}
                       </p>

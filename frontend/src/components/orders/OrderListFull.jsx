@@ -98,7 +98,7 @@ function OrderListFull({ onReview }) {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">❌ {error}</p>
+        <p className="text-red-800"> {error}</p>
       </div>
     );
   }
@@ -259,11 +259,11 @@ function OrderListFull({ onReview }) {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                    <div><span className="font-medium">📍 Cimetière :</span> {order.cemetery_name || 'Non spécifié'}</div>
-                    <div><span className="font-medium">📅 Date :</span> {new Date(order.created_at).toLocaleDateString('fr-FR')}</div>
-                    <div><span className="font-medium">💰 Prix :</span> {order.price ? `${order.price}€` : 'Non défini'}</div>
+                    <div><span className="font-medium"> Cimetière :</span> {order.cemetery_name || 'Non spécifié'}</div>
+                    <div><span className="font-medium"> Date :</span> {new Date(order.created_at).toLocaleDateString('fr-FR')}</div>
+                    <div><span className="font-medium"> Prix :</span> {order.price ? `${order.price}€` : 'Non défini'}</div>
                     {order.prestataire_email && (
-                      <div><span className="font-medium">👤 Prestataire :</span> {order.prestataire_email}</div>
+                      <div><span className="font-medium"> Prestataire :</span> {order.prestataire_email}</div>
                     )}
                   </div>
                 </div>
@@ -285,7 +285,7 @@ function OrderListFull({ onReview }) {
                   disabled={cancelling[order.id]}
                   className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50 mt-3"
                 >
-                  {cancelling[order.id] ? '⏳ Annulation...' : '❌ Annuler la commande'}
+                  {cancelling[order.id] ? '⏳ Annulation...' : ' Annuler la commande'}
                 </button>
               </div>
             )}
@@ -299,7 +299,7 @@ function OrderListFull({ onReview }) {
                     disabled={loadingPhotos[order.id]}
                     className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
                   >
-                    {loadingPhotos[order.id] ? '⏳ Chargement...' : isExpanded ? '🔼 Masquer photos' : '📷 Voir les photos'}
+                    {loadingPhotos[order.id] ? '⏳ Chargement...' : isExpanded ? ' Masquer photos' : ' Voir les photos'}
                   </button>
 
                   {order.status === 'completed' && (
@@ -312,7 +312,7 @@ function OrderListFull({ onReview }) {
                       </button>
                     ) : (
                       <div className="flex-1 bg-green-100 text-green-800 px-4 py-2 rounded-lg text-center font-medium">
-                        ✅ Évalué
+                         Évalué
                       </div>
                     )
                   )}
@@ -322,7 +322,7 @@ function OrderListFull({ onReview }) {
                       <button
                         onClick={e => { e.stopPropagation(); exportFacturePDF(order); }}
                         className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center justify-center gap-2">
-                        📄 Télécharger la facture
+                         Télécharger la facture
                       </button>
                     </div>
                   )}
@@ -340,7 +340,7 @@ function OrderListFull({ onReview }) {
                         <img src={beforePhoto.url} alt="Avant intervention"
                           className="w-full h-64 object-cover rounded-lg border-2 border-gray-200" />
                         <span className="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm font-medium">
-                          📷 Avant
+                           Avant
                         </span>
                       </div>
                     )}
@@ -349,7 +349,7 @@ function OrderListFull({ onReview }) {
                         <img src={afterPhoto.url} alt="Après intervention"
                           className="w-full h-64 object-cover rounded-lg border-2 border-green-200" />
                         <span className="absolute top-2 left-2 bg-green-600 bg-opacity-90 text-white px-3 py-1 rounded text-sm font-medium">
-                          ✨ Après
+                           Après
                         </span>
                       </div>
                     )}

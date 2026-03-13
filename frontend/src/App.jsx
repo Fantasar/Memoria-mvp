@@ -34,7 +34,7 @@ import CompleteMission from './pages/orders/CompleteMission';
  * Routeur principal de l'application Mémoria.
  * AuthProvider est géré dans main.jsx — ne pas le redéclarer ici.
  *
- * ⚠️ ORDRE CRITIQUE des routes :
+ * ️ ORDRE CRITIQUE des routes :
  * Les routes statiques (/orders/new, /orders/checkout) doivent être
  * déclarées AVANT les routes dynamiques (/orders/:id)
  */
@@ -74,7 +74,7 @@ function App() {
           }
         />
 
-        {/* ⚠️ Statiques avant dynamiques — /new et /checkout avant /:id */}
+        {/* ️ Statiques avant dynamiques — /new et /checkout avant /:id */}
         <Route
           path="/orders/new"
           element={

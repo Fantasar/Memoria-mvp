@@ -46,7 +46,7 @@ const PhotoGallery = ({ orderId }) => {
     <div className="grid grid-cols-2 gap-4 mt-4">
       {beforePhoto && (
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">📷 Avant</p>
+          <p className="text-sm font-medium text-gray-700 mb-2"> Avant</p>
           <img
             src={beforePhoto.url}
             alt="Avant intervention"
@@ -56,7 +56,7 @@ const PhotoGallery = ({ orderId }) => {
       )}
       {afterPhoto && (
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">✨ Après</p>
+          <p className="text-sm font-medium text-gray-700 mb-2"> Après</p>
           <img
             src={afterPhoto.url}
             alt="Après intervention"

@@ -74,7 +74,7 @@ function Header() {
           {/* Droite desktop : nom + déconnexion */}
           <div className="hidden md:flex items-center gap-4">
             <span className="text-sm text-gray-700">
-              👤 {user?.prenom} {user?.nom}
+               {user?.prenom} {user?.nom}
             </span>
             <button
               onClick={handleLogout}
@@ -100,7 +100,7 @@ function Header() {
         {menuOpen && (
           <div className="md:hidden mt-3 pt-3 border-t border-gray-200 flex flex-col gap-3">
 
-            <span className="text-xs text-gray-500">👤 {user?.prenom} {user?.nom} — {labelByRole[user?.role]}</span>
+            <span className="text-xs text-gray-500"> {user?.prenom} {user?.nom} — {labelByRole[user?.role]}</span>
 
             {user?.role === 'client' && (
               <>

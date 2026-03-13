@@ -151,7 +151,7 @@ function OrderDetails() {
             <div className="space-y-3">
               <div>
                 <p className="text-sm text-gray-600">Cimetière</p>
-                <p className="font-semibold text-gray-900">📍 {order.cemetery_name}</p>
+                <p className="font-semibold text-gray-900"> {order.cemetery_name}</p>
                 <p className="text-sm text-gray-600">{order.cemetery_city}</p>
               </div>
               {order.cemetery_location && (
@@ -181,7 +181,7 @@ function OrderDetails() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Prestataire</h2>
             {order.prestataire_email ? (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-sm text-green-800 mb-2">✅ Prestataire assigné</p>
+                <p className="text-sm text-green-800 mb-2"> Prestataire assigné</p>
                 <p className="font-semibold text-gray-900">{order.prestataire_email}</p>
               </div>
             ) : (
@@ -200,7 +200,7 @@ function OrderDetails() {
         {order.status === 'pending' && (
           <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              💡 <strong>Bon à savoir :</strong> Vous serez notifié par email dès qu'un prestataire acceptera votre commande.
+               <strong>Bon à savoir :</strong> Vous serez notifié par email dès qu'un prestataire acceptera votre commande.
             </p>
           </div>
         )}

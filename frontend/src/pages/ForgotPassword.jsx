@@ -40,7 +40,7 @@ function ForgotPassword() {
         <div className="pt-24">
           <AuthLayout title="Code envoyé !" subtitle="">
             <div className="text-center">
-              <div className="text-6xl mb-4">📱</div>
+              <div className="text-6xl mb-4"></div>
               <p className="text-gray-600 mb-2">
                 Si ce numéro est enregistré, vous allez recevoir un SMS avec votre code de réinitialisation.
               </p>
