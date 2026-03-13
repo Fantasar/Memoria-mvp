@@ -25,12 +25,12 @@ const authHeaders = () => ({
 
 // Sections de la sidebar — extraites pour éviter de les redéclarer à chaque render
 const NAV_SECTIONS = [
-  { key: 'overview',       icon: '', label: 'Aperçu' },
-  { key: 'currentMission', icon: '', label: 'Mission en cours' },
-  { key: 'orders',         icon: '', label: 'Historique des commandes' },
-  { key: 'gallery',        icon: '', label: 'Galerie photos' },
-  { key: 'notifications',  icon: '', label: 'Notifications' },
-  { key: 'profile',        icon: '', label: 'Profil' },
+  { key: 'overview', icon: '📊', label: 'Aperçu' },
+  { key: 'currentMission', icon: '🔄', label: 'Mission en cours' },
+  { key: 'orders', icon: '📋', label: 'Historique des commandes' },
+  { key: 'gallery', icon: '📷', label: 'Galerie photos' },
+  { key: 'notifications', icon: '🔔', label: 'Notifications' },
+  { key: 'profile', icon: '👤', label: 'Profil' },
 ];
 
 /**
@@ -426,31 +426,54 @@ function DashboardClient() {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <Navbar />
       {/* Contenu principal */}
-      <main className="flex-1 flex bg-blue-50 gap-6 px-6 py-8 pt-32 w-full">
+      <main className="flex-1 bg-slate-50 px-6 py-8 pt-32 pl-24 w-full">
 
         {/* Sidebar */}
-        <aside className="w-1/3 bg-white border-l-4 border-blue-600 rounded-lg p-6 space-y-2 shadow h-fit">
-          <p className="text-gray-500 uppercase font-semibold text-sm mb-4">Sections</p>
+        <aside className="fixed top-0 left-0 h-full w-16 bg-white border-r border-gray-100 shadow-sm z-40 flex flex-col items-center pt-24 pb-6 gap-1">
 
-          {NAV_SECTIONS.map(({ key, icon, label }) => (
-            <button
-              key={key}
-              onClick={() => setActiveSection(key)}
-              className={`w-full text-left px-4 py-2 rounded-lg transition ${activeSection === key
-                ? 'bg-blue-100 text-blue-700 font-semibold'
-                : 'hover:bg-gray-100'
-                }`}
-            >
-              <div className="flex items-center justify-between">
-                <span>{icon} {label}</span>
-                {key === 'notifications' && unreadCount > 0 && (
-                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                    {unreadCount}
-                  </span>
-                )}
+          {NAV_SECTIONS.map(({ key, label }) => {
+            const icons = {
+              overview: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+              currentMission: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
+              orders: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+              gallery: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+              notifications: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>,
+              profile: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
+            };
+
+            return (
+              <div key={key} className="relative group w-full flex justify-center">
+                <button
+                  onClick={() => setActiveSection(key)}
+                  className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all ${activeSection === key
+                    ? 'bg-slate-800 text-white shadow-md'
+                    : 'text-gray-400 hover:bg-slate-50 hover:text-slate-700'
+                    }`}
+                >
+                  {icons[key]}
+                  {/* Badge notifications */}
+                  {key === 'notifications' && unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Tooltip */}
+                <div className="absolute left-14 top-1/2 -translate-y-1/2 px-3 py-1.5
+          bg-slate-800 text-white text-xs font-medium rounded-lg shadow-lg
+          whitespace-nowrap pointer-events-none
+          opacity-0 group-hover:opacity-100
+          translate-x-1 group-hover:translate-x-0
+          transition-all duration-200 z-50">
+                  {label}
+                  {/* Flèche gauche */}
+                  <div className="absolute right-full top-1/2 -translate-y-1/2
+            border-4 border-transparent border-r-slate-800" />
+                </div>
               </div>
-            </button>
-          ))}
+            );
+          })}
         </aside>
 
         {/* Zone principale */}
@@ -467,7 +490,7 @@ function DashboardClient() {
 
           {successMessage && (
             <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-green-800"> {successMessage}</p>
+              <p className="text-green-800">✅ {successMessage}</p>
             </div>
           )}
 
@@ -516,12 +539,12 @@ function DashboardClient() {
                     onClick={() => setReviewRating(star)}
                     className="text-5xl transition-transform hover:scale-110 focus:outline-none"
                   >
-                    {star <= reviewRating ? '⭐' : ''}
+                    {star <= reviewRating ? '⭐' : '☆'}
                   </button>
                 ))}
               </div>
               <p className="text-center text-sm text-gray-600 mt-2">
-                {['', ' Décevant', ' Moyen', ' Bien', ' Très bien', '⭐ Excellent'][reviewRating]}
+                {['', '😞 Décevant', '😐 Moyen', '🙂 Bien', '😊 Très bien', '⭐ Excellent'][reviewRating]}
               </p>
             </div>
 
@@ -556,7 +579,7 @@ function DashboardClient() {
                 disabled={submittingReview || !reviewRating}
                 className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submittingReview ? 'Envoi...' : " Envoyer l'évaluation"}
+                {submittingReview ? 'Envoi...' : "✅ Envoyer l'évaluation"}
               </button>
             </div>
           </div>
