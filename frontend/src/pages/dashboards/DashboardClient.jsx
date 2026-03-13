@@ -3,16 +3,11 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Link } from 'react-router-dom';
 import axios from 'axios';
 
-// Composants orders
 import OrderListPreview from '../../components/orders/OrderListPreview';
 import OrderListFull from '../../components/orders/OrderListFull';
 import CrispChat from '../../components/layout/CrispChat';
-
-
-// Composants clients — dossier "clients" avec s
 import PhotoGallery from '../../components/client/PhotoGallery';
 import CurrentMission from '../../components/client/CurrentMission';
 import ClientNotifications from '../../components/client/ClientNotifications';
@@ -23,28 +18,62 @@ const authHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 });
 
-// Sections de la sidebar — extraites pour éviter de les redéclarer à chaque render
+// Sections de la sidebar
 const NAV_SECTIONS = [
-  { key: 'overview', icon: '📊', label: 'Aperçu' },
-  { key: 'currentMission', icon: '🔄', label: 'Mission en cours' },
-  { key: 'orders', icon: '📋', label: 'Historique des commandes' },
-  { key: 'gallery', icon: '📷', label: 'Galerie photos' },
-  { key: 'notifications', icon: '🔔', label: 'Notifications' },
-  { key: 'profile', icon: '👤', label: 'Profil' },
+  { key: 'overview',       label: 'Aperçu' },
+  { key: 'currentMission', label: 'Mission en cours' },
+  { key: 'orders',         label: 'Historique des commandes' },
+  { key: 'gallery',        label: 'Galerie photos' },
+  { key: 'notifications',  label: 'Notifications' },
+  { key: 'profile',        label: 'Profil' },
 ];
+
+// Icônes SVG de la sidebar
+const ICONS = {
+  overview: (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  ),
+  currentMission: (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  ),
+  orders: (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  ),
+  gallery: (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  ),
+  notifications: (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+  ),
+  profile: (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  ),
+};
 
 /**
  * Dashboard principal du client.
- * Navigation par sections via sidebar — contenu rendu dynamiquement.
+ * Navigation par sections via sidebar iconique — contenu rendu dynamiquement.
  */
 function DashboardClient() {
   const { user, logout, login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [activeSection, setActiveSection] = useState('overview');
   const [successMessage, setSuccessMessage] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
-  const location = useLocation();
 
   const [dashboardStats, setDashboardStats] = useState({
     orders_in_progress: 0,
@@ -60,10 +89,10 @@ function DashboardClient() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState(null);
 
-  //Modal des modification des information du compte
+  // Modal profil
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const [profileData, setProfileData] = useState({ prenom: '', nom: '', email: '' });
+  const [profileData, setProfileData] = useState({ prenom: '', nom: '', email: '', telephone: '' });
   const [passwordData, setPasswordData] = useState({ current: '', newPassword: '', confirm: '' });
   const [profileSuccess, setProfileSuccess] = useState(null);
   const [profileError, setProfileError] = useState(null);
@@ -81,7 +110,7 @@ function DashboardClient() {
     }
   }, [location.state]);
 
-  // Chargement initial des stats et du badge notifications
+  // Chargement initial des stats et badge notifications (polling 10s)
   useEffect(() => {
     fetchStats();
     fetchUnreadCount();
@@ -89,17 +118,17 @@ function DashboardClient() {
     return () => clearInterval(interval);
   }, []);
 
-  /** Récupère les statistiques du dashboard client (missions en cours, terminées, dernière commande) */
+  /** Récupère les statistiques du dashboard client */
   const fetchStats = async () => {
     try {
       const response = await axios.get('/api/orders/dashboard-stats', authHeaders());
       setDashboardStats(response.data.data || response.data);
     } catch {
-      // Échec silencieux — les stats restent à 0
+      // Échec silencieux — stats restent à 0
     }
   };
 
-  /** Récupère le nombre de notifications non lues — appelé toutes les 10 secondes via setInterval */
+  /** Récupère le nombre de notifications non lues */
   const fetchUnreadCount = async () => {
     try {
       const response = await axios.get('/api/notifications', authHeaders());
@@ -119,7 +148,7 @@ function DashboardClient() {
     setShowReviewModal(true);
   };
 
-  /** Ferme le modal d'évaluation et réinitialise tous les états associés */
+  /** Ferme le modal d'évaluation et réinitialise les états */
   const closeReviewModal = () => {
     setShowReviewModal(false);
     setOrderToReview(null);
@@ -128,26 +157,20 @@ function DashboardClient() {
     setReviewError(null);
   };
 
-  /**
-  * Soumet l'évaluation du prestataire pour une commande terminée
-  * Gère le cas où la commande a déjà été évaluée (ALREADY_REVIEWED)
-  */
+  /** Soumet l'évaluation du prestataire */
   const handleSubmitReview = async () => {
     if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
       setReviewError('Veuillez sélectionner une note entre 1 et 5 étoiles');
       return;
     }
-
     setSubmittingReview(true);
     setReviewError(null);
-
     try {
       await axios.post('/api/reviews', {
         order_id: orderToReview.id,
         rating: reviewRating,
         comment: reviewComment.trim() || null
       }, authHeaders());
-
       closeReviewModal();
       await fetchStats();
     } catch (err) {
@@ -167,26 +190,27 @@ function DashboardClient() {
 
   const renderSection = () => {
     switch (activeSection) {
+
       case 'overview':
         return (
           <div>
-            <h2 className="text-xl font-semibold mb-4">Aperçu</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-blue-50 p-4 rounded-lg shadow text-center">
-                <p className="text-gray-500">Commandes en cours</p>
-                <p className="text-2xl font-bold">{dashboardStats.orders_in_progress}</p>
+            <h2 className="text-xl font-semibold text-gray-800 mb-6">Aperçu</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 text-center">
+                <p className="text-sm font-medium text-gray-500 mb-2">Commandes en cours</p>
+                <p className="text-3xl font-bold text-blue-600">{dashboardStats.orders_in_progress}</p>
               </div>
-              <div className="bg-green-50 p-4 rounded-lg shadow text-center">
-                <p className="text-gray-500">Commandes terminées</p>
-                <p className="text-2xl font-bold">{dashboardStats.orders_completed}</p>
+              <div className="bg-blue-100 border border-blue-200 rounded-xl p-6 text-center">
+                <p className="text-sm font-medium text-gray-500 mb-2">Commandes terminées</p>
+                <p className="text-3xl font-bold text-blue-700">{dashboardStats.orders_completed}</p>
               </div>
-              <div className="bg-yellow-50 p-4 rounded-lg shadow text-center">
-                <p className="text-gray-500">Dernière commande</p>
-                <p className="text-2xl font-bold">
+              <div className="bg-blue-600 border border-blue-600 rounded-xl p-6 text-center">
+                <p className="text-sm font-medium text-blue-100 mb-2">Dernière commande</p>
+                <p className="text-3xl font-bold text-white">
                   {dashboardStats.last_order_date
                     ? new Date(dashboardStats.last_order_date).toLocaleDateString('fr-FR', {
-                      day: '2-digit', month: 'short', year: 'numeric'
-                    })
+                        day: '2-digit', month: 'short', year: 'numeric'
+                      })
                     : '-'}
                 </p>
               </div>
@@ -201,7 +225,7 @@ function DashboardClient() {
       case 'orders':
         return (
           <div>
-            <h2 className="text-2xl font-semibold mb-6">Historique des commandes</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Historique des commandes</h2>
             <OrderListFull onReview={openReviewModal} />
           </div>
         );
@@ -215,11 +239,11 @@ function DashboardClient() {
       case 'profile':
         return (
           <div>
-            <h2 className="text-2xl font-semibold mb-6">Mon profil</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Mon profil</h2>
 
-            <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+            <div className="bg-white border border-gray-200 rounded-xl p-6 mb-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-800">
+                <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
                 Informations personnelles
@@ -228,33 +252,36 @@ function DashboardClient() {
                 <div><label className="text-sm font-medium text-gray-500">Prénom</label><p className="text-gray-900 font-medium">{user?.prenom || '-'}</p></div>
                 <div><label className="text-sm font-medium text-gray-500">Nom</label><p className="text-gray-900 font-medium">{user?.nom || '-'}</p></div>
                 <div><label className="text-sm font-medium text-gray-500">Email</label><p className="text-gray-900 font-medium">{user?.email || '-'}</p></div>
-                {/* Téléphone — ajouté pour reset mot de passe et contact prestataire */}
                 <div><label className="text-sm font-medium text-gray-500">Téléphone</label><p className="text-gray-900 font-medium">{user?.telephone || '-'}</p></div>
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Statut</label>
-                  <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Actif</span>
+                  <div className="mt-1">
+                    <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Actif</span>
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Membre depuis</label>
                   <p className="text-gray-900 font-medium">
-                    {user?.created_at ? new Date(user.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+                    {user?.created_at
+                      ? new Date(user.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                      : '-'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex gap-4">
+            <div className="flex gap-3">
               <button
                 onClick={() => {
                   setProfileData({ prenom: user?.prenom || '', nom: user?.nom || '', email: user?.email || '', telephone: user?.telephone || '' });
                   setProfileError(null); setProfileSuccess(null); setShowEditProfile(true);
                 }}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
+                className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold text-sm shadow-sm transition">
                 Modifier mes informations
               </button>
               <button
@@ -262,7 +289,7 @@ function DashboardClient() {
                   setPasswordData({ current: '', newPassword: '', confirm: '' });
                   setPasswordError(null); setPasswordSuccess(null); setShowChangePassword(true);
                 }}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 transition">
                 Changer mon mot de passe
               </button>
             </div>
@@ -270,35 +297,31 @@ function DashboardClient() {
             {/* Modal modifier profil */}
             {showEditProfile && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
                   <h3 className="text-lg font-semibold mb-4">Modifier mes informations</h3>
                   {profileError && <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{profileError}</p></div>}
                   {profileSuccess && <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm">{profileSuccess}</p></div>}
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
-                      <input type="text" value={profileData.prenom} onChange={e => setProfileData(prev => ({ ...prev, prenom: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                      <input type="text" value={profileData.nom} onChange={e => setProfileData(prev => ({ ...prev, nom: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <input type="email" value={profileData.email} onChange={e => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                      <input type="tel" value={profileData.telephone} onChange={e => setProfileData(prev => ({ ...prev, telephone: e.target.value }))}
-                        placeholder="0612345678" className="w-full border border-gray-300 rounded-lg px-3 py-2" />
-                    </div>
+                    {['prenom', 'nom', 'email', 'telephone'].map(field => (
+                      <div key={field}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                          {field === 'telephone' ? 'Téléphone' : field.charAt(0).toUpperCase() + field.slice(1)}
+                        </label>
+                        <input
+                          type={field === 'email' ? 'email' : field === 'telephone' ? 'tel' : 'text'}
+                          value={profileData[field]}
+                          onChange={e => setProfileData(prev => ({ ...prev, [field]: e.target.value }))}
+                          placeholder={field === 'telephone' ? '0612345678' : ''}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                      </div>
+                    ))}
                   </div>
                   <div className="flex gap-3 mt-6">
                     <button onClick={() => setShowEditProfile(false)}
-                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">Annuler</button>
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg font-medium transition">
+                      Annuler
+                    </button>
                     <button
                       onClick={async () => {
                         setProfileError(null);
@@ -317,63 +340,44 @@ function DashboardClient() {
                           setProfileError(err.response?.data?.error?.message || 'Erreur lors de la mise à jour');
                         }
                       }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Enregistrer</button>
+                      className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium transition">
+                      Enregistrer
+                    </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ── Modal changer mot de passe ───────────────────────── */}
+            {/* Modal changer mot de passe */}
             {showChangePassword && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
                   <h3 className="text-lg font-semibold mb-4">Changer mon mot de passe</h3>
-
-                  {passwordError && (
-                    <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3">
-                      <p className="text-red-800 text-sm">{passwordError}</p>
-                    </div>
-                  )}
-                  {passwordSuccess && (
-                    <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3">
-                      <p className="text-green-800 text-sm">{passwordSuccess}</p>
-                    </div>
-                  )}
-
+                  {passwordError && <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{passwordError}</p></div>}
+                  {passwordSuccess && <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm">{passwordSuccess}</p></div>}
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe actuel</label>
-                      <input
-                        type="password"
-                        value={passwordData.current}
+                      <input type="password" value={passwordData.current}
                         onChange={e => setPasswordData(prev => ({ ...prev, current: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                      />
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
-                      <input
-                        type="password"
-                        value={passwordData.newPassword}
+                      <input type="password" value={passwordData.newPassword}
                         onChange={e => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                      />
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Confirmer le nouveau mot de passe</label>
-                      <input
-                        type="password"
-                        value={passwordData.confirm}
+                      <input type="password" value={passwordData.confirm}
                         onChange={e => setPasswordData(prev => ({ ...prev, confirm: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                      />
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
                     </div>
                   </div>
-
                   <div className="flex gap-3 mt-6">
-                    <button
-                      onClick={() => setShowChangePassword(false)}
-                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">
+                    <button onClick={() => setShowChangePassword(false)}
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg font-medium transition">
                       Annuler
                     </button>
                     <button
@@ -404,101 +408,88 @@ function DashboardClient() {
                           setPasswordError(err.response?.data?.error?.message || 'Erreur lors du changement');
                         }
                       }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                      className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium transition">
                       Confirmer
                     </button>
                   </div>
                 </div>
               </div>
             )}
-
           </div>
         );
+
       default:
         return null;
     }
   };
 
-
   // ─── Rendu principal ──────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-blue-50 flex flex-col">
       <Navbar />
-      {/* Contenu principal */}
-      <main className="flex-1 bg-slate-50 px-6 py-8 pt-32 pl-24 w-full">
 
-        {/* Sidebar */}
+      <main className="flex-1 px-6 py-8 pt-32 pl-24 w-full">
+
+        {/* Sidebar iconique fixe */}
         <aside className="fixed top-0 left-0 h-full w-16 bg-white border-r border-gray-100 shadow-sm z-30 flex flex-col items-center pt-28 pb-6 gap-1">
+          {NAV_SECTIONS.map(({ key, label }) => (
+            <div key={key} className="relative group w-full flex justify-center">
+              <button
+                onClick={() => setActiveSection(key)}
+                className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all ${
+                  activeSection === key
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : 'text-gray-400 hover:bg-blue-50 hover:text-blue-500'
+                }`}
+              >
+                {ICONS[key]}
+                {/* Badge notifications */}
+                {key === 'notifications' && unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
 
-          {NAV_SECTIONS.map(({ key, label }) => {
-            const icons = {
-              overview: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
-              currentMission: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
-              orders: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
-              gallery: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
-              notifications: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>,
-              profile: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
-            };
-
-            return (
-              <div key={key} className="relative group w-full flex justify-center">
-                <button
-                  onClick={() => setActiveSection(key)}
-                  className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all ${activeSection === key
-                    ? 'bg-slate-800 text-white shadow-md'
-                    : 'text-gray-400 hover:bg-slate-50 hover:text-slate-700'
-                    }`}
-                >
-                  {icons[key]}
-                  {/* Badge notifications */}
-                  {key === 'notifications' && unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                {/* Tooltip */}
-                <div className="absolute left-14 top-1/2 -translate-y-1/2 px-3 py-1.5
-          bg-slate-800 text-white text-xs font-medium rounded-lg shadow-lg
-          whitespace-nowrap pointer-events-none
-          opacity-0 group-hover:opacity-100
-          translate-x-1 group-hover:translate-x-0
-          transition-all duration-200 z-50">
-                  {label}
-                  {/* Flèche gauche */}
-                  <div className="absolute right-full top-1/2 -translate-y-1/2
-            border-4 border-transparent border-r-slate-800" />
-                </div>
+              {/* Tooltip */}
+              <div className="absolute left-14 top-1/2 -translate-y-1/2 px-3 py-1.5
+                bg-slate-800 text-white text-xs font-medium rounded-lg shadow-lg
+                whitespace-nowrap pointer-events-none
+                opacity-0 group-hover:opacity-100
+                translate-x-1 group-hover:translate-x-0
+                transition-all duration-200 z-50">
+                {label}
+                <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-800" />
               </div>
-            );
-          })}
+            </div>
+          ))}
         </aside>
 
-        {/* Zone principale */}
-        <section className="flex-1 bg-white border-r-4 border-blue-600 rounded-lg p-6 shadow">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold">Dashboard Client</h1>
+        {/* Zone de contenu */}
+        <section className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+
+          {/* Header */}
+          <div className="flex items-center justify-between mb-2 pb-6 border-b border-gray-100">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Dashboard Client</h1>
+              {user && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Bienvenue <span className="font-semibold text-gray-700">{user.prenom} {user.nom}</span>
+                </p>
+              )}
+            </div>
             <button
               onClick={() => navigate('/orders/new')}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-            >
+              className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm shadow-sm transition hover:shadow-md">
               + Nouvelle commande
             </button>
           </div>
 
+          {/* Message de succès post-paiement */}
           {successMessage && (
-            <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-green-800">✅ {successMessage}</p>
-            </div>
-          )}
-
-          {user && (
-            <div className="mb-6 pb-6 border-b border-gray-200">
-              <p className="text-gray-700">
-                Bienvenue <span className="font-semibold">{user.prenom} {user.nom}</span>
-              </p>
+            <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
+              <p className="text-green-800 text-sm font-medium">{successMessage}</p>
             </div>
           )}
 
@@ -507,28 +498,27 @@ function DashboardClient() {
 
       </main>
 
-      {/* Modal évaluation */}
+      {/* Modal évaluation — hors du main, z-50 */}
       {showReviewModal && orderToReview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-lg w-full p-6">
-            <h3 className="text-xl font-bold mb-4">Évaluer cette mission</h3>
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl">
+            <h3 className="text-xl font-bold mb-4 text-gray-900">Évaluer cette mission</h3>
 
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-gray-600 mb-1">Mission</p>
-              <p className="font-medium">{orderToReview.service_name}</p>
-              <p className="text-sm text-gray-600 mt-1">
+            <div className="bg-blue-50 rounded-xl p-4 mb-6">
+              <p className="text-sm text-gray-500 mb-1">Mission</p>
+              <p className="font-semibold text-gray-800">{orderToReview.service_name}</p>
+              <p className="text-sm text-gray-500 mt-1">
                 {orderToReview.cemetery_name} — {orderToReview.cemetery_city}
               </p>
             </div>
 
-            {/* Erreur évaluation */}
             {reviewError && (
               <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
                 <p className="text-red-800 text-sm">{reviewError}</p>
               </div>
             )}
 
-            {/* Sélection étoiles */}
+            {/* Sélection étoiles — SVG, sans emojis */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-3">Votre note *</label>
               <div className="flex gap-2 justify-center">
@@ -537,49 +527,51 @@ function DashboardClient() {
                     key={star}
                     type="button"
                     onClick={() => setReviewRating(star)}
-                    className="text-5xl transition-transform hover:scale-110 focus:outline-none"
+                    className="transition-transform hover:scale-110 focus:outline-none"
                   >
-                    {star <= reviewRating ? '⭐' : '☆'}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-10 h-10"
+                      viewBox="0 0 24 24"
+                      fill={star <= reviewRating ? '#F59E0B' : 'none'}
+                      stroke={star <= reviewRating ? '#F59E0B' : '#D1D5DB'}
+                      strokeWidth={1.5}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
                   </button>
                 ))}
               </div>
-              <p className="text-center text-sm text-gray-600 mt-2">
-                {['', '😞 Décevant', '😐 Moyen', '🙂 Bien', '😊 Très bien', '⭐ Excellent'][reviewRating]}
+              <p className="text-center text-sm text-gray-500 mt-2">
+                {['', 'Décevant', 'Moyen', 'Bien', 'Très bien', 'Excellent'][reviewRating]}
               </p>
             </div>
 
-            {/* Commentaire */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Votre commentaire (optionnel)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Votre commentaire (optionnel)</label>
               <textarea
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
                 placeholder="Partagez votre expérience avec ce prestataire..."
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                 rows="4"
                 maxLength="500"
               />
-              <p className="text-xs text-gray-500 mt-1 text-right">
-                {reviewComment.length}/500 caractères
-              </p>
+              <p className="text-xs text-gray-400 mt-1 text-right">{reviewComment.length}/500 caractères</p>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={closeReviewModal}
                 disabled={submittingReview}
-                className="flex-1 bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
-              >
+                className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-200 transition disabled:opacity-50">
                 Annuler
               </button>
               <button
                 onClick={handleSubmitReview}
                 disabled={submittingReview || !reviewRating}
-                className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submittingReview ? 'Envoi...' : "✅ Envoyer l'évaluation"}
+                className="flex-1 bg-blue-500 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                {submittingReview ? 'Envoi...' : "Envoyer l'évaluation"}
               </button>
             </div>
           </div>
