@@ -176,7 +176,7 @@ function CurrentMission() {
 
                   {order.status === 'awaiting_validation' && (
                     <div className="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-4">
-                      <p className="text-orange-800 font-medium">⏳ Validation en cours</p>
+                      <p className="text-orange-800 font-medium">Validation en cours</p>
                       <p className="text-sm text-orange-700 mt-1">
                         Un administrateur vérifie la qualité de l'intervention.
                       </p>
