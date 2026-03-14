@@ -18,7 +18,6 @@ const authHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 });
 
-// Sections de la sidebar
 const NAV_SECTIONS = [
   { key: 'overview',       label: 'Aperçu' },
   { key: 'currentMission', label: 'Mission en cours' },
@@ -28,7 +27,6 @@ const NAV_SECTIONS = [
   { key: 'profile',        label: 'Profil' },
 ];
 
-// Icônes SVG de la sidebar
 const ICONS = {
   overview: (
     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -62,12 +60,8 @@ const ICONS = {
   ),
 };
 
-/**
- * Dashboard principal du client.
- * Navigation par sections via sidebar iconique — contenu rendu dynamiquement.
- */
 function DashboardClient() {
-  const { user, logout, login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -99,7 +93,6 @@ function DashboardClient() {
   const [passwordSuccess, setPasswordSuccess] = useState(null);
   const [passwordError, setPasswordError] = useState(null);
 
-  // Message de succès depuis la redirection post-paiement
   useEffect(() => {
     if (location.state?.message) {
       setSuccessMessage(location.state.message);
@@ -110,7 +103,6 @@ function DashboardClient() {
     }
   }, [location.state]);
 
-  // Chargement initial des stats et badge notifications (polling 10s)
   useEffect(() => {
     fetchStats();
     fetchUnreadCount();
@@ -118,28 +110,21 @@ function DashboardClient() {
     return () => clearInterval(interval);
   }, []);
 
-  /** Récupère les statistiques du dashboard client */
   const fetchStats = async () => {
     try {
       const response = await axios.get('/api/orders/dashboard-stats', authHeaders());
       setDashboardStats(response.data.data || response.data);
-    } catch {
-      // Échec silencieux — stats restent à 0
-    }
+    } catch { }
   };
 
-  /** Récupère le nombre de notifications non lues */
   const fetchUnreadCount = async () => {
     try {
       const response = await axios.get('/api/notifications', authHeaders());
       const notifications = response.data.data?.notifications || [];
       setUnreadCount(notifications.filter(n => !n.is_read).length);
-    } catch {
-      // Échec silencieux — badge reste à 0
-    }
+    } catch { }
   };
 
-  /** Ouvre le modal d'évaluation pour une commande terminée */
   const openReviewModal = (order) => {
     setOrderToReview(order);
     setReviewRating(5);
@@ -148,7 +133,6 @@ function DashboardClient() {
     setShowReviewModal(true);
   };
 
-  /** Ferme le modal d'évaluation et réinitialise les états */
   const closeReviewModal = () => {
     setShowReviewModal(false);
     setOrderToReview(null);
@@ -157,7 +141,6 @@ function DashboardClient() {
     setReviewError(null);
   };
 
-  /** Soumet l'évaluation du prestataire */
   const handleSubmitReview = async () => {
     if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
       setReviewError('Veuillez sélectionner une note entre 1 et 5 étoiles');
@@ -195,18 +178,20 @@ function DashboardClient() {
         return (
           <div>
             <h2 className="text-xl font-semibold text-gray-800 mb-6">Aperçu</h2>
+
+            {/* KPI cards — dégradé bleu uniforme, max blue-500 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 text-center">
                 <p className="text-sm font-medium text-gray-500 mb-2">Commandes en cours</p>
-                <p className="text-3xl font-bold text-blue-600">{dashboardStats.orders_in_progress}</p>
+                <p className="text-3xl font-bold text-blue-500">{dashboardStats.orders_in_progress}</p>
               </div>
               <div className="bg-blue-100 border border-blue-200 rounded-xl p-6 text-center">
                 <p className="text-sm font-medium text-gray-500 mb-2">Commandes terminées</p>
-                <p className="text-3xl font-bold text-blue-700">{dashboardStats.orders_completed}</p>
+                <p className="text-3xl font-bold text-blue-600">{dashboardStats.orders_completed}</p>
               </div>
-              <div className="bg-blue-600 border border-blue-600 rounded-xl p-6 text-center">
+              <div className="bg-blue-500 border border-blue-500 rounded-xl p-6 text-center">
                 <p className="text-sm font-medium text-blue-100 mb-2">Dernière commande</p>
-                <p className="text-3xl font-bold text-white">
+                <p className="text-2xl font-bold text-white">
                   {dashboardStats.last_order_date
                     ? new Date(dashboardStats.last_order_date).toLocaleDateString('fr-FR', {
                         day: '2-digit', month: 'short', year: 'numeric'
@@ -215,7 +200,12 @@ function DashboardClient() {
                 </p>
               </div>
             </div>
-            <OrderListPreview onReview={openReviewModal} />
+
+            {/* Commandes récentes */}
+            <OrderListPreview
+              onReview={openReviewModal}
+              onNavigateToOrders={() => setActiveSection('orders')}
+            />
           </div>
         );
 
@@ -302,16 +292,19 @@ function DashboardClient() {
                   {profileError && <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{profileError}</p></div>}
                   {profileSuccess && <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm">{profileSuccess}</p></div>}
                   <div className="space-y-4">
-                    {['prenom', 'nom', 'email', 'telephone'].map(field => (
+                    {[
+                      { field: 'prenom', label: 'Prénom', type: 'text' },
+                      { field: 'nom', label: 'Nom', type: 'text' },
+                      { field: 'email', label: 'Email', type: 'email' },
+                      { field: 'telephone', label: 'Téléphone', type: 'tel', placeholder: '0612345678' },
+                    ].map(({ field, label, type, placeholder }) => (
                       <div key={field}>
-                        <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                          {field === 'telephone' ? 'Téléphone' : field.charAt(0).toUpperCase() + field.slice(1)}
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
                         <input
-                          type={field === 'email' ? 'email' : field === 'telephone' ? 'tel' : 'text'}
+                          type={type}
                           value={profileData[field]}
                           onChange={e => setProfileData(prev => ({ ...prev, [field]: e.target.value }))}
-                          placeholder={field === 'telephone' ? '0612345678' : ''}
+                          placeholder={placeholder || ''}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                         />
                       </div>
@@ -356,24 +349,21 @@ function DashboardClient() {
                   {passwordError && <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-800 text-sm">{passwordError}</p></div>}
                   {passwordSuccess && <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-800 text-sm">{passwordSuccess}</p></div>}
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe actuel</label>
-                      <input type="password" value={passwordData.current}
-                        onChange={e => setPasswordData(prev => ({ ...prev, current: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
-                      <input type="password" value={passwordData.newPassword}
-                        onChange={e => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Confirmer le nouveau mot de passe</label>
-                      <input type="password" value={passwordData.confirm}
-                        onChange={e => setPasswordData(prev => ({ ...prev, confirm: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                    </div>
+                    {[
+                      { field: 'current', label: 'Mot de passe actuel' },
+                      { field: 'newPassword', label: 'Nouveau mot de passe' },
+                      { field: 'confirm', label: 'Confirmer le nouveau mot de passe' },
+                    ].map(({ field, label }) => (
+                      <div key={field}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                        <input
+                          type="password"
+                          value={passwordData[field]}
+                          onChange={e => setPasswordData(prev => ({ ...prev, [field]: e.target.value }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                      </div>
+                    ))}
                   </div>
                   <div className="flex gap-3 mt-6">
                     <button onClick={() => setShowChangePassword(false)}
@@ -384,16 +374,13 @@ function DashboardClient() {
                       onClick={async () => {
                         setPasswordError(null);
                         if (!passwordData.current || !passwordData.newPassword || !passwordData.confirm) {
-                          setPasswordError('Tous les champs sont obligatoires');
-                          return;
+                          setPasswordError('Tous les champs sont obligatoires'); return;
                         }
                         if (passwordData.newPassword.length < 8) {
-                          setPasswordError('Le nouveau mot de passe doit contenir au moins 8 caractères');
-                          return;
+                          setPasswordError('Le nouveau mot de passe doit contenir au moins 8 caractères'); return;
                         }
                         if (passwordData.newPassword !== passwordData.confirm) {
-                          setPasswordError('Les mots de passe ne correspondent pas');
-                          return;
+                          setPasswordError('Les mots de passe ne correspondent pas'); return;
                         }
                         try {
                           const res = await axios.put('/api/users/password', {
@@ -444,15 +431,12 @@ function DashboardClient() {
                 }`}
               >
                 {ICONS[key]}
-                {/* Badge notifications */}
                 {key === 'notifications' && unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full">
                     {unreadCount}
                   </span>
                 )}
               </button>
-
-              {/* Tooltip */}
               <div className="absolute left-14 top-1/2 -translate-y-1/2 px-3 py-1.5
                 bg-slate-800 text-white text-xs font-medium rounded-lg shadow-lg
                 whitespace-nowrap pointer-events-none
@@ -468,9 +452,7 @@ function DashboardClient() {
 
         {/* Zone de contenu */}
         <section className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-
-          {/* Header */}
-          <div className="flex items-center justify-between mb-2 pb-6 border-b border-gray-100">
+          <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-100">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Dashboard Client</h1>
               {user && (
@@ -486,7 +468,6 @@ function DashboardClient() {
             </button>
           </div>
 
-          {/* Message de succès post-paiement */}
           {successMessage && (
             <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
               <p className="text-green-800 text-sm font-medium">{successMessage}</p>
@@ -498,7 +479,7 @@ function DashboardClient() {
 
       </main>
 
-      {/* Modal évaluation — hors du main, z-50 */}
+      {/* Modal évaluation */}
       {showReviewModal && orderToReview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl">
@@ -518,7 +499,6 @@ function DashboardClient() {
               </div>
             )}
 
-            {/* Sélection étoiles — SVG, sans emojis */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-3">Votre note *</label>
               <div className="flex gap-2 justify-center">
@@ -529,14 +509,10 @@ function DashboardClient() {
                     onClick={() => setReviewRating(star)}
                     className="transition-transform hover:scale-110 focus:outline-none"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-10 h-10"
-                      viewBox="0 0 24 24"
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" viewBox="0 0 24 24"
                       fill={star <= reviewRating ? '#F59E0B' : 'none'}
                       stroke={star <= reviewRating ? '#F59E0B' : '#D1D5DB'}
-                      strokeWidth={1.5}
-                    >
+                      strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                     </svg>
                   </button>
@@ -561,15 +537,11 @@ function DashboardClient() {
             </div>
 
             <div className="flex gap-3">
-              <button
-                onClick={closeReviewModal}
-                disabled={submittingReview}
+              <button onClick={closeReviewModal} disabled={submittingReview}
                 className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-200 transition disabled:opacity-50">
                 Annuler
               </button>
-              <button
-                onClick={handleSubmitReview}
-                disabled={submittingReview || !reviewRating}
+              <button onClick={handleSubmitReview} disabled={submittingReview || !reviewRating}
                 className="flex-1 bg-blue-500 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 {submittingReview ? 'Envoi...' : "Envoyer l'évaluation"}
               </button>
@@ -579,7 +551,6 @@ function DashboardClient() {
       )}
 
       <CrispChat user={user} />
-
     </div>
   );
 }
